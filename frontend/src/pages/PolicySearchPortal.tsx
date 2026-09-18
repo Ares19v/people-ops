@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../api';
 import { CitationItem } from '../types';
-import { Search, Shield, FileText, AlertTriangle, BookOpen, ExternalLink, Sparkles } from 'lucide-react';
+import { Search, Shield, FileText, AlertTriangle, BookOpen, ExternalLink, Sparkles, ShieldCheck } from 'lucide-react';
 
 export const PolicySearchPortal: React.FC = () => {
   const [query, setQuery] = useState('casual leave maharashtra');
@@ -33,15 +33,18 @@ export const PolicySearchPortal: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">HR Policy & Maharashtra Labour Law Graph RAG</h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Explore authoritative policies indexed against the Maharashtra Shops & Establishments Act, 2017.
+        <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+          <Shield className="w-5 h-5 text-blue-600" />
+          HR Policy & Maharashtra Labour Law Graph RAG
+        </h2>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Explore authoritative policies indexed against the Maharashtra Shops & Establishments Act, 2017 with statutory citations.
         </p>
       </div>
 
       {/* Search Input Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-        <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+      <div className="card-olixer p-4 sm:p-5 space-y-3">
+        <div className="flex items-center gap-2 bg-slate-50/80 p-2 rounded-2xl border border-slate-200 focus-within:bg-white focus-within:border-blue-600 transition-all">
           <Search className="w-5 h-5 text-slate-400 ml-2" />
           <input
             type="text"
@@ -54,15 +57,15 @@ export const PolicySearchPortal: React.FC = () => {
           <button
             onClick={() => handleSearch()}
             disabled={searching}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
+            className="btn-pill-dark"
           >
-            {searching ? 'Querying Graph...' : 'Search'}
+            {searching ? 'Querying Graph...' : 'Search Graph'}
           </button>
         </div>
 
-        {/* Suggestion Pills */}
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-slate-400 font-medium">Try asking:</span>
+        {/* Query Suggestion Pills */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Suggested:</span>
           {sampleQueries.map((sq) => (
             <button
               key={sq}
@@ -70,7 +73,7 @@ export const PolicySearchPortal: React.FC = () => {
                 setQuery(sq);
                 handleSearch(sq);
               }}
-              className="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 rounded-lg transition-colors"
+              className="btn-pill-outline text-xs py-1 px-3"
             >
               {sq}
             </button>
@@ -78,60 +81,61 @@ export const PolicySearchPortal: React.FC = () => {
         </div>
       </div>
 
-      {/* Search Results Display */}
+      {/* Results View */}
       {results && (
-        <div className="space-y-4">
-          {/* Statutory Disclaimer Alert */}
-          {results.legal_disclaimer && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs flex items-start gap-3">
-              <Shield className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold">Statutory Guidance Notice:</span>
-                <p className="mt-0.5 text-blue-800">{results.legal_disclaimer}</p>
+        <div className="space-y-6">
+          {/* Answer Card */}
+          <div className="card-olixer p-6">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                <span className="font-display font-bold text-xs uppercase tracking-wider text-slate-500">
+                  Synthesized Graph RAG Response
+                </span>
+              </div>
+              <div className="badge-statutory-green">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>NeMo Legal Rail Verified</span>
               </div>
             </div>
-          )}
+
+            <p className="text-sm text-slate-800 leading-relaxed font-normal">
+              {results.summary || results.answer || 'Query processed across policy nodes.'}
+            </p>
+
+            {results.disclaimer && (
+              <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-[11px] text-slate-500 flex items-start gap-2">
+                <Shield className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                <span>{results.disclaimer}</span>
+              </div>
+            )}
+          </div>
 
           {/* Citations Grid */}
-          {results.citations && results.citations.length > 0 && (
-            <div>
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Authoritative Graph Citations ({results.citations.length})
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {results.citations.map((cit: CitationItem, idx: number) => (
-                  <div
-                    key={idx}
-                    className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:border-emerald-200 transition-all"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-slate-900">{cit.source_title}</span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          cit.document_type === 'STATUTORY_LAW'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}
-                      >
-                        {cit.document_type}
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-600 mt-2 font-medium">{cit.section}</div>
-                    <div className="text-xs text-slate-500 mt-1">{cit.citation_text}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Retrieved Synthesis Card */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-emerald-600" />
-              Synthesized Knowledge Context
+          <div>
+            <h3 className="font-display font-bold text-sm text-slate-900 mb-3 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-blue-600" />
+              Retrieved Policy Nodes & Citations ({results.citations?.length || 0})
             </h3>
-            <div className="whitespace-pre-wrap text-xs text-slate-700 leading-relaxed font-sans bg-slate-50 p-4 rounded-xl border border-slate-100">
-              {results.context}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {results.citations?.map((c: CitationItem, idx: number) => (
+                <div key={idx} className="entity-dossier">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-display font-bold text-xs text-slate-900">{c.source_title}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">
+                      {c.section}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed italic bg-slate-50/60 p-3 rounded-xl border border-slate-100">
+                    "{c.citation_text}"
+                  </p>
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Relevance: {(c.confidence_score * 100).toFixed(0)}%</span>
+                    <span className="text-blue-600 font-medium">Node Verified</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

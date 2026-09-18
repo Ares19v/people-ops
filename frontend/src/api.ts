@@ -82,6 +82,14 @@ export const api = {
     const res = await apiClient.get<TimesheetReportSummary>('/reports/timesheets', { params: filters });
     return res.data;
   },
+  decideTimesheets: async (entryIds: string[], decision: 'APPROVE' | 'REJECT', rejectionReason?: string) => {
+    const res = await apiClient.post<TimesheetEntry[]>('/timesheets/decide', {
+      entry_ids: entryIds,
+      decision,
+      rejection_reason: rejectionReason,
+    });
+    return res.data;
+  },
   getTimesheetCSVUrl: (filters?: Record<string, any>) => {
     const params = new URLSearchParams(filters).toString();
     return `${API_BASE_URL}/reports/timesheets/csv?${params}`;

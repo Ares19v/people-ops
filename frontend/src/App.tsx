@@ -17,7 +17,17 @@ export const App: React.FC = () => {
   const [balances, setBalances] = useState<LeaveBalanceSummary | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Sync fullscreen class with document.body
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.classList.add('is-fullscreen');
+    } else {
+      document.body.classList.remove('is-fullscreen');
+    }
+  }, [isFullscreen]);
 
   // Switch role and fetch user data
   const handleRoleSwitch = async (newRole: UserRole) => {
@@ -51,77 +61,110 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-emerald-500 selection:text-white">
-      {/* Top Navigation */}
-      <Navbar
-        currentUser={currentUser}
-        currentRole={currentRole}
-        onRoleSwitch={handleRoleSwitch}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        toggleChat={() => setIsChatOpen((prev) => !prev)}
-        isChatOpen={isChatOpen}
-      />
+    <div className={`floating-canvas ${isFullscreen ? 'is-fullscreen' : ''}`}>
+      {/* Background Decorative Grid and Ambient Glow */}
+      <div className="canvas-grid-bg" />
+      <div className="canvas-glow" />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-500">
-            <div className="w-10 h-10 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mb-3" />
-            <span className="text-xs font-semibold">Switching authenticated role & initializing Google ADK tools...</span>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'dashboard' && (
-              <Dashboard
-                currentUser={currentUser}
-                currentRole={currentRole}
-                balances={balances}
-                onNavigate={(tab) => setActiveTab(tab)}
-                openChat={() => setIsChatOpen(true)}
-              />
-            )}
-            {activeTab === 'leaves' && (
-              <LeavePortal
-                currentUser={currentUser}
-                currentRole={currentRole}
-                balances={balances}
-                onRefreshBalances={refreshBalances}
-              />
-            )}
-            {activeTab === 'timesheets' && (
-              <TimesheetPortal currentUser={currentUser} currentRole={currentRole} />
-            )}
-            {activeTab === 'reports' && (
-              <ReportsPortal currentUser={currentUser} currentRole={currentRole} />
-            )}
-            {activeTab === 'policy' && <PolicySearchPortal />}
-            {activeTab === 'onboarding' && (
-              <OnboardingWizard currentUser={currentUser} currentRole={currentRole} />
-            )}
-          </>
-        )}
-      </main>
+      {/* Main Container Content */}
+      <div className="canvas-content">
+        {/* Top Navbar */}
+        <Navbar
+          currentUser={currentUser}
+          currentRole={currentRole}
+          onRoleSwitch={handleRoleSwitch}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          toggleChat={() => setIsChatOpen((prev) => !prev)}
+          isChatOpen={isChatOpen}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
+        />
 
-      {/* AI Assistant Chat Drawer */}
-      <AgentChatDrawer
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        onActionExecuted={() => {
-          refreshBalances();
-        }}
-      />
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-emerald-600" />
-            <span>Google ADK Architecture &bull; NVIDIA NeMo Guardrails 0.24 &bull; DPDP Act 2023 Compliant</span>
-          </div>
-          <div>Antigravity Global Technologies Pvt Ltd &bull; Maharashtra Shops & Establishments 2017</div>
+        {/* Mobile Navigation Pills */}
+        <div className="flex lg:hidden overflow-x-auto gap-2 pb-3 mb-6 border-b border-slate-100">
+          {[
+            { id: 'dashboard', label: 'Dashboard' },
+            { id: 'leaves', label: 'Leaves' },
+            { id: 'timesheets', label: 'Timesheets' },
+            { id: 'reports', label: 'Reports' },
+            { id: 'policy', label: 'HR Policy RAG' },
+            ...(currentRole !== 'EMPLOYEE' ? [{ id: 'onboarding', label: 'Onboarding' }] : []),
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                activeTab === item.id
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-      </footer>
+
+        {/* Main Content Area */}
+        <main className="w-full">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[420px] text-slate-500">
+              <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+              <span className="text-xs font-semibold">Switching authenticated role & initializing Google ADK tools...</span>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'dashboard' && (
+                <Dashboard
+                  currentUser={currentUser}
+                  currentRole={currentRole}
+                  balances={balances}
+                  onNavigate={(tab) => setActiveTab(tab)}
+                  openChat={() => setIsChatOpen(true)}
+                />
+              )}
+              {activeTab === 'leaves' && (
+                <LeavePortal
+                  currentUser={currentUser}
+                  currentRole={currentRole}
+                  balances={balances}
+                  onRefreshBalances={refreshBalances}
+                />
+              )}
+              {activeTab === 'timesheets' && (
+                <TimesheetPortal currentUser={currentUser} currentRole={currentRole} />
+              )}
+              {activeTab === 'reports' && (
+                <ReportsPortal currentUser={currentUser} currentRole={currentRole} />
+              )}
+              {activeTab === 'policy' && <PolicySearchPortal />}
+              {activeTab === 'onboarding' && (
+                <OnboardingWizard currentUser={currentUser} currentRole={currentRole} />
+              )}
+            </>
+          )}
+        </main>
+
+        {/* AI Assistant Chat Drawer */}
+        <AgentChatDrawer
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          onActionExecuted={() => {
+            refreshBalances();
+          }}
+        />
+
+        {/* Footer */}
+        <footer className="mt-16 pt-6 border-t border-slate-200/70 text-xs text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-blue-600" />
+              <span>Google ADK Multi-Agent Architecture &bull; NVIDIA NeMo Guardrails &bull; DPDP Act 2023 Compliant</span>
+            </div>
+            <div>Antigravity Global Technologies Pvt Ltd &bull; Maharashtra Shops & Establishments 2017</div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };

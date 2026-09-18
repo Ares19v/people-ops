@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, UserRole } from '../types';
-import { Bot, Calendar, Clock, FileText, LayoutDashboard, UserPlus, Shield, Sparkles } from 'lucide-react';
+import { Bot, Calendar, Clock, FileText, LayoutDashboard, UserPlus, Shield, Sparkles, Maximize2, Minimize2 } from 'lucide-react';
 
 interface NavbarProps {
   currentUser: User | null;
@@ -10,6 +10,8 @@ interface NavbarProps {
   setActiveTab: (tab: string) => void;
   toggleChat: () => void;
   isChatOpen: boolean;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -20,6 +22,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   toggleChat,
   isChatOpen,
+  isFullscreen,
+  onToggleFullscreen,
 }) => {
   const roles: { label: string; value: UserRole }[] = [
     { label: 'Employee', value: 'EMPLOYEE' },
@@ -29,88 +33,90 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'leaves', label: 'Leave Ledger', icon: Calendar },
-    { id: 'timesheets', label: 'Timesheets', icon: Clock },
-    { id: 'reports', label: 'Reports & CSV', icon: FileText },
-    { id: 'policy', label: 'HR Policy RAG', icon: Shield },
-    ...(currentRole !== 'EMPLOYEE' ? [{ id: 'onboarding', label: 'Onboarding', icon: UserPlus }] : []),
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'leaves', label: 'Leave Ledger' },
+    { id: 'timesheets', label: 'Timesheets' },
+    { id: 'reports', label: 'Reports & CSV' },
+    { id: 'policy', label: 'HR Policy RAG' },
+    ...(currentRole !== 'EMPLOYEE' ? [{ id: 'onboarding', label: 'Onboarding' }] : []),
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Brand */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-              <Bot className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                Antigravity HR
-              </span>
-              <span className="block text-xs font-semibold text-emerald-600 uppercase tracking-wider">
-                ADK Multi-Agent + NeMo
-              </span>
-            </div>
+    <nav className="olixer-nav">
+      {/* Brand Logo */}
+      <div className="brand-block" onClick={() => setActiveTab('dashboard')}>
+        <div className="brand-icon-box">
+          <Bot size={22} className="text-slate-900" />
+        </div>
+        <div>
+          <div className="brand-title">
+            PeopleOps<span style={{ color: 'var(--blue-brand)' }}>.adk</span>
           </div>
-
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-emerald-50 text-emerald-700 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-600' : 'text-slate-500'}`} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Right: Role Switcher & Agent Chat Trigger */}
-          <div className="flex items-center gap-3">
-            {/* Quick Role Switcher */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
-              <span className="text-xs font-medium text-slate-500 px-2 hidden sm:inline">Role:</span>
-              <select
-                value={currentRole}
-                onChange={(e) => onRoleSwitch(e.target.value as UserRole)}
-                className="bg-transparent text-xs font-semibold text-slate-800 border-none focus:ring-0 cursor-pointer pr-4"
-              >
-                {roles.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Multi-Agent Assistant Button */}
-            <button
-              onClick={toggleChat}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
-                isChatOpen
-                  ? 'bg-emerald-700 text-white shadow-emerald-700/20'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
-              }`}
-            >
-              <Sparkles className="w-4 h-4 animate-pulse" />
-              <span>AI Agents</span>
-            </button>
-          </div>
+          <div className="brand-sub">Google ADK &bull; NeMo Guardrails</div>
         </div>
       </div>
-    </header>
+
+      {/* Center Nav Links with Active Indicator Dot */}
+      <div className="hidden lg:flex nav-center-menu">
+        {navItems.map((item) => {
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              className={`nav-item-link ${isActive ? 'active' : ''}`}
+              onClick={() => setActiveTab(item.id)}
+            >
+              <span>{item.label}</span>
+              {isActive && <div className="nav-dot" />}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Right Actions */}
+      <div className="nav-actions">
+        {/* Fullscreen / Framed View Toggle */}
+        <button
+          className="btn-pill-outline hidden sm:inline-flex"
+          onClick={onToggleFullscreen}
+          title={isFullscreen ? "Switch to Framed Card View" : "Switch to Full Screen"}
+        >
+          {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          <span>{isFullscreen ? "Framed View" : "Full Screen"}</span>
+        </button>
+
+        {/* Role Switcher Pill */}
+        <div className="relative inline-flex items-center">
+          <select
+            value={currentRole}
+            onChange={(e) => onRoleSwitch(e.target.value as UserRole)}
+            className="btn-pill-outline appearance-none pr-8 cursor-pointer bg-white text-xs font-semibold focus:outline-none"
+          >
+            {roles.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
+            ▼
+          </div>
+        </div>
+
+        {/* Ask HR AI Deep Charcoal Pill Button */}
+        <button
+          onClick={toggleChat}
+          className="btn-pill-dark"
+          title="Open Google ADK HR Assistant"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <Bot size={15} />
+          <span>Ask HR AI</span>
+        </button>
+      </div>
+    </nav>
   );
 };

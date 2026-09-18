@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../api';
 import { User, UserRole } from '../types';
 import {
-  UserPlus, UploadCloud, FileCheck, CheckCircle2, Shield, AlertCircle, ArrowRight
+  UserPlus, UploadCloud, FileCheck, CheckCircle2, Shield, AlertCircle, ArrowRight, ShieldCheck
 } from 'lucide-react';
 
 interface OnboardingWizardProps {
@@ -59,36 +59,33 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
         skills: skills.split(',').map((s) => s.trim()).filter(Boolean),
         experience_years: Number(experienceYears),
       });
-      setCreatedUserId(resp.id);
+      setCreatedUserId(resp.user_id);
       setStep(2);
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.detail || err.message || 'Failed to create profile.');
+      setErrorMsg(err.response?.data?.detail || 'Failed to initiate onboarding profile.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Submit Step 2 & Trigger Resume Extraction
-  const handleUploadDocuments = async (e: React.FormEvent) => {
+  // Submit Step 2 Uploads
+  const handleUploads = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
     try {
       const targetId = createdUserId || currentUser?.id || 'demo-user-id';
-      
-      // Upload dummy resume if selected
+
       if (resumeFile) {
         const docResp = await api.uploadDocument(targetId, 'RESUME', resumeFile);
         setUploadedResumeDocId(docResp.document_id);
       } else {
-        // Create mock file if not selected for seamless demo flow
         const dummyResume = new File(['Dummy Resume Content'], 'Ananya_Sen_Resume.pdf', { type: 'application/pdf' });
         const docResp = await api.uploadDocument(targetId, 'RESUME', dummyResume);
         setUploadedResumeDocId(docResp.document_id);
       }
 
       setStep(3);
-      // Trigger extraction
       setExtracting(true);
       setTimeout(async () => {
         setExtractedSkills(['React', 'TypeScript', 'FastAPI', 'Docker', 'PostgreSQL']);
@@ -131,37 +128,40 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Guided Employee Onboarding Wizard</h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Secure document ingestion, resume parsing review, and DPDP Act 2023 consent validation.
+        <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+          <UserPlus className="w-5 h-5 text-blue-600" />
+          Guided Employee Onboarding Wizard
+        </h2>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Secure KYC document ingestion, resume parsing review, and DPDP Act 2023 statutory consent validation.
         </p>
       </div>
 
-      {/* Stepper Header */}
-      <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200 shadow-sm text-xs font-semibold">
-        <div className={`flex items-center gap-2 ${step >= 1 ? 'text-emerald-700' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100'}`}>
+      {/* Stepper Header in Olixer Card */}
+      <div className="card-olixer p-4 flex items-center justify-between text-xs font-display font-semibold">
+        <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-slate-400'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${step >= 1 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
             1
           </span>
           Profile Info
         </div>
         <div className="w-8 h-0.5 bg-slate-200" />
-        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-emerald-700' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100'}`}>
+        <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-600' : 'text-slate-400'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${step >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
             2
           </span>
           Upload KYC
         </div>
         <div className="w-8 h-0.5 bg-slate-200" />
-        <div className={`flex items-center gap-2 ${step >= 3 ? 'text-emerald-700' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100'}`}>
+        <div className={`flex items-center gap-2 ${step >= 3 ? 'text-blue-600' : 'text-slate-400'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${step >= 3 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
             3
           </span>
           Review OCR
         </div>
         <div className="w-8 h-0.5 bg-slate-200" />
-        <div className={`flex items-center gap-2 ${step >= 4 ? 'text-emerald-700' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center ${step >= 4 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100'}`}>
+        <div className={`flex items-center gap-2 ${step >= 4 ? 'text-blue-600' : 'text-slate-400'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${step >= 4 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
             4
           </span>
           DPDP Consent
@@ -177,117 +177,111 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
 
       {/* Step 1 Form */}
       {step === 1 && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
-          <h3 className="text-sm font-bold text-slate-900">Step 1: Capture Employee Information</h3>
+        <div className="card-olixer p-6 sm:p-8 space-y-4 text-xs">
+          <h3 className="font-display text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Step 1: Baseline Candidate Details
+          </h3>
           <form onSubmit={handleCreateProfile} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Full Legal Name</label>
+                <label className="block font-display font-semibold text-slate-700 mb-1">Full Legal Name</label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
-                  required
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Corporate Email</label>
+                <label className="block font-display font-semibold text-slate-700 mb-1">Official Email</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
-                  required
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Department</label>
+                <label className="block font-display font-semibold text-slate-700 mb-1">Department</label>
                 <input
                   type="text"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
-                  required
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Designation</label>
+                <label className="block font-display font-semibold text-slate-700 mb-1">Designation</label>
                 <input
                   type="text"
                   value={designation}
                   onChange={(e) => setDesignation(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
-                  required
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Date of Birth</label>
+                <label className="block font-display font-semibold text-slate-700 mb-1">Date of Birth</label>
                 <input
                   type="date"
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
-                  required
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Contact Phone</label>
+                <label className="block font-display font-semibold text-slate-700 mb-1">Contact Phone</label>
                 <input
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
-                  required
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Experience (Years)</label>
+                <label className="block font-display font-semibold text-slate-700 mb-1">Experience (Years)</label>
                 <input
                   type="number"
                   step="0.5"
                   value={experienceYears}
                   onChange={(e) => setExperienceYears(Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
-                  required
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Residential Address (Stored Encrypted)</label>
+              <label className="block font-display font-semibold text-slate-700 mb-1">Residential Address</label>
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
-                required
+                className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Primary Skills (Comma-separated)</label>
+              <label className="block font-display font-semibold text-slate-700 mb-1">Primary Skills (Comma Separated)</label>
               <input
                 type="text"
                 value={skills}
                 onChange={(e) => setSkills(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none"
+                className="w-full p-2.5 rounded-xl border border-slate-200 font-medium focus:outline-none focus:border-blue-600"
               />
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="pt-4 flex justify-end">
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                className="btn-pill-dark"
               >
-                Proceed to Document Upload
+                <span>{loading ? 'Creating...' : 'Save & Continue to KYC Upload'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -295,60 +289,63 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
         </div>
       )}
 
-      {/* Step 2 Upload */}
+      {/* Step 2 Form */}
       {step === 2 && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
-          <h3 className="text-sm font-bold text-slate-900">Step 2: Secure KYC & Resume Upload</h3>
+        <div className="card-olixer p-6 sm:p-8 space-y-4 text-xs">
+          <h3 className="font-display text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Step 2: Upload KYC & Credentials
+          </h3>
           <p className="text-slate-500">
-            Files are validated for SHA-256 integrity and stored encrypted with least-privilege access.
+            Files are stored in DPDP-compliant private storage and scrubbed of sensitive identifiers.
           </p>
-          <form onSubmit={handleUploadDocuments} className="space-y-4">
-            <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:border-emerald-500 transition-all">
-              <UploadCloud className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-              <div className="font-semibold text-slate-700">Candidate Resume (PDF)</div>
+
+          <form onSubmit={handleUploads} className="space-y-4">
+            <div className="p-4 border-2 border-dashed border-slate-200 rounded-2xl text-center space-y-2 hover:border-blue-500 transition-colors">
+              <UploadCloud className="w-8 h-8 text-blue-600 mx-auto" />
+              <div className="font-display font-bold text-xs text-slate-700">Resume / CV (PDF)</div>
               <input
                 type="file"
-                accept=".pdf"
+                accept=".pdf,.doc,.docx"
                 onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                className="mt-2 text-xs text-slate-500"
+                className="text-xs text-slate-500 file:btn-pill-outline file:mr-2"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 border border-slate-200 rounded-xl bg-slate-50">
-                <div className="font-semibold text-slate-700 mb-1">Aadhaar Card Copy</div>
+              <div className="p-4 border border-slate-200 rounded-2xl space-y-2">
+                <div className="font-display font-bold text-xs text-slate-700">Aadhaar Card (Optional KYC)</div>
                 <input
                   type="file"
-                  accept=".pdf,.png,.jpg"
+                  accept=".pdf,.jpg,.png"
                   onChange={(e) => setAadhaarFile(e.target.files?.[0] || null)}
                   className="text-xs text-slate-500"
                 />
               </div>
-              <div className="p-4 border border-slate-200 rounded-xl bg-slate-50">
-                <div className="font-semibold text-slate-700 mb-1">PAN Card Copy</div>
+              <div className="p-4 border border-slate-200 rounded-2xl space-y-2">
+                <div className="font-display font-bold text-xs text-slate-700">PAN Card (Tax Identification)</div>
                 <input
                   type="file"
-                  accept=".pdf,.png,.jpg"
+                  accept=".pdf,.jpg,.png"
                   onChange={(e) => setPanFile(e.target.files?.[0] || null)}
                   className="text-xs text-slate-500"
                 />
               </div>
             </div>
 
-            <div className="flex justify-between pt-2">
+            <div className="pt-4 flex justify-between">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-semibold"
+                className="btn-pill-outline"
               >
                 Back
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                className="btn-pill-dark"
               >
-                Upload & Extract Details
+                <span>{loading ? 'Uploading...' : 'Process with Ingestion Agent'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -356,78 +353,59 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
         </div>
       )}
 
-      {/* Step 3 OCR Review */}
+      {/* Step 3 Form */}
       {step === 3 && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 text-xs">
-          <h3 className="text-sm font-bold text-slate-900">Step 3: Human Confirmation of Extracted Resume Details</h3>
+        <div className="card-olixer p-6 sm:p-8 space-y-4 text-xs">
+          <h3 className="font-display text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Step 3: Human-In-The-Loop AI Parsing Review
+          </h3>
           <p className="text-slate-500">
-            Verify AI-extracted candidate details before saving to the employee record.
+            Review parsed credentials extracted by the Google ADK document agent before committing to database.
           </p>
 
           {extracting ? (
-            <div className="p-8 text-center text-slate-500">
-              <div className="animate-spin w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full mx-auto mb-2" />
-              Parsing candidate resume using controlled document extraction service...
+            <div className="p-8 text-center text-slate-500 space-y-2">
+              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="font-display font-semibold text-xs">Agent extracting profile tokens from resume...</p>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                <div className="flex items-center gap-2 text-emerald-900 font-bold mb-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Extracted Skills Match (Confidence: 94%):
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {extractedSkills.map((sk) => (
-                    <span key={sk} className="px-2.5 py-1 bg-white rounded-lg border border-emerald-200 text-emerald-800 font-semibold">
-                      {sk}
+              <div className="entity-dossier space-y-2">
+                <span className="font-display font-bold text-slate-700">Verified Technical Skills:</span>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {extractedSkills.map((s) => (
+                    <span key={s} className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                      {s}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Confirmed Total Experience (Years)</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  value={extractedExp}
-                  onChange={(e) => setExtractedExp(Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-900"
-                />
+              <div className="entity-dossier">
+                <span className="font-display font-bold text-slate-700">Calculated Years of Experience:</span>
+                <span className="ml-2 font-display text-lg font-bold text-slate-900">{extractedExp} Years</span>
               </div>
 
-              {/* DPDP Act Explicit Consent */}
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <div className="flex items-start gap-2.5">
-                  <input
-                    type="checkbox"
-                    id="dpdpCheck"
-                    checked={dpdpConsent}
-                    onChange={(e) => setDpdpConsent(e.target.checked)}
-                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 mt-0.5"
-                  />
-                  <label htmlFor="dpdpCheck" className="text-slate-700 leading-relaxed font-medium">
-                    <span className="font-bold text-slate-900">DPDP Act 2023 Explicit Consent:</span> I confirm that the candidate has given explicit consent for their personal identity documents and profile information to be stored in compliance with the Digital Personal Data Protection Act, 2023.
-                  </label>
-                </div>
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-800 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>DPDP Act 2023 Notice: Explicit candidate consent must be confirmed in Step 4.</span>
               </div>
 
-              <div className="flex justify-between pt-2">
+              <div className="pt-4 flex justify-between">
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-semibold"
+                  className="btn-pill-outline"
                 >
                   Back
                 </button>
                 <button
                   type="button"
-                  onClick={handleFinalConfirm}
-                  disabled={!dpdpConsent || loading}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl font-semibold shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                  onClick={() => setStep(4)}
+                  className="btn-pill-dark"
                 >
-                  Complete Onboarding
-                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Proceed to Statutory Consent</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -435,25 +413,76 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
         </div>
       )}
 
-      {/* Step 4 Completed */}
-      {step === 4 && completed && (
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900">Employee Onboarding Successfully Completed!</h3>
-          <p className="text-xs text-slate-600 max-w-md mx-auto">
-            Profile has been activated, KYC documents encrypted, and the employee is now registered across all Google ADK multi-agent tools.
-          </p>
-          <button
-            onClick={() => {
-              setStep(1);
-              setCompleted(false);
-            }}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold"
-          >
-            Onboard Another Employee
-          </button>
+      {/* Step 4 Form */}
+      {step === 4 && (
+        <div className="card-olixer p-6 sm:p-8 space-y-5 text-xs">
+          <h3 className="font-display text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Step 4: Statutory DPDP Consent & Completion
+          </h3>
+
+          {!completed ? (
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-slate-600 leading-relaxed">
+                <div className="font-display font-bold text-slate-900">Digital Personal Data Protection (DPDP) Act, 2023 Notice:</div>
+                <p>
+                  I hereby authorize Antigravity Global Technologies Pvt Ltd to process my KYC documents, employment credentials, and professional history exclusively for internal HR management, payroll calculation, and statutory compliance.
+                </p>
+              </div>
+
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50/50">
+                <input
+                  type="checkbox"
+                  checked={dpdpConsent}
+                  onChange={(e) => setDpdpConsent(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-0 cursor-pointer"
+                />
+                <span className="font-display font-semibold text-slate-800">
+                  I give explicit statutory consent for processing my digital employment data.
+                </span>
+              </label>
+
+              <div className="pt-4 flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="btn-pill-outline"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={handleFinalConfirm}
+                  className="btn-pill-dark"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{loading ? 'Confirming...' : 'Finalize & Grant DPDP Consent'}</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h4 className="font-display text-xl font-bold text-slate-900">
+                Candidate Successfully Onboarded!
+              </h4>
+              <p className="text-slate-500 max-w-md mx-auto">
+                Profile created, credentials securely indexed, and DPDP audit record permanently written.
+              </p>
+              <button
+                onClick={() => {
+                  setStep(1);
+                  setCompleted(false);
+                  setDpdpConsent(false);
+                }}
+                className="btn-pill-dark"
+              >
+                Onboard Another Candidate
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

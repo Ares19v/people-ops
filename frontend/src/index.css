@@ -2,14 +2,390 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===================================================================
+   PeopleOps.adk — Olixer Design System
+   Pale ice-blue outer canvas (#dce5f0), floating curved white card
+   (radius 36px), subtle dot-grid backdrop, deep charcoal pill buttons (#0b1329),
+   Plus Jakarta Sans headers, Inter body text, and multi-agent circuits.
+   =================================================================== */
+
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  color-scheme: light dark;
+  /* Olixer Canvas & Card Palette */
+  --bg-viewport:   #dce5f0;
+  --bg-viewport-2: #edf2f9;
+  --bg-card:       #ffffff;
+  --bg-subtle:     #f8fafc;
+  --bg-pill:       #f1f5f9;
+  
+  /* Primary Darks & Contrasts */
+  --dark-pill:     #0b1329;
+  --dark-hover:    #16203d;
+  --dark-card:     #0e172a;
+  
+  /* Borders */
+  --border-light:  #edf2f7;
+  --border-card:   #e2e8f0;
+  --border-subtle: rgba(226, 232, 240, 0.85);
+  
+  /* Accents */
+  --blue-brand:    #2563eb;
+  --blue-soft:     #eff6ff;
+  --cyan-accent:   #06b6d4;
+  --green-soft:    #ecfdf5;
+  --green-text:    #059669;
+  --amber-soft:    #fffbeb;
+  --amber-text:    #d97706;
+  --red-soft:      #fef2f2;
+  --red-text:      #dc2626;
+
+  /* Typography */
+  --text-primary:  #0b1329;
+  --text-body:     #475569;
+  --text-muted:    #64748b;
+  --text-dim:      #94a3b8;
+  --text-light:    #ffffff;
+
+  /* Radii */
+  --r-canvas:      36px;
+  --r-card:        24px;
+  --r-md:          16px;
+  --r-sm:          10px;
+  --r-pill:        9999px;
+
+  /* Shadows */
+  --shadow-canvas: 0 25px 60px -15px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.8);
+  --shadow-card:   0 10px 30px -5px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.03);
+  --shadow-pill:   0 4px 12px rgba(11, 19, 41, 0.12);
+
+  /* Fonts */
+  --font-display:  'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-body:     'Inter', -apple-system, sans-serif;
+  --font-mono:     'JetBrains Mono', monospace;
 }
 
 body {
-  margin: 0;
+  font-family: var(--font-body);
+  background: linear-gradient(135deg, var(--bg-viewport) 0%, var(--bg-viewport-2) 100%);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  padding: 32px 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
   min-height: 100vh;
-  background-color: #f8fafc;
-  color: #0f172a;
+  transition: padding 0.25s ease;
+}
+
+body.is-fullscreen {
+  padding: 0;
+  background: var(--bg-card);
+}
+
+/* ── Floating Canvas Workspace Container ── */
+.floating-canvas {
+  width: 100%;
+  max-width: 1400px;
+  background: var(--bg-card);
+  border-radius: var(--r-canvas);
+  box-shadow: var(--shadow-canvas);
+  padding: 28px 40px 48px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  transition: all 0.25s ease;
+}
+
+.floating-canvas.is-fullscreen {
+  max-width: 100%;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  min-height: 100vh;
+  padding: 24px 44px 48px;
+}
+
+/* Subtle Geometric Dot Grid Backdrop */
+.canvas-grid-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 540px;
+  background-image: 
+    linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at 50% 25%, black 35%, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle at 50% 25%, black 35%, transparent 80%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ambient Radial Glow Blob */
+.canvas-glow {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 750px;
+  height: 380px;
+  background: radial-gradient(ellipse at center, rgba(191, 219, 254, 0.45) 0%, rgba(241, 245, 249, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.canvas-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Top Navigation Bar (Olixer Nav) ── */
+.olixer-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 20;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.brand-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 2px solid var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Center Menu with Active Indicator Dot */
+.nav-center-menu {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-item-link {
+  background: transparent;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-body);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s ease;
+  position: relative;
+  padding: 4px 2px;
+}
+
+.nav-item-link:hover {
+  color: var(--text-primary);
+}
+
+.nav-item-link.active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.nav-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--blue-brand);
+  margin-top: -2px;
+}
+
+/* Right Nav Buttons */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Pill Buttons ── */
+.btn-pill-dark {
+  background: var(--dark-pill);
+  color: var(--text-light);
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 9px 20px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-pill);
+  transition: all 0.18s ease;
+}
+
+.btn-pill-dark:hover {
+  background: var(--dark-hover);
+  transform: translateY(-1px);
+}
+
+.btn-pill-outline {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-pill);
+  padding: 8px 16px;
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.15s ease;
+}
+
+.btn-pill-outline:hover {
+  background: var(--bg-pill);
+  border-color: #cbd5e1;
+}
+
+/* ── Hero Presentation Section ── */
+.hero-wrapper {
+  text-align: center;
+  max-width: 820px;
+  margin: 0 auto 36px;
+}
+
+.pill-announcement {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 16px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border-card);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  margin-bottom: 16px;
+}
+
+.hero-main-title {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin-bottom: 12px;
+}
+
+.hero-subtext {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 660px;
+  margin: 0 auto;
+}
+
+/* ── Card Surfaces & Entity Dossiers ── */
+.card-olixer {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-card);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-olixer:hover {
+  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.07);
+}
+
+.entity-dossier {
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 20px;
+  position: relative;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
+}
+
+.entity-dossier:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 24px -4px rgba(15, 23, 42, 0.06);
+}
+
+/* Compliance Badges */
+.badge-statutory-green {
+  background: var(--green-soft);
+  color: var(--green-text);
+  border: 1px solid rgba(5, 150, 105, 0.25);
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge-statutory-amber {
+  background: var(--amber-soft);
+  color: var(--amber-text);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge-statutory-red {
+  background: var(--red-soft);
+  color: var(--red-text);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }

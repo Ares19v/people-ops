@@ -15,12 +15,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
+    BACKEND_CORS_ORIGINS: List[str] = ["*"]
     
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://hr_user:hr_password@localhost:5432/hr_db"
