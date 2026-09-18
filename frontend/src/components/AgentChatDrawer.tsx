@@ -10,6 +10,7 @@ interface ChatDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onActionExecuted?: () => void;
+  initialPrompt?: string;
 }
 
 interface Message {
@@ -24,7 +25,7 @@ interface Message {
   latencyMs?: number;
 }
 
-export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onActionExecuted }) => {
+export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onActionExecuted, initialPrompt }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -39,15 +40,40 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, on
   const [executingAction, setExecutingAction] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const quickPrompts = [
+    'Check my leave balances',
+    'What is daily max hours under Maharashtra Act 2017?',
+    'Apply for 2 days Casual Leave from next Monday',
+    'What are overtime wage rules under Section 13?',
+  ];
+
+  // Handle Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // If initialPrompt provided when drawer opens, populate input
+  useEffect(() => {
+    if (isOpen && initialPrompt) {
+      setInput(initialPrompt);
+    }
+  }, [isOpen, initialPrompt]);
+
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-    const userMsgText = input.trim();
+  const handleSendText = async (textToSend: string) => {
+    if (!textToSend.trim() || isLoading) return;
+    const userMsgText = textToSend.trim();
     setInput('');
 
     const userMsg: Message = {
@@ -108,7 +134,12 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, on
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl border-l border-slate-200 flex flex-col">
+    <>
+      <div
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 transition-opacity"
+        onClick={onClose}
+      />
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl border-l border-slate-200 flex flex-col">
       {/* Drawer Header */}
       <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center gap-3">
@@ -227,26 +258,41 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, on
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Quick Prompt Pills */}
+      <div className="px-3.5 py-2 bg-slate-50/90 border-t border-slate-200/80 flex items-center gap-1.5 overflow-x-auto">
+        {quickPrompts.map((qp, idx) => (
+          <button
+            key={idx}
+            onClick={() => handleSendText(qp)}
+            disabled={isLoading}
+            className="text-[11px] font-semibold text-slate-700 bg-white hover:bg-blue-50 hover:text-blue-700 px-2.5 py-1 rounded-full border border-slate-200 shadow-xs whitespace-nowrap transition-all shrink-0 outline-none focus:outline-none"
+          >
+            {qp}
+          </button>
+        ))}
+      </div>
+
       {/* Input Tray */}
-      <div className="p-3.5 bg-white border-t border-slate-200">
+      <div className="p-3.5 bg-white border-t border-slate-100">
         <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200 focus-within:bg-white focus-within:border-blue-600 transition-all">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSendText(input)}
             placeholder="Ask anything or request action..."
-            className="flex-1 bg-transparent px-3 py-1.5 text-xs text-slate-900 focus:outline-none"
+            className="flex-1 bg-transparent px-3 py-1.5 text-xs text-slate-900 outline-none focus:outline-none"
           />
           <button
-            onClick={handleSend}
+            onClick={() => handleSendText(input)}
             disabled={!input.trim() || isLoading}
-            className="btn-pill-dark px-3 py-1.5 text-xs"
+            className="btn-pill-dark px-3 py-1.5 text-xs outline-none focus:outline-none"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
     </div>
+    </>
   );
 };

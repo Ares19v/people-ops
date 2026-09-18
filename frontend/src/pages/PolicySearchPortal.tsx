@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { CitationItem } from '../types';
 import { Search, Shield, FileText, AlertTriangle, BookOpen, ExternalLink, Sparkles, ShieldCheck } from 'lucide-react';
@@ -17,7 +17,7 @@ export const PolicySearchPortal: React.FC = () => {
   ];
 
   const handleSearch = async (searchTerm?: string) => {
-    const q = searchTerm || query;
+    const q = searchTerm !== undefined ? searchTerm : query;
     if (!q.trim()) return;
     setSearching(true);
     try {
@@ -29,6 +29,10 @@ export const PolicySearchPortal: React.FC = () => {
       setSearching(false);
     }
   };
+
+  useEffect(() => {
+    handleSearch('casual leave maharashtra');
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -44,20 +48,22 @@ export const PolicySearchPortal: React.FC = () => {
 
       {/* Search Input Bar */}
       <div className="card-olixer p-4 sm:p-5 space-y-3">
-        <div className="flex items-center gap-2 bg-slate-50/80 p-2 rounded-2xl border border-slate-200 focus-within:bg-white focus-within:border-blue-600 transition-all">
-          <Search className="w-5 h-5 text-slate-400 ml-2" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="Search policies, accrual rules, or statutory provisions..."
-            className="flex-1 bg-transparent px-2 py-1 text-sm text-slate-900 focus:outline-none"
-          />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-slate-50/80 p-2 rounded-2xl border border-slate-200 focus-within:bg-white focus-within:border-blue-600 transition-all shadow-sm">
+          <div className="flex items-center flex-1 gap-2 pl-2">
+            <Search className="w-5 h-5 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Search policies, accrual rules, or statutory provisions..."
+              className="w-full bg-transparent py-1.5 text-sm text-slate-900 outline-none focus:outline-none"
+            />
+          </div>
           <button
             onClick={() => handleSearch()}
             disabled={searching}
-            className="btn-pill-dark"
+            className="btn-pill-dark shrink-0 self-stretch sm:self-auto py-2.5 px-5 flex items-center justify-center outline-none focus:outline-none"
           >
             {searching ? 'Querying Graph...' : 'Search Graph'}
           </button>

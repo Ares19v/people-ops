@@ -197,6 +197,7 @@ body.is-fullscreen {
 .nav-item-link {
   background: transparent;
   border: none;
+  outline: none;
   font-family: var(--font-body);
   font-size: 13.5px;
   font-weight: 500;
@@ -209,6 +210,14 @@ body.is-fullscreen {
   transition: color 0.15s ease;
   position: relative;
   padding: 4px 2px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-item-link:focus,
+.nav-item-link:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .nav-item-link:hover {

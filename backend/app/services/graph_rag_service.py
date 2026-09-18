@@ -85,7 +85,7 @@ class GraphRAGService:
                     source_title="Enterprise Leave Policy 2026",
                     section=pol.get("code", "General"),
                     document_type="COMPANY_POLICY",
-                    citation_text=pol.get("citation", "Company Policy 2026"),
+                    citation_text=f"{pol['name']}: Annual quota of {pol.get('annual_quota')} days ({pol.get('accrual_frequency')}). {pol.get('carry_forward_rules', '')} Statutory baseline: {pol.get('statutory_comparison', '')}",
                     confidence_score=0.98
                 ))
 
@@ -120,18 +120,26 @@ class GraphRAGService:
                     source_title=self.law_data.get("source", "Maharashtra Labour Law"),
                     section=f"Section {sec['section']}",
                     document_type="STATUTORY_LAW",
-                    citation_text=sec.get("citation", "Act LXI of 2017"),
+                    citation_text=f"Section {sec['section']} ({sec['title']}): {sec['content']}",
                     confidence_score=0.95
                 ))
 
-        # Synthesize context
+        # Synthesize context and rich summary
         context_text = "\n\n---\n\n".join(c["content"] for c in matched_chunks[:top_k])
         if not context_text:
-            context_text = "No direct policy match found in the current index. Escalating to human HR advisor."
+            summary_text = "No direct policy match found in the current index. Escalating to human HR advisor."
+            context_text = summary_text
             requires_escalation = True
+        else:
+            summary_parts = []
+            for chunk in matched_chunks[:top_k]:
+                summary_parts.append(f"• {chunk['title']}: {chunk['content'].splitlines()[1] if len(chunk['content'].splitlines()) > 1 else chunk['content']}")
+            summary_text = f"Synthesized analysis for '{query}':\n" + "\n".join(summary_parts)
 
         return {
             "query": query,
+            "summary": summary_text,
+            "answer": summary_text,
             "context": context_text,
             "citations": citations[:top_k],
             "requires_escalation": requires_escalation,

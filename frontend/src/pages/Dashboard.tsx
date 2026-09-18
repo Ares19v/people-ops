@@ -10,8 +10,8 @@ interface DashboardProps {
   currentUser: User | null;
   currentRole: UserRole;
   balances: LeaveBalanceSummary | null;
-  onNavigate: (tab: string) => void;
-  openChat: () => void;
+  onNavigate: (tab: string, options?: { openApplyModal?: boolean; openLogModal?: boolean }) => void;
+  openChat: (prompt?: string) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -44,15 +44,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Hero Quick Action Pills */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <button onClick={openChat} className="btn-pill-dark">
+          <button onClick={() => openChat()} className="btn-pill-dark">
             <Bot size={15} />
             <span>Ask HR Assistant</span>
           </button>
-          <button onClick={() => onNavigate('leaves')} className="btn-pill-outline">
+          <button onClick={() => onNavigate('leaves', { openApplyModal: true })} className="btn-pill-outline">
             <Calendar size={14} />
             <span>Apply Leave</span>
           </button>
-          <button onClick={() => onNavigate('timesheets')} className="btn-pill-outline">
+          <button onClick={() => onNavigate('timesheets', { openLogModal: true })} className="btn-pill-outline">
             <Clock size={14} />
             <span>Log Timesheet</span>
           </button>
@@ -64,15 +64,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Interactive Multi-Agent Flow Circuit */}
-      <AgentFlowCircuit onSelectQuery={() => openChat()} />
+      <AgentFlowCircuit onSelectQuery={(query) => openChat(query)} />
 
       {/* KPI Metrics Row in Olixer Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Earned Leave */}
-        <div className="card-olixer p-5">
+        <div
+          onClick={() => onNavigate('leaves')}
+          className="card-olixer p-5 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group"
+          title="View Leave Ledger"
+        >
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-display font-semibold text-slate-600">Earned Leave (EL)</span>
-            <span className="p-2 rounded-xl bg-blue-50 text-blue-600">
+            <span className="font-display font-semibold text-slate-600 group-hover:text-blue-600 transition-colors">Earned Leave (EL)</span>
+            <span className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
               <Calendar className="w-4 h-4" />
             </span>
           </div>
@@ -89,10 +93,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Casual Leave */}
-        <div className="card-olixer p-5">
+        <div
+          onClick={() => onNavigate('leaves')}
+          className="card-olixer p-5 cursor-pointer hover:border-emerald-400 hover:shadow-md transition-all group"
+          title="View Leave Ledger"
+        >
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-display font-semibold text-slate-600">Casual Leave (CL)</span>
-            <span className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+            <span className="font-display font-semibold text-slate-600 group-hover:text-emerald-600 transition-colors">Casual Leave (CL)</span>
+            <span className="p-2 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
               <Calendar className="w-4 h-4" />
             </span>
           </div>
@@ -109,10 +117,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Logged Hours */}
-        <div className="card-olixer p-5">
+        <div
+          onClick={() => onNavigate('timesheets')}
+          className="card-olixer p-5 cursor-pointer hover:border-amber-400 hover:shadow-md transition-all group"
+          title="View Timesheets"
+        >
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-display font-semibold text-slate-600">Logged Hours (Week)</span>
-            <span className="p-2 rounded-xl bg-amber-50 text-amber-600">
+            <span className="font-display font-semibold text-slate-600 group-hover:text-amber-600 transition-colors">Logged Hours (Week)</span>
+            <span className="p-2 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
               <Clock className="w-4 h-4" />
             </span>
           </div>
@@ -129,10 +141,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* NeMo Guardrails */}
-        <div className="card-olixer p-5">
+        <div
+          onClick={() => openChat('What NVIDIA NeMo Guardrails are active in this workspace?')}
+          className="card-olixer p-5 cursor-pointer hover:border-purple-400 hover:shadow-md transition-all group"
+          title="Ask HR AI about Guardrails"
+        >
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-display font-semibold text-slate-600">NeMo Safety Rails</span>
-            <span className="p-2 rounded-xl bg-purple-50 text-purple-600">
+            <span className="font-display font-semibold text-slate-600 group-hover:text-purple-600 transition-colors">NeMo Safety Rails</span>
+            <span className="p-2 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
               <Shield className="w-4 h-4" />
             </span>
           </div>

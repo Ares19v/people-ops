@@ -17,8 +17,22 @@ export const App: React.FC = () => {
   const [balances, setBalances] = useState<LeaveBalanceSummary | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [autoOpenApplyModal, setAutoOpenApplyModal] = useState(false);
+  const [autoOpenLogModal, setAutoOpenLogModal] = useState(false);
+  const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>(undefined);
+
+  const handleNavigate = (tab: string, options?: { openApplyModal?: boolean; openLogModal?: boolean }) => {
+    setActiveTab(tab);
+    setAutoOpenApplyModal(!!options?.openApplyModal);
+    setAutoOpenLogModal(!!options?.openLogModal);
+  };
+
+  const handleOpenChat = (prompt?: string) => {
+    if (prompt) setChatInitialPrompt(prompt);
+    setIsChatOpen(true);
+  };
 
   // Sync fullscreen class with document.body
   useEffect(() => {
@@ -119,8 +133,8 @@ export const App: React.FC = () => {
                   currentUser={currentUser}
                   currentRole={currentRole}
                   balances={balances}
-                  onNavigate={(tab) => setActiveTab(tab)}
-                  openChat={() => setIsChatOpen(true)}
+                  onNavigate={handleNavigate}
+                  openChat={handleOpenChat}
                 />
               )}
               {activeTab === 'leaves' && (
@@ -129,10 +143,15 @@ export const App: React.FC = () => {
                   currentRole={currentRole}
                   balances={balances}
                   onRefreshBalances={refreshBalances}
+                  initialOpenApplyModal={autoOpenApplyModal}
                 />
               )}
               {activeTab === 'timesheets' && (
-                <TimesheetPortal currentUser={currentUser} currentRole={currentRole} />
+                <TimesheetPortal
+                  currentUser={currentUser}
+                  currentRole={currentRole}
+                  initialOpenLogModal={autoOpenLogModal}
+                />
               )}
               {activeTab === 'reports' && (
                 <ReportsPortal currentUser={currentUser} currentRole={currentRole} />
@@ -149,6 +168,7 @@ export const App: React.FC = () => {
         <AgentChatDrawer
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
+          initialPrompt={chatInitialPrompt}
           onActionExecuted={() => {
             refreshBalances();
           }}

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, UserRole, LeaveBalanceSummary, LeaveApplication } from '../types';
-import { Calendar, CheckCircle2, Clock, XCircle, AlertCircle, Plus, ShieldCheck } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, XCircle, AlertCircle, Plus, ShieldCheck, X } from 'lucide-react';
 
 interface LeavePortalProps {
   currentUser: User | null;
   currentRole: UserRole;
   balances: LeaveBalanceSummary | null;
   onRefreshBalances: () => void;
+  initialOpenApplyModal?: boolean;
 }
 
 export const LeavePortal: React.FC<LeavePortalProps> = ({
@@ -15,11 +16,12 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
   currentRole,
   balances,
   onRefreshBalances,
+  initialOpenApplyModal = false,
 }) => {
   const [applications, setApplications] = useState<LeaveApplication[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<LeaveApplication[]>([]);
   const [activeTab, setActiveTab] = useState<'my_leaves' | 'approvals'>('my_leaves');
-  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(initialOpenApplyModal);
 
   // Form state
   const [leaveType, setLeaveType] = useState('EL');
@@ -140,34 +142,36 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200/80 pb-2">
-        <button
-          onClick={() => setActiveTab('my_leaves')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-            activeTab === 'my_leaves'
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-        >
-          My Leave History ({applications.length})
-        </button>
-        {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && (
+      <div className="flex items-center">
+        <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-full border border-slate-200/80">
           <button
-            onClick={() => setActiveTab('approvals')}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              activeTab === 'approvals'
+            onClick={() => setActiveTab('my_leaves')}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all outline-none focus:outline-none ${
+              activeTab === 'my_leaves'
                 ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <span>Manager Approval Inbox</span>
-            {pendingApprovals.length > 0 && (
-              <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center font-bold">
-                {pendingApprovals.length}
-              </span>
-            )}
+            My Leave History ({applications.length})
           </button>
-        )}
+          {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && (
+            <button
+              onClick={() => setActiveTab('approvals')}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 outline-none focus:outline-none ${
+                activeTab === 'approvals'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>Manager Approval Inbox</span>
+              {pendingApprovals.length > 0 && (
+                <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center font-bold">
+                  {pendingApprovals.length}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Applications Table */}
@@ -281,6 +285,13 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
       {showApplyModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="card-olixer max-w-lg w-full bg-white p-6 sm:p-8 shadow-2xl relative">
+            <button
+              onClick={() => setShowApplyModal(false)}
+              className="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
             <h3 className="font-display text-lg font-bold text-slate-900 mb-1">
               Apply for Statutory Leave
             </h3>

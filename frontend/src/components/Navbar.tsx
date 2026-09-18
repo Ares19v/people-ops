@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           return (
             <button
               key={item.id}
-              className={`nav-item-link ${isActive ? 'active' : ''}`}
+              className={`nav-item-link ${isActive ? 'active' : ''} outline-none focus:outline-none focus-visible:outline-none focus:ring-0`}
               onClick={() => setActiveTab(item.id)}
             >
               <span>{item.label}</span>
@@ -77,9 +77,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="nav-actions">
         {/* Fullscreen / Framed View Toggle */}
         <button
-          className="btn-pill-outline hidden sm:inline-flex"
+          className="btn-pill-outline hidden sm:inline-flex outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           onClick={onToggleFullscreen}
-          title={isFullscreen ? "Switch to Framed Card View" : "Switch to Full Screen"}
+          title={isFullscreen ? "Switch to Framed Card View" : "Switch to Full Screen (Default)"}
         >
           {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           <span>{isFullscreen ? "Framed View" : "Full Screen"}</span>
@@ -90,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <select
             value={currentRole}
             onChange={(e) => onRoleSwitch(e.target.value as UserRole)}
-            className="btn-pill-outline appearance-none pr-8 cursor-pointer bg-white text-xs font-semibold focus:outline-none"
+            className="btn-pill-outline appearance-none pr-8 cursor-pointer bg-white text-xs font-semibold outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           >
             {roles.map((r) => (
               <option key={r.value} value={r.value}>
@@ -106,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Ask HR AI Deep Charcoal Pill Button */}
         <button
           onClick={toggleChat}
-          className="btn-pill-dark"
+          className="btn-pill-dark outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           title="Open Google ADK HR Assistant"
         >
           <span className="relative flex h-2 w-2">

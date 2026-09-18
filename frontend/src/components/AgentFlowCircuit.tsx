@@ -41,13 +41,13 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
     <div className="card-olixer overflow-hidden p-6 sm:p-8" style={{ position: 'relative' }}>
       {/* Background SVG Flow Connectors */}
       <svg
-        className="hidden md:block absolute inset-0 w-full h-full pointer-events-none z-0"
+        className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-0"
         viewBox="0 0 1000 340"
         preserveAspectRatio="none"
       >
         {/* Left top to center */}
         <path
-          d="M 280 85 C 380 85, 410 170, 500 170"
+          d="M 290 85 C 370 85, 410 170, 500 170"
           fill="none"
           stroke={activePreset === 'leave' ? '#2563eb' : '#cbd5e1'}
           strokeWidth={activePreset === 'leave' ? '2.5' : '1.5'}
@@ -55,14 +55,14 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
         />
         {/* Left center to center */}
         <path
-          d="M 280 170 C 380 170, 410 170, 500 170"
+          d="M 290 170 C 370 170, 410 170, 500 170"
           fill="none"
           stroke={activePreset === 'policy' ? '#2563eb' : '#cbd5e1'}
           strokeWidth={activePreset === 'policy' ? '2.5' : '1.5'}
         />
         {/* Left bottom to center */}
         <path
-          d="M 280 255 C 380 255, 410 170, 500 170"
+          d="M 290 255 C 370 255, 410 170, 500 170"
           fill="none"
           stroke={activePreset === 'timesheet' ? '#2563eb' : '#cbd5e1'}
           strokeWidth={activePreset === 'timesheet' ? '2.5' : '1.5'}
@@ -70,21 +70,21 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
         />
         {/* Center to right top */}
         <path
-          d="M 500 170 C 590 170, 620 85, 720 85"
+          d="M 500 170 C 590 170, 630 85, 710 85"
           fill="none"
           stroke={activePreset === 'leave' ? '#059669' : '#cbd5e1'}
           strokeWidth={activePreset === 'leave' ? '2.5' : '1.5'}
         />
         {/* Center to right center */}
         <path
-          d="M 500 170 C 590 170, 620 170, 720 170"
+          d="M 500 170 C 590 170, 630 170, 710 170"
           fill="none"
           stroke={activePreset === 'policy' ? '#059669' : '#cbd5e1'}
           strokeWidth={activePreset === 'policy' ? '2.5' : '1.5'}
         />
         {/* Center to right bottom */}
         <path
-          d="M 500 170 C 590 170, 620 255, 720 255"
+          d="M 500 170 C 590 170, 630 255, 710 255"
           fill="none"
           stroke={activePreset === 'timesheet' ? '#059669' : '#cbd5e1'}
           strokeWidth={activePreset === 'timesheet' ? '2.5' : '1.5'}
@@ -111,7 +111,7 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
       </div>
 
       {/* 3 Column Interactive Circuit Diagram */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center relative z-10">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(220px,1fr)_270px_minmax(220px,1fr)] gap-6 xl:gap-8 items-center relative z-10">
         {/* LEFT COLUMN: Inbound Requests */}
         <div className="space-y-3">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
@@ -126,7 +126,7 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
                   setActivePreset(p.id);
                   if (onSelectQuery) onSelectQuery(p.query);
                 }}
-                className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                className={`p-3.5 rounded-2xl border cursor-pointer transition-all outline-none focus:outline-none ${
                   isSelected
                     ? 'bg-blue-50/80 border-blue-600 shadow-sm'
                     : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
@@ -143,7 +143,7 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
         </div>
 
         {/* CENTER COLUMN: NeMo Perimeter & Root Orchestrator */}
-        <div className="flex flex-col items-center justify-center p-5 rounded-3xl bg-slate-900 text-white shadow-lg border border-slate-800 relative">
+        <div className="w-full max-w-[260px] mx-auto flex flex-col items-center justify-center p-5 rounded-3xl bg-slate-900 text-white shadow-xl border border-slate-800 relative">
           <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center mb-3">
             <Cpu className="w-6 h-6 text-blue-400" />
           </div>
@@ -173,14 +173,18 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
         {/* RIGHT COLUMN: Specialized Execution Agents */}
         <div className="space-y-3">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-            2. Autonomous Execution Fleet
+            2. Autonomous Execution Fleet (Click to inspect)
           </div>
 
           <div
-            className={`p-3.5 rounded-2xl border transition-all ${
+            onClick={() => {
+              setActivePreset('leave');
+              if (onSelectQuery) onSelectQuery(presets[0].query);
+            }}
+            className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
               activePreset === 'leave'
                 ? 'bg-emerald-50/80 border-emerald-600 shadow-sm'
-                : 'bg-white border-slate-200 opacity-60'
+                : 'bg-white border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -193,10 +197,14 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
           </div>
 
           <div
-            className={`p-3.5 rounded-2xl border transition-all ${
+            onClick={() => {
+              setActivePreset('policy');
+              if (onSelectQuery) onSelectQuery(presets[1].query);
+            }}
+            className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
               activePreset === 'policy'
                 ? 'bg-emerald-50/80 border-emerald-600 shadow-sm'
-                : 'bg-white border-slate-200 opacity-60'
+                : 'bg-white border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -209,10 +217,14 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
           </div>
 
           <div
-            className={`p-3.5 rounded-2xl border transition-all ${
+            onClick={() => {
+              setActivePreset('timesheet');
+              if (onSelectQuery) onSelectQuery(presets[2].query);
+            }}
+            className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
               activePreset === 'timesheet'
                 ? 'bg-emerald-50/80 border-emerald-600 shadow-sm'
-                : 'bg-white border-slate-200 opacity-60'
+                : 'bg-white border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100'
             }`}
           >
             <div className="flex items-center gap-2">

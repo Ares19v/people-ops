@@ -6,12 +6,17 @@ import { Clock, CheckCircle2, Plus, AlertCircle, FileText, Check, X, ShieldCheck
 interface TimesheetPortalProps {
   currentUser: User | null;
   currentRole: UserRole;
+  initialOpenLogModal?: boolean;
 }
 
-export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({ currentUser, currentRole }) => {
+export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
+  currentUser,
+  currentRole,
+  initialOpenLogModal = false,
+}) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [report, setReport] = useState<TimesheetReportSummary | null>(null);
-  const [showLogModal, setShowLogModal] = useState(false);
+  const [showLogModal, setShowLogModal] = useState(initialOpenLogModal);
   const [selectedProject, setSelectedProject] = useState('');
   const [taskName, setTaskName] = useState('');
   const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
@@ -81,6 +86,15 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({ currentUser, c
       await api.decideTimesheets(ids, decision);
       await loadData();
       alert(`Batch ${decision.toLowerCase()} completed for ${ids.length} entries.`);
+    } catch (err: any) {
+      alert(`Decision error: ${err.message}`);
+    }
+  };
+
+  const handleSingleDecision = async (entryId: string, decision: 'APPROVE' | 'REJECT') => {
+    try {
+      await api.decideTimesheets([entryId], decision);
+      await loadData();
     } catch (err: any) {
       alert(`Decision error: ${err.message}`);
     }
@@ -222,13 +236,16 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({ currentUser, c
                 <th className="p-4">Hours</th>
                 <th className="p-4">Billable</th>
                 <th className="p-4">Status</th>
-                <th className="p-4 text-right">Logged By</th>
+                <th className="p-4">Logged By</th>
+                {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && (
+                  <th className="p-4 text-right">Action</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {allEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                  <td colSpan={currentRole === 'HR_MANAGER' || currentRole === 'ADMIN' ? 8 : 7} className="p-8 text-center text-slate-400">
                     No timesheet entries recorded yet. Click "Log Working Hours" to submit.
                   </td>
                 </tr>
@@ -268,7 +285,31 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({ currentUser, c
                         {entry.status}
                       </span>
                     </td>
-                    <td className="p-4 text-right text-slate-500 font-medium">{entry.employee_name || 'Member'}</td>
+                    <td className="p-4 text-slate-500 font-medium">{entry.employee_name || 'Member'}</td>
+                    {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && (
+                      <td className="p-4 text-right">
+                        {entry.status === 'SUBMITTED' ? (
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleSingleDecision(entry.id, 'APPROVE')}
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold transition-all shadow-sm"
+                              title="Approve this entry"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleSingleDecision(entry.id, 'REJECT')}
+                              className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-semibold transition-all shadow-sm"
+                              title="Reject this entry"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-[11px] italic">Decided</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -281,6 +322,13 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({ currentUser, c
       {showLogModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="card-olixer max-w-lg w-full bg-white p-6 sm:p-8 shadow-2xl relative">
+            <button
+              onClick={() => setShowLogModal(false)}
+              className="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
             <h3 className="font-display text-lg font-bold text-slate-900 mb-1">
               Log Working Hours
             </h3>
