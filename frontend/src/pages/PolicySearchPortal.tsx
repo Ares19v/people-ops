@@ -79,7 +79,7 @@ export const PolicySearchPortal: React.FC = () => {
                 setQuery(sq);
                 handleSearch(sq);
               }}
-              className="btn-pill-outline text-xs py-1 px-3"
+              className="text-xs font-semibold py-1 px-3 rounded-full bg-slate-100/90 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200/80 outline-none focus:outline-none"
             >
               {sq}
             </button>

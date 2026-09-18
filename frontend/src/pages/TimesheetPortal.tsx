@@ -134,7 +134,7 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card-olixer p-5">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
             <span className="font-display font-semibold text-slate-600">Total Hours</span>
@@ -220,7 +220,7 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
 
       {/* Timesheet Entries Table */}
       <div className="card-olixer p-0 overflow-hidden">
-        <div className="p-4 bg-slate-50/80 border-b border-slate-200/70 flex items-center justify-between">
+        <div className="px-5 py-3.5 bg-slate-50/50 border-b border-slate-200/70 flex items-center justify-between">
           <span className="font-display font-bold text-xs text-slate-900">
             Recorded Time Entries ({allEntries.length})
           </span>
@@ -228,7 +228,7 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-white text-slate-600 font-display font-bold border-b border-slate-100">
+            <thead className="bg-slate-50/80 text-slate-600 font-display font-bold border-b border-slate-200/70">
               <tr>
                 <th className="p-4">Date</th>
                 <th className="p-4">Project</th>

@@ -140,31 +140,31 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
       {/* Stepper Header in Olixer Card */}
       <div className="card-olixer p-4 flex items-center justify-between text-xs font-display font-semibold">
         <div className={`flex items-center gap-2 ${step >= 1 ? 'text-blue-600' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${step >= 1 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold shrink-0 ${step >= 1 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
             1
           </span>
-          Profile Info
+          <span className="whitespace-nowrap">Profile Info</span>
         </div>
-        <div className="w-8 h-0.5 bg-slate-200" />
+        <div className="flex-1 h-0.5 bg-slate-200 mx-2 sm:mx-4 min-w-[12px]" />
         <div className={`flex items-center gap-2 ${step >= 2 ? 'text-blue-600' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${step >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold shrink-0 ${step >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
             2
           </span>
-          Upload KYC
+          <span className="whitespace-nowrap">Upload KYC</span>
         </div>
-        <div className="w-8 h-0.5 bg-slate-200" />
+        <div className="flex-1 h-0.5 bg-slate-200 mx-2 sm:mx-4 min-w-[12px]" />
         <div className={`flex items-center gap-2 ${step >= 3 ? 'text-blue-600' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${step >= 3 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold shrink-0 ${step >= 3 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
             3
           </span>
-          Review OCR
+          <span className="whitespace-nowrap">Review OCR</span>
         </div>
-        <div className="w-8 h-0.5 bg-slate-200" />
+        <div className="flex-1 h-0.5 bg-slate-200 mx-2 sm:mx-4 min-w-[12px]" />
         <div className={`flex items-center gap-2 ${step >= 4 ? 'text-blue-600' : 'text-slate-400'}`}>
-          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${step >= 4 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold shrink-0 ${step >= 4 ? 'bg-blue-100 text-blue-800' : 'bg-slate-100'}`}>
             4
           </span>
-          DPDP Consent
+          <span className="whitespace-nowrap">DPDP Consent</span>
         </div>
       </div>
 
