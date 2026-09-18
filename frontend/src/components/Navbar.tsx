@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, UserRole } from '../types';
-import { Bot, Calendar, Clock, FileText, LayoutDashboard, UserPlus, Shield, Sparkles, Network } from 'lucide-react';
+import { Bot, Calendar, Clock, FileText, LayoutDashboard, UserPlus, Shield, Sparkles } from 'lucide-react';
 
 interface NavbarProps {
   currentUser: User | null;
@@ -34,7 +34,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'timesheets', label: 'Timesheets', icon: Clock },
     { id: 'reports', label: 'Reports & CSV', icon: FileText },
     { id: 'policy', label: 'HR Policy RAG', icon: Shield },
-    { id: 'graph', label: 'Code Graph', icon: Network },
     ...(currentRole !== 'EMPLOYEE' ? [{ id: 'onboarding', label: 'Onboarding', icon: UserPlus }] : []),
   ];
 

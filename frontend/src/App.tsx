@@ -9,7 +9,6 @@ import { TimesheetPortal } from './pages/TimesheetPortal';
 import { ReportsPortal } from './pages/ReportsPortal';
 import { PolicySearchPortal } from './pages/PolicySearchPortal';
 import { OnboardingWizard } from './pages/OnboardingWizard';
-import { ArchitectureGraph } from './pages/ArchitectureGraph';
 import { Shield, Sparkles } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -97,7 +96,6 @@ export const App: React.FC = () => {
               <ReportsPortal currentUser={currentUser} currentRole={currentRole} />
             )}
             {activeTab === 'policy' && <PolicySearchPortal />}
-            {activeTab === 'graph' && <ArchitectureGraph />}
             {activeTab === 'onboarding' && (
               <OnboardingWizard currentUser={currentUser} currentRole={currentRole} />
             )}
