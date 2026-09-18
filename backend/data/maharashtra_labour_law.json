@@ -1,0 +1,62 @@
+{
+  "source": "Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017",
+  "act_number": "Maharashtra Act No. LXI of 2017",
+  "jurisdiction": "Maharashtra, India",
+  "document_type": "STATUTORY_LAW",
+  "sections": [
+    {
+      "section": "18(1)",
+      "title": "Annual Leave with Pay (Earned Leave / EL)",
+      "content": "Every worker who has worked for a period of not less than two hundred and forty days in an establishment during a calendar year shall be allowed in the subsequent calendar year, leave with wages at the rate of one day for every twenty days of work performed by him during the previous calendar year. Workers who commenced employment otherwise than on the first day of January shall be entitled to leave with wages if they have worked for two-thirds of the total number of days in the remainder of the calendar year.",
+      "leave_type": "EL",
+      "statutory_min_accrual_rate": "1 day for every 20 days worked",
+      "carry_forward_limit": 45,
+      "encashment_rule": "Encashment permitted on cessation of employment or resignation. Accumulated leave beyond 45 days does not automatically carry forward unless requested and refused.",
+      "citation": "Maharashtra Act LXI of 2017, Section 18(1)"
+    },
+    {
+      "section": "18(2)",
+      "title": "Casual and Sick Leave",
+      "content": "Every worker shall be entitled to eight days of casual leave with wages in every calendar year. Casual leave shall lapse at the end of the calendar year and cannot be carried forward or encashed.",
+      "leave_type": "CL",
+      "statutory_allocation": 8,
+      "carry_forward_limit": 0,
+      "encashment_rule": "Non-encashable; lapses on December 31st.",
+      "citation": "Maharashtra Act LXI of 2017, Section 18(2)"
+    },
+    {
+      "section": "18(3)",
+      "title": "Leave Application Notice Period",
+      "content": "A worker who desires to avail himself of leave with wages shall apply in writing to the employer not less than fifteen days before the date on which he wishes his leave to begin, provided that the application may be made not less than thirty days if the leave is required for more than four days.",
+      "leave_type": "EL",
+      "notice_period_days": 15,
+      "extended_notice_period_days": 30,
+      "citation": "Maharashtra Act LXI of 2017, Section 18(3)"
+    },
+    {
+      "section": "18(5)",
+      "title": "Paid National and Festival Holidays",
+      "content": "Every worker shall be allowed four paid holidays on 26th January (Republic Day), 1st May (Maharashtra Day), 15th August (Independence Day), and 2nd October (Mahatma Gandhi Jayanti), and four other festival holidays as agreed upon between the employer and employees.",
+      "leave_type": "HOLIDAY",
+      "mandatory_days": ["26-Jan", "01-May", "15-Aug", "02-Oct"],
+      "total_paid_holidays": 8,
+      "citation": "Maharashtra Act LXI of 2017, Section 18(5)"
+    },
+    {
+      "section": "13",
+      "title": "Daily and Weekly Working Hours & Overtime",
+      "content": "No adult worker shall be required or allowed to work in an establishment for more than nine hours in any day and forty-eight hours in any week. Where a worker works beyond nine hours on any day or forty-eight hours in any week, he shall, in respect of such overtime work, be entitled to wages at the rate of twice his ordinary rate of wages.",
+      "max_daily_hours": 9,
+      "max_weekly_hours": 48,
+      "overtime_rate_multiplier": 2.0,
+      "citation": "Maharashtra Act LXI of 2017, Section 13"
+    },
+    {
+      "section": "15",
+      "title": "Spread-Over of Daily Working Hours",
+      "content": "The spread-over of a worker in an establishment shall not exceed ten and a half hours in any day, provided that in case of urgent work or seasonal pressure, spread-over may be extended up to twelve hours with appropriate intervals of rest.",
+      "max_spread_over_hours": 10.5,
+      "citation": "Maharashtra Act LXI of 2017, Section 15"
+    }
+  ]
+}

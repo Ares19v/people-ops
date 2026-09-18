@@ -1,0 +1,78 @@
+{
+  "company_name": "Antigravity Global Technologies Pvt Ltd",
+  "document_title": "Enterprise Leave & Working Hours Policy Manual 2026",
+  "version": "2.4.0",
+  "effective_date": "2026-01-01",
+  "document_type": "COMPANY_POLICY",
+  "approval_status": "ACTIVE_APPROVED",
+  "reviewed_by": "Legal & HR Compliance Committee",
+  "jurisdiction_compliance": "Maharashtra Shops & Establishments Act 2017 compliant",
+  "policies": [
+    {
+      "code": "POL-LEAVE-EL",
+      "name": "Earned Leave (EL / Privilege Leave)",
+      "leave_type": "EL",
+      "annual_quota": 18,
+      "accrual_frequency": "Monthly (1.5 days credited on the 1st of each calendar month)",
+      "statutory_comparison": "Company provides 18 days/year, matching statutory minimum of 1 day per 20 days worked under Maharashtra Act LXI of 2017.",
+      "max_accumulation": 45,
+      "carry_forward_rules": "Maximum 45 days can be accumulated and carried forward into the next calendar year. Excess balances beyond 45 days lapse automatically on December 31st unless an exception was granted by HR Director.",
+      "min_days_per_application": 1,
+      "max_consecutive_days": 15,
+      "notice_period_days": 7,
+      "approval_required": "Reporting Manager",
+      "encashment": "Encashment permitted only upon separation/resignation for up to 30 accumulated days calculated at basic salary rate.",
+      "citation": "Enterprise Leave Policy 2026, Section 4.1"
+    },
+    {
+      "code": "POL-LEAVE-CL",
+      "name": "Casual Leave (CL)",
+      "leave_type": "CL",
+      "annual_quota": 8,
+      "accrual_frequency": "Lump sum credited on January 1st (or pro-rated on joining date)",
+      "statutory_comparison": "Directly implements Section 18(2) of Maharashtra Shops & Establishments Act 2017 granting 8 days.",
+      "max_accumulation": 8,
+      "carry_forward_rules": "Non-cumulative. Any unused CL lapses on December 31st. Cannot be carried forward or encashed under any circumstances.",
+      "min_days_per_application": 0.5,
+      "max_consecutive_days": 3,
+      "notice_period_days": 1,
+      "approval_required": "Reporting Manager",
+      "citation": "Enterprise Leave Policy 2026, Section 4.2"
+    },
+    {
+      "code": "POL-LEAVE-SL",
+      "name": "Sick Leave (SL / Medical Leave)",
+      "leave_type": "SL",
+      "annual_quota": 10,
+      "accrual_frequency": "Lump sum credited on January 1st",
+      "statutory_comparison": "Company policy provision exceeding statutory minimum for medical welfare.",
+      "max_accumulation": 20,
+      "carry_forward_rules": "Up to 10 unused days may be carried forward to the subsequent year, capped at 20 days lifetime accumulation. Non-encashable.",
+      "medical_certificate_required_after_days": 2,
+      "approval_required": "Reporting Manager",
+      "citation": "Enterprise Leave Policy 2026, Section 4.3"
+    },
+    {
+      "code": "POL-LEAVE-LWP",
+      "name": "Leave Without Pay (LWP / Loss of Pay)",
+      "leave_type": "LWP",
+      "annual_quota": "Uncapped subject to discretionary management sanction",
+      "statutory_comparison": "Discretionary policy; no statutory entitlement exists under Maharashtra Act LXI of 2017 for unearned absentia.",
+      "conditions": "Applicable only when all EL, CL, and SL balances are fully exhausted. Deducted from monthly payroll on a per-calendar-day formula.",
+      "approval_required": "Reporting Manager AND HR Manager concurrence",
+      "max_continuous_days": 90,
+      "citation": "Enterprise Leave Policy 2026, Section 4.4"
+    },
+    {
+      "code": "POL-TIME-STD",
+      "name": "Working Hours & Timesheet Logging Policy",
+      "standard_daily_hours": 8.0,
+      "standard_weekly_hours": 40.0,
+      "max_daily_billable_hours": 12.0,
+      "statutory_comparison": "Standard is 8 hrs/day (40 hrs/week), well within Maharashtra statutory ceiling of 9 hrs/day and 48 hrs/week under Section 13.",
+      "submission_window_rule": "Weekly timesheets must be submitted by Monday 12:00 PM for the preceding week (Monday through Sunday).",
+      "approval_window_rule": "Managers must approve or reject pending timesheets by Tuesday 6:00 PM.",
+      "citation": "Enterprise Working Hours & Timesheet Policy 2026, Section 2.1"
+    }
+  ]
+}

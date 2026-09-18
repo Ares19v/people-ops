@@ -1,0 +1,17 @@
+models:
+  - type: main
+    engine: mock_llm
+    model: gemini-1.5-pro
+
+rails:
+  input:
+    flows:
+      - check jailbreak
+      - check prompt injection
+      - check unauthorized employee data access
+      - check off-topic scope
+  output:
+    flows:
+      - mask pii output
+      - check legal disclaimer presence
+      - check grounded citations
