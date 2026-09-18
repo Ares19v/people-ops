@@ -83,10 +83,7 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 mb-6 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
-            </span>
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
             <h3 className="font-display font-bold text-base text-slate-900 tracking-tight">
               Google ADK Multi-Agent Flow Circuit &bull; NeMo Safety Boundary
             </h3>
@@ -103,7 +100,7 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
             <span>Colang 2.0 Rails Active</span>
           </span>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
-            <Zap className="w-3 h-3 text-blue-600 animate-pulse" />
+            <Zap className="w-3 h-3 text-blue-600" />
             <span>Routing Latency: 42ms</span>
           </span>
         </div>
@@ -150,7 +147,7 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
                   </div>
                   {isSelected && (
                     <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                       Routed
                     </span>
                   )}
@@ -170,11 +167,10 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
           </div>
 
           <div className="circuit-hub-box p-5 text-white flex-1 flex flex-col justify-between">
-            {/* Animated Processor Icon */}
+            {/* Processor Icon */}
             <div className="relative mb-3 flex items-center justify-center">
-              <div className="absolute w-12 h-12 rounded-full bg-blue-500/20 radar-ping" />
-              <div className="w-11 h-11 rounded-2xl bg-blue-600/30 border border-blue-400/50 flex items-center justify-center shadow-inner relative z-10">
-                <Cpu className="w-5 h-5 text-blue-400 animate-pulse" />
+              <div className="w-11 h-11 rounded-2xl bg-blue-600/25 border border-blue-400/40 flex items-center justify-center shadow-inner relative z-10">
+                <Cpu className="w-5 h-5 text-blue-400" />
               </div>
             </div>
 
@@ -207,12 +203,6 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
                 <span className="text-slate-400">DPDP Privacy:</span>
                 <span className="font-bold text-emerald-400">SCRUBBED</span>
               </div>
-            </div>
-
-            {/* Active flow connection line */}
-            <div className="w-full pt-2 border-t border-slate-800/80 flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-              <span className="font-mono text-slate-300 font-medium">Safe Sub-Agent Fleet</span>
             </div>
           </div>
         </div>
@@ -263,7 +253,7 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
                   </div>
                   {isTarget && (
                     <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       Active
                     </span>
                   )}

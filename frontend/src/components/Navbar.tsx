@@ -109,11 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="btn-pill-dark outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           title="Open Google ADK HR Assistant"
         >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <Bot size={15} />
+          <Bot size={15} className="text-blue-400" />
           <span>Ask HR AI</span>
         </button>
       </div>
