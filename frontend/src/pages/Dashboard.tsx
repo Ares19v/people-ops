@@ -29,10 +29,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="space-y-8">
       {/* Olixer Hero Presentation Section */}
       <div className="hero-wrapper">
-        <div className="pill-announcement">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-          <span>Google ADK Multi-Agent Orchestration &bull; NVIDIA NeMo Guardrails</span>
-        </div>
         <h1 className="hero-main-title">
           Intelligent People Operations, <br className="hidden sm:inline" />
           <strong>orchestrated by autonomous agents.</strong>
