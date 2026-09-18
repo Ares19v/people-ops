@@ -1,0 +1,2270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>people-ops — Complete Call Flow &amp; Architecture Documentation</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --bg: #0f172a; --surface: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8;
+  --warn: #fbbf24; --err: #f87171; --ok: #34d399;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+.container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+h1 { font-size: 2.4rem; margin-bottom: 8px; background: linear-gradient(135deg, var(--accent), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+h2 { font-size: 1.7rem; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 1.25rem; margin: 32px 0 12px; color: var(--accent); }
+h4 { font-size: 1.05rem; margin: 20px 0 8px; color: var(--warn); }
+p { margin: 8px 0; color: var(--muted); }
+.subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 32px; }
+.mermaid { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 20px 0; overflow-x: auto; position: relative; }
+.mermaid.is-enhanced { padding: 0; overflow: hidden; min-height: 260px; }
+.mermaid-viewport { padding: 54px 24px 24px; overflow: hidden; cursor: grab; touch-action: none; min-height: 260px; }
+.mermaid-viewport.is-dragging { cursor: grabbing; }
+.mermaid-viewport svg { max-width: none !important; height: auto; transform-origin: 0 0; transition: transform 120ms ease; }
+.mermaid-toolbar { position: absolute; top: 10px; right: 10px; z-index: 3; display: flex; align-items: center; gap: 6px; padding: 6px; background: rgba(15,23,42,0.92); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.28); }
+.mermaid-toolbar button, .mermaid-toolbar .zoom-level { height: 28px; min-width: 32px; border: 1px solid var(--border); border-radius: 6px; background: #1e293b; color: var(--text); font: 600 0.78rem system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; }
+.mermaid-toolbar button { cursor: pointer; }
+.mermaid-toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+.mermaid-toolbar .zoom-level { min-width: 52px; color: var(--muted); background: transparent; }
+.call-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.92rem; }
+.call-table th { background: #1a2744; color: var(--accent); text-align: left; padding: 10px 14px; border: 1px solid var(--border); }
+.call-table td { padding: 8px 14px; border: 1px solid var(--border); vertical-align: top; }
+.call-table tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+.tag-async { background: #7c3aed33; color: #a78bfa; }
+.tag-class { background: #05966933; color: var(--ok); }
+.tag-func { background: #2563eb33; color: var(--accent); }
+.tag-cmd { background: #d9770633; color: var(--warn); }
+.tag-endpoint { background: #dc262633; color: var(--err); }
+.tag-hook { background: #db277733; color: #f472b6; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 16px 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
+.arrow-chain { font-family: 'Fira Code', monospace; font-size: 0.85rem; color: var(--accent); padding: 10px; background: rgba(56,189,248,0.06); border-radius: 6px; }
+code { font-family: 'Fira Code', 'Cascadia Code', monospace; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 3px; font-size: 0.88em; }
+ul, ol { margin: 8px 0 8px 24px; color: var(--muted); }
+li { margin: 4px 0; }
+a { color: var(--accent); }
+hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+.nav { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; }
+.nav a { text-decoration: none; }
+.nav a:hover { text-decoration: underline; }
+@media (max-width: 768px) { .container { padding: 16px; } h1 { font-size: 1.8rem; } }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>people-ops — Complete Call Flow &amp; Architecture Documentation</h1>
+<p class="subtitle">Generated from graphify knowledge graph: 466 nodes, 1240 edges, 19 communities. Commit: e488e43</p>
+
+<div class="nav">
+    <a href="#overview">Architecture Overview</a>
+    <a href="#build-graph">Graph Build</a>
+    <a href="#cli-skills">CLI &amp; Skill Installers</a>
+    <a href="#serve-api">Serving API</a>
+    <a href="#security-global">Security &amp; Global Graph</a>
+    <a href="#tests-fixtures">Tests &amp; Fixtures</a>
+    <a href="#tailwind-config-js">tailwind.config.js</a>
+    <a href="#postcss-config-js">postcss.config.js</a>
+    <a href="#hr-multiagent-platform-backend">hr-multiagent-platform-backend</a>
+</div>
+
+<!-- ====== Architecture Overview ====== -->
+<h2 id="overview">1. Architecture Overview</h2>
+
+<div class="mermaid">
+
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    BUILD_GRAPH_321CBB04("Graph Build<br/><small>88 nodes</small>")
+    class BUILD_GRAPH_321CBB04 module;
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>59 nodes</small>")
+    class CLI_SKILLS_9964CBB8 module;
+    SERVE_API_35EC8E86("Serving API<br/><small>170 nodes</small>")
+    class SERVE_API_35EC8E86 module;
+    SECURITY_GLOBAL_5B9C6A04("Security &amp; Global Graph<br/><small>36 nodes</small>")
+    class SECURITY_GLOBAL_5B9C6A04 module;
+    TESTS_FIXTURES_B84B1DCC("Tests &amp; Fixtures<br/><small>109 nodes</small>")
+    class TESTS_FIXTURES_B84B1DCC module;
+    TAILWIND_CONFIG_JS_3BF2B486("tailwind.config.js<br/><small>2 nodes</small>")
+    class TAILWIND_CONFIG_JS_3BF2B486 module;
+    POSTCSS_CONFIG_JS_F78865D3("postcss.config.js<br/><small>1 nodes</small>")
+    class POSTCSS_CONFIG_JS_F78865D3 module;
+    HR_MULTIAGENT_PLATFORM_BACKEND_BA92A483("hr-multiagent-platform-backend<br/><small>1 nodes</small>")
+    class HR_MULTIAGENT_PLATFORM_BACKEND_BA92A483 module;
+    TESTS_FIXTURES_B84B1DCC -->|imports x83| SERVE_API_35EC8E86
+    SERVE_API_35EC8E86 -->|imports x47| TESTS_FIXTURES_B84B1DCC
+    CLI_SKILLS_9964CBB8 -->|imports x34| SERVE_API_35EC8E86
+    TESTS_FIXTURES_B84B1DCC -->|imports x20| CLI_SKILLS_9964CBB8
+    SERVE_API_35EC8E86 -->|imports x19| CLI_SKILLS_9964CBB8
+    CLI_SKILLS_9964CBB8 -->|imports x11| TESTS_FIXTURES_B84B1DCC
+    SERVE_API_35EC8E86 -->|imports x8| SECURITY_GLOBAL_5B9C6A04
+    SECURITY_GLOBAL_5B9C6A04 -->|imports x6| SERVE_API_35EC8E86
+    SECURITY_GLOBAL_5B9C6A04 -->|contains x5| TESTS_FIXTURES_B84B1DCC
+    CLI_SKILLS_9964CBB8 -->|imports x4| SECURITY_GLOBAL_5B9C6A04
+    TESTS_FIXTURES_B84B1DCC -->|imports x4| SECURITY_GLOBAL_5B9C6A04
+    BUILD_GRAPH_321CBB04 -->|imports x2| SERVE_API_35EC8E86
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h4>Architecture Layers</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
+      <tr><td>Graph Build</td><td>88</td><td><code>3, 10, 11, 14, 15</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>59</td><td><code>0</code></td></tr><tr><td>Serving API</td><td>170</td><td><code>1, 2, 6, 9, 13</code></td></tr><tr><td>Security &amp; Global Graph</td><td>36</td><td><code>4</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>109</td><td><code>5, 7, 8, 12</code></td></tr><tr><td>tailwind.config.js</td><td>2</td><td><code>16</code></td></tr><tr><td>postcss.config.js</td><td>1</td><td><code>17</code></td></tr><tr><td>hr-multiagent-platform-backend</td><td>1</td><td><code>18</code></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Core Flow</h4>
+    <div class="arrow-chain">tailwind.config.js -&gt; Graph Build -&gt; Serving API -&gt; Tests &amp; Fixtures -&gt; CLI &amp; Skill Installers -&gt; Security &amp; Global Graph -&gt; postcss.config.js</div>
+  </div>
+</div>
+<div class="grid">
+  <div class="card">
+    <h4>Graph Report Highlights</h4>
+    <ul>
+      <li>466 nodes · 1240 edges · 19 communities (15 shown, 4 thin omitted)</li>
+      <li>Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 136 edges (avg confidence: 0.95)</li>
+      <li>Token cost: 0 input · 0 output</li>
+      <li>1. `User` - 65 edges</li>
+      <li>2. `UserRole` - 36 edges</li>
+      <li>3. `TimesheetService` - 25 edges</li>
+    </ul>
+  </div>
+</div>
+<hr>
+<!-- ====== 2. Graph Build ====== -->
+<h2 id="build-graph">2. Graph Build</h2>
+<p>Graph Build groups implementation around frontend, packagejson, tsconfigappjson, tsconfignodejson, mostly in frontend/package.json, frontend/tsconfig.app.json, frontend/tsconfig.node.json. This section covers 88 nodes and 84 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Graph Build (88 nodes, 84 edges)
+    subgraph build_graph_frontend_package_json_640d842e["frontend/package.json"]
+        frontend_package_9c7557c1("package.json")
+        ref_axios_764701d9("axios<br/><small>frontend/package.json</small>")
+        ref_clsx_3ea06f07("clsx<br/><small>frontend/package.json</small>")
+        ref_react_dom_61ea372d("react-dom<br/><small>frontend/package.json</small>")
+        ref_tailwind_merge_fffbbea3("tailwind-merge<br/><small>frontend/package.json</small>")
+        ref_types_node_4b20becf("@types/node<br/><small>frontend/package.json</small>")
+        ref_types_react_1bb250f2("@types/react<br/><small>frontend/package.json</small>")
+        ref_types_react_dom_2cfa9575("@types/react-dom<br/><small>frontend/package.json</small>")
+        ref_vitejs_plugin_react_2811e448("@vitejs/plugin-react<br/><small>frontend/package.json</small>")
+        ref_autoprefixer_e09e26da("autoprefixer<br/><small>frontend/package.json</small>")
+        ref_oxlint_515af8f1("oxlint<br/><small>frontend/package.json</small>")
+        ref_postcss_5f5a71df("postcss<br/><small>frontend/package.json</small>")
+        ref_tailwindcss_34b78b9c("tailwindcss<br/><small>frontend/package.json</small>")
+        ref_typescript_d5a01309("typescript<br/><small>frontend/package.json</small>")
+        ref_vite_c95c70db("vite<br/><small>frontend/package.json</small>")
+    end
+    subgraph build_graph_frontend_oxlintrc_json_ee8a21c2["frontend/.oxlintrc.json"]
+        frontend_oxlintrc_schema_4f6d7107("$schema<br/><small>frontend/.oxlintrc.json</small>")
+        frontend_oxlintrc_3fe8b629(".oxlintrc.json")
+    end
+    frontend_vite_config_3ac59d22("vite.config.ts")
+    frontend_package_9c7557c1 -->|imports| ref_axios_764701d9
+    frontend_package_9c7557c1 -->|imports| ref_clsx_3ea06f07
+    frontend_package_9c7557c1 -->|imports| ref_react_dom_61ea372d
+    frontend_package_9c7557c1 -->|imports| ref_tailwind_merge_fffbbea3
+    frontend_package_9c7557c1 -->|imports| ref_types_node_4b20becf
+    frontend_package_9c7557c1 -->|imports| ref_types_react_1bb250f2
+    frontend_package_9c7557c1 -->|imports| ref_types_react_dom_2cfa9575
+    frontend_package_9c7557c1 -->|imports| ref_vitejs_plugin_react_2811e448
+    frontend_package_9c7557c1 -->|imports| ref_autoprefixer_e09e26da
+    frontend_package_9c7557c1 -->|imports| ref_oxlint_515af8f1
+    frontend_package_9c7557c1 -->|imports| ref_postcss_5f5a71df
+    frontend_package_9c7557c1 -->|imports| ref_tailwindcss_34b78b9c
+    frontend_package_9c7557c1 -->|imports| ref_typescript_d5a01309
+    frontend_package_9c7557c1 -->|imports| ref_vite_c95c70db
+    frontend_vite_config_3ac59d22 -->|imports| ref_vitejs_plugin_react_2811e448
+    frontend_vite_config_3ac59d22 -->|imports| ref_vite_c95c70db
+    %% Omitted for readability: 70 nodes, 0 edges
+    class frontend_package_9c7557c1 function;
+    class ref_axios_764701d9 function;
+    class ref_clsx_3ea06f07 function;
+    class ref_react_dom_61ea372d function;
+    class ref_tailwind_merge_fffbbea3 function;
+    class ref_types_node_4b20becf function;
+    class ref_types_react_1bb250f2 function;
+    class ref_types_react_dom_2cfa9575 function;
+    class ref_vitejs_plugin_react_2811e448 function;
+    class ref_autoprefixer_e09e26da function;
+    class ref_oxlint_515af8f1 function;
+    class ref_postcss_5f5a71df function;
+    class ref_tailwindcss_34b78b9c function;
+    class ref_typescript_d5a01309 function;
+    class ref_vite_c95c70db function;
+    class frontend_oxlintrc_schema_4f6d7107 function;
+    class frontend_oxlintrc_3fe8b629 function;
+    class frontend_vite_config_3ac59d22 module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>package.json</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>@types/node</code><br><small style="color:var(--muted)">frontend/package.json</small><br><code>@types/react</code><br><small style="color:var(--muted)">frontend/package.json</small><br><code>@types/react-dom</code><br><small style="color:var(--muted)">frontend/package.json</small><br>+13 more</td>
+  <td>package.json node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>dependencies</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>dependencies node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>axios</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>axios node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>clsx</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>clsx node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>lucide-react</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>lucide-react node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>react</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>react node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>react-dom</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>react-dom node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>tailwind-merge</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>tailwind-merge node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>devDependencies</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>devDependencies node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>autoprefixer</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>autoprefixer node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>oxlint</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>oxlint node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>postcss</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>postcss node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>tailwindcss</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>tailwindcss node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>@types/node</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@types/node node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>@types/react</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@types/react node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>@types/react-dom</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@types/react-dom node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>typescript</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>typescript node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>vite</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>vite node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>@vitejs/plugin-react</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@vitejs/plugin-react node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>name</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>name node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>private</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>private node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>scripts</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>scripts node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>build</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>build node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>dev</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>dev node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>lint</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>lint node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>preview</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>preview node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>type</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>type node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>version</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>version node in frontend/package.json.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>vite.config.ts</code><br><small style="color:var(--muted)">frontend/vite.config.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>@vitejs/plugin-react</code><br><small style="color:var(--muted)">frontend/package.json</small><br><code>vite</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td>Module file in frontend/vite.config.ts.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>autoprefixer</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>package.json</code><br><small style="color:var(--muted)">frontend/package.json</small></td>
+  <td>No direct outbound edge</td>
+  <td>autoprefixer node in frontend/package.json.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>frontend/package.json</code></td><td>42 nodes</td></tr>
+<tr><td><code>frontend/tsconfig.app.json</code></td><td>19 nodes</td></tr>
+<tr><td><code>frontend/tsconfig.node.json</code></td><td>17 nodes</td></tr>
+<tr><td><code>frontend/.oxlintrc.json</code></td><td>6 nodes</td></tr>
+<tr><td><code>frontend/tsconfig.json</code></td><td>3 nodes</td></tr>
+<tr><td><code>frontend/vite.config.ts</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x68, imports x14, imports x2. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 3. CLI & Skill Installers ====== -->
+<h2 id="cli-skills">3. CLI &amp; Skill Installers</h2>
+<p>CLI &amp; Skill Installers groups implementation around app, backend, agents, agentpy, mostly in app/services/graph_rag_service.py, app/agents/leave_agent.py, app/agents/orchestrator.py. This section covers 59 nodes and 86 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: CLI &amp; Skill Installers (59 nodes, 86 edges)
+    subgraph cli_skills_app_agents_leave_agent_py_374b46ea["app/agents/leave_agent.py"]
+        backend_app_agents_leave_agent_bcc16f47("leave_agent.py")
+        backend_app_agents_leave_agent_leaveagent_35610d61("LeaveAgent<br/><small>app/agents/leave_agent.py</small>")
+        backend_app_agents_leave_agent_leaveagent_init_11cda313("__init__()<br/><small>app/agents/leave_agent.py</small>")
+        backend_app_agents_leave_agent_leaveagent_handle_d0dd31c1("handle_request()<br/><small>app/agents/leave_agent.py</small>")
+    end
+    subgraph cli_skills_app_agents_orchestrator_py_54ebf186["app/agents/orchestrator.py"]
+        backend_app_agents_orchestrator_8660ff72("orchestrator.py")
+        backend_app_agents_orchestrator_rootorchestrator_6bbac400("RootOrchestrator<br/><small>app/agents/orchestrator.py</small>")
+        backend_app_agents_orchestrator_rootorchestrator_29a9dfb1("__init__()<br/><small>app/agents/orchestrator.py</small>")
+        backend_app_agents_orchestrator_rootorchestrator_0e615b3f("process_message()<br/><small>app/agents/orchestrator.py</small>")
+    end
+    subgraph cli_skills_app_agents_policy_agent_py_f71daf35["app/agents/policy_agent.py"]
+        backend_app_agents_policy_agent_92837f40("policy_agent.py")
+        backend_app_agents_policy_agent_hrpolicyagent_8343f04a("HRPolicyAgent<br/><small>app/agents/policy_agent.py</small>")
+        backend_app_agents_policy_agent_hrpolicyagent_in_42edbd07("__init__()<br/><small>app/agents/policy_agent.py</small>")
+        backend_app_agents_policy_agent_hrpolicyagent_ha_fcbb226a("handle_request()<br/><small>app/agents/policy_agent.py</small>")
+    end
+    subgraph cli_skills_app_services_graph_rag_service_py_254ccb8f["app/services/graph_rag_service.py"]
+        backend_app_services_graph_rag_service_graphrags_27ca5f11("GraphRAGService<br/><small>app/services/graph_rag_service.py</small>")
+        backend_app_services_graph_rag_service_graphrags_c2ca6e9b("__init__()<br/><small>app/services/graph_rag_service.py</small>")
+        backend_app_services_graph_rag_service_graphrags_2c1163b3("_load_local_data()<br/><small>app/services/graph_rag_service.py</small>")
+        backend_app_services_graph_rag_service_graphrags_80d18b6f("_get_neo4j_driver()<br/><small>app/services/graph_rag_service.py</small>")
+    end
+    backend_app_api_v1_agents_2c6bd486("agents.py")
+    promptfoo_promptfoo_provider_874d25a7("promptfoo_provider.py")
+    backend_app_agents_leave_agent_leaveagent_35610d61 -->|method| backend_app_agents_leave_agent_leaveagent_init_11cda313
+    backend_app_agents_leave_agent_leaveagent_35610d61 -->|method| backend_app_agents_leave_agent_leaveagent_handle_d0dd31c1
+    backend_app_agents_orchestrator_rootorchestrator_6bbac400 -->|method| backend_app_agents_orchestrator_rootorchestrator_29a9dfb1
+    backend_app_agents_orchestrator_rootorchestrator_6bbac400 -->|method| backend_app_agents_orchestrator_rootorchestrator_0e615b3f
+    backend_app_agents_policy_agent_hrpolicyagent_8343f04a -->|method| backend_app_agents_policy_agent_hrpolicyagent_in_42edbd07
+    backend_app_agents_policy_agent_hrpolicyagent_8343f04a -->|method| backend_app_agents_policy_agent_hrpolicyagent_ha_fcbb226a
+    backend_app_services_graph_rag_service_graphrags_27ca5f11 -->|method| backend_app_services_graph_rag_service_graphrags_c2ca6e9b
+    backend_app_services_graph_rag_service_graphrags_27ca5f11 -->|method| backend_app_services_graph_rag_service_graphrags_2c1163b3
+    backend_app_services_graph_rag_service_graphrags_27ca5f11 -->|method| backend_app_services_graph_rag_service_graphrags_80d18b6f
+    backend_app_services_graph_rag_service_graphrags_c2ca6e9b -->|calls| backend_app_services_graph_rag_service_graphrags_2c1163b3
+    %% Omitted for readability: 41 nodes, 0 edges
+    class backend_app_agents_leave_agent_bcc16f47 module;
+    class backend_app_agents_leave_agent_leaveagent_35610d61 klass;
+    class backend_app_agents_leave_agent_leaveagent_init_11cda313 function;
+    class backend_app_agents_leave_agent_leaveagent_handle_d0dd31c1 function;
+    class backend_app_agents_orchestrator_8660ff72 module;
+    class backend_app_agents_orchestrator_rootorchestrator_6bbac400 klass;
+    class backend_app_agents_orchestrator_rootorchestrator_29a9dfb1 function;
+    class backend_app_agents_orchestrator_rootorchestrator_0e615b3f function;
+    class backend_app_agents_policy_agent_92837f40 module;
+    class backend_app_agents_policy_agent_hrpolicyagent_8343f04a klass;
+    class backend_app_agents_policy_agent_hrpolicyagent_in_42edbd07 function;
+    class backend_app_agents_policy_agent_hrpolicyagent_ha_fcbb226a function;
+    class backend_app_services_graph_rag_service_graphrags_27ca5f11 klass;
+    class backend_app_services_graph_rag_service_graphrags_c2ca6e9b function;
+    class backend_app_services_graph_rag_service_graphrags_2c1163b3 function;
+    class backend_app_services_graph_rag_service_graphrags_80d18b6f function;
+    class backend_app_api_v1_agents_2c6bd486 module;
+    class promptfoo_promptfoo_provider_874d25a7 module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>LeaveAgent</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small><br><code>handle_request()</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br>+3 more</td>
+  <td>LeaveAgent node in app/agents/leave_agent.py.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>RootOrchestrator</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small><br><code>AgentChatResponse</code><br><small style="color:var(--muted)">app/schemas/agent.py</small><br><code>process_message()</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small><br>+1 more</td>
+  <td>RootOrchestrator node in app/agents/orchestrator.py.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>HRPolicyAgent</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small><br><code>handle_request()</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small><br><code>StructuredAction</code><br><small style="color:var(--muted)">app/schemas/agent.py</small><br>+1 more</td>
+  <td>HRPolicyAgent node in app/agents/policy_agent.py.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>AgentChatRequest</code><br><small style="color:var(--muted)">app/schemas/agent.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>agents.py</code><br><small style="color:var(--muted)">api/v1/agents.py</small><br><code>multi agent system()</code><br><small style="color:var(--muted)">api/v1/agents.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>AgentChatResponse</code><br><small style="color:var(--muted)">app/schemas/agent.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>agents.py</code><br><small style="color:var(--muted)">api/v1/agents.py</small><br><code>orchestrator.py</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small><br>+1 more</td>
+  <td>No direct outbound edge</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>CitationItem</code><br><small style="color:var(--muted)">app/schemas/agent.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>graph_rag_service.py</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small><br><code>GraphRAGService</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small><br>+2 more</td>
+  <td>No direct outbound edge</td>
+  <td>CitationItem node in app/schemas/agent.py.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>StructuredAction</code><br><small style="color:var(--muted)">app/schemas/agent.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>handle_request()</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small><br><code>handle_request()</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small><br>+8 more</td>
+  <td>No direct outbound edge</td>
+  <td>StructuredAction node in app/schemas/agent.py.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>GraphRAGService</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small><br><code>_get_neo4j_driver()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small><br><code>_load_local_data()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small><br>+2 more</td>
+  <td>Builds dependency relationships and graph data.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>.handle_request()</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>LeaveAgent</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small></td>
+  <td><code>get_balance_summary()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>StructuredAction</code><br><small style="color:var(--muted)">app/schemas/agent.py</small></td>
+  <td>.handle_request() node in app/agents/leave_agent.py.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>.__init__()</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>LeaveAgent</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small></td>
+  <td><code>get_llm_provider()</code><br><small style="color:var(--muted)">app/agents/llm_provider.py</small></td>
+  <td>.__init__() node in app/agents/leave_agent.py.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>.__init__()</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>RootOrchestrator</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>.__init__() node in app/agents/orchestrator.py.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>.process_message()</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>RootOrchestrator</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>.process_message() node in app/agents/orchestrator.py.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>.handle_request()</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>HRPolicyAgent</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small></td>
+  <td><code>StructuredAction</code><br><small style="color:var(--muted)">app/schemas/agent.py</small></td>
+  <td>.handle_request() node in app/agents/policy_agent.py.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>.__init__()</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>HRPolicyAgent</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small></td>
+  <td><code>get_llm_provider()</code><br><small style="color:var(--muted)">app/agents/llm_provider.py</small></td>
+  <td>.__init__() node in app/agents/policy_agent.py.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>chat_with_multi_agent_system()</code><br><small style="color:var(--muted)">api/v1/agents.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AgentChatRequest</code><br><small style="color:var(--muted)">app/schemas/agent.py</small><br><code>User</code><br><small style="color:var(--muted)">app/models/user.py</small></td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>search_policies()</code><br><small style="color:var(--muted)">api/v1/policy.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>User</code><br><small style="color:var(--muted)">app/models/user.py</small></td>
+  <td>search_policies() node in api/v1/policy.py.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>._get_neo4j_driver()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>GraphRAGService</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>._get_neo4j_driver() node in app/services/graph_rag_service.py.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>.__init__()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>GraphRAGService</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td><code>_load_local_data()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td>.__init__() node in app/services/graph_rag_service.py.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>._load_local_data()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small><br><code>GraphRAGService</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>._load_local_data() node in app/services/graph_rag_service.py.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>.search_policies()</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>GraphRAGService</code><br><small style="color:var(--muted)">app/services/graph_rag_service.py</small></td>
+  <td><code>CitationItem</code><br><small style="color:var(--muted)">app/schemas/agent.py</small></td>
+  <td>.search_policies() node in app/services/graph_rag_service.py.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>leave_agent.py</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_agents_llm_provider</code><br><code>app_models_leave</code><br><code>app_models_user</code><br>+11 more</td>
+  <td>Module file in app/agents/leave_agent.py.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>Any</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Any node in project.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>AsyncSession</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AsyncSession node in project.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>orchestrator.py</code><br><small style="color:var(--muted)">app/agents/orchestrator.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AgentChatResponse</code><br><small style="color:var(--muted)">app/schemas/agent.py</small><br><code>app_agents_leave_agent</code><br><code>app_agents_policy_agent</code><br>+12 more</td>
+  <td>Module file in app/agents/orchestrator.py.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>AsyncSession</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AsyncSession node in project.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>policy_agent.py</code><br><small style="color:var(--muted)">app/agents/policy_agent.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_agents_llm_provider</code><br><code>app_models_user</code><br><code>app_schemas_agent</code><br>+6 more</td>
+  <td>Module file in app/agents/policy_agent.py.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>Any</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Any node in project.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>AsyncSession</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AsyncSession node in project.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>agents.py</code><br><small style="color:var(--muted)">api/v1/agents.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AgentChatRequest</code><br><small style="color:var(--muted)">app/schemas/agent.py</small><br><code>AgentChatResponse</code><br><small style="color:var(--muted)">app/schemas/agent.py</small><br><code>app_agents_orchestrator</code><br>+9 more</td>
+  <td>Module file in api/v1/agents.py.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>AsyncSession</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AsyncSession node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>app/services/graph_rag_service.py</code></td><td>7 nodes</td></tr>
+<tr><td><code>app/agents/leave_agent.py</code></td><td>5 nodes</td></tr>
+<tr><td><code>app/agents/orchestrator.py</code></td><td>5 nodes</td></tr>
+<tr><td><code>app/agents/policy_agent.py</code></td><td>5 nodes</td></tr>
+<tr><td><code>app/schemas/agent.py</code></td><td>5 nodes</td></tr>
+<tr><td><code>api/v1/agents.py</code></td><td>2 nodes</td></tr>
+<tr><td><code>api/v1/policy.py</code></td><td>2 nodes</td></tr>
+<tr><td><code>promptfoo/promptfoo_provider.py</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x27, references x11, imports x11, method x10. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 4. Serving API ====== -->
+<h2 id="serve-api">4. Serving API</h2>
+<p>Serving API groups implementation around app, backend, frontend, api, mostly in frontend/src/types.ts, app/agents/llm_provider.py, app/schemas/timesheet.py. This section covers 170 nodes and 489 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Serving API (170 nodes, 489 edges)
+    subgraph serve_api_app_services_timesheet_service_py_b487126e["app/services/timesheet_service.py"]
+        backend_app_services_timesheet_service_fab2f864("timesheet_service.py")
+        backend_app_services_timesheet_service_timesheet_2684e958("TimesheetService<br/><small>app/services/timesheet_service.py</small>")
+        backend_app_services_timesheet_service_timesheet_e0637ad1("get_report_summary()<br/><small>app/services/timesheet_service.py</small>")
+        backend_app_services_timesheet_service_timesheet_c451d480("log_entry()<br/><small>app/services/timesheet_service.py</small>")
+        backend_app_services_timesheet_service_timesheet_e2111172("generate_csv()<br/><small>app/services/timesheet_service.py</small>")
+        backend_app_services_timesheet_service_timesheet_b237ff1b("decide_entries()<br/><small>app/services/timesheet_service.py</small>")
+    end
+    subgraph serve_api_app_agents_llm_provider_py_ae794943["app/agents/llm_provider.py"]
+        backend_app_agents_llm_provider_basellmprovider_8fc15508("BaseLLMProvider<br/><small>app/agents/llm_provider.py</small>")
+        backend_app_agents_llm_provider_basellmprovider_fb2b3e5d("generate_response()<br/><small>app/agents/llm_provider.py</small>")
+        backend_app_agents_llm_provider_mockllmprovider_dd775619("MockLLMProvider<br/><small>app/agents/llm_provider.py</small>")
+        backend_app_agents_llm_provider_mockllmprovider_09d9780a("generate_response()<br/><small>app/agents/llm_provider.py</small>")
+    end
+    subgraph serve_api_app_agents_timesheet_agent_py_e80e8abe["app/agents/timesheet_agent.py"]
+        backend_app_agents_timesheet_agent_timesheetagen_dd4ac298("TimesheetAgent<br/><small>app/agents/timesheet_agent.py</small>")
+        backend_app_agents_timesheet_agent_timesheetagen_ff508def("__init__()<br/><small>app/agents/timesheet_agent.py</small>")
+        backend_app_agents_timesheet_agent_timesheetagen_a3bb40fc("handle_request()<br/><small>app/agents/timesheet_agent.py</small>")
+    end
+    backend_app_api_v1_onboarding_c7e60d60("onboarding.py")
+    backend_app_api_v1_reports_7296b65b("reports.py")
+    backend_app_api_v1_timesheets_c4e20244("timesheets.py")
+    backend_app_services_onboarding_service_96034b57("onboarding_service.py")
+    frontend_src_app_7da8908b("App.tsx")
+    backend_app_agents_timesheet_agent_timesheetagen_dd4ac298 -->|method| backend_app_agents_timesheet_agent_timesheetagen_ff508def
+    backend_app_agents_timesheet_agent_timesheetagen_dd4ac298 -->|method| backend_app_agents_timesheet_agent_timesheetagen_a3bb40fc
+    backend_app_services_timesheet_service_timesheet_2684e958 -->|method| backend_app_services_timesheet_service_timesheet_e0637ad1
+    backend_app_services_timesheet_service_timesheet_2684e958 -->|method| backend_app_services_timesheet_service_timesheet_c451d480
+    backend_app_services_timesheet_service_timesheet_2684e958 -->|method| backend_app_services_timesheet_service_timesheet_e2111172
+    backend_app_services_timesheet_service_timesheet_2684e958 -->|method| backend_app_services_timesheet_service_timesheet_b237ff1b
+    backend_app_agents_llm_provider_basellmprovider_8fc15508 -->|method| backend_app_agents_llm_provider_basellmprovider_fb2b3e5d
+    backend_app_agents_llm_provider_mockllmprovider_dd775619 -->|method| backend_app_agents_llm_provider_mockllmprovider_09d9780a
+    backend_app_agents_timesheet_agent_timesheetagen_a3bb40fc -->|calls| backend_app_services_timesheet_service_timesheet_e0637ad1
+    backend_app_api_v1_reports_7296b65b -->|imports| backend_app_services_timesheet_service_timesheet_2684e958
+    backend_app_api_v1_timesheets_c4e20244 -->|imports| backend_app_services_timesheet_service_timesheet_2684e958
+    backend_app_agents_timesheet_agent_timesheetagen_dd4ac298 -->|uses| backend_app_services_timesheet_service_timesheet_2684e958
+    %% Omitted for readability: 152 nodes, 0 edges
+    class backend_app_services_timesheet_service_fab2f864 module;
+    class backend_app_services_timesheet_service_timesheet_2684e958 klass;
+    class backend_app_services_timesheet_service_timesheet_e0637ad1 function;
+    class backend_app_services_timesheet_service_timesheet_c451d480 function;
+    class backend_app_services_timesheet_service_timesheet_e2111172 function;
+    class backend_app_services_timesheet_service_timesheet_b237ff1b function;
+    class backend_app_agents_llm_provider_basellmprovider_8fc15508 klass;
+    class backend_app_agents_llm_provider_basellmprovider_fb2b3e5d function;
+    class backend_app_agents_llm_provider_mockllmprovider_dd775619 klass;
+    class backend_app_agents_llm_provider_mockllmprovider_09d9780a function;
+    class backend_app_agents_timesheet_agent_timesheetagen_dd4ac298 klass;
+    class backend_app_agents_timesheet_agent_timesheetagen_ff508def function;
+    class backend_app_agents_timesheet_agent_timesheetagen_a3bb40fc function;
+    class backend_app_api_v1_onboarding_c7e60d60 module;
+    class backend_app_api_v1_reports_7296b65b module;
+    class backend_app_api_v1_timesheets_c4e20244 module;
+    class backend_app_services_onboarding_service_96034b57 module;
+    class frontend_src_app_7da8908b ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>TimesheetAgent</code><br><small style="color:var(--muted)">app/agents/timesheet_agent.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/agents/timesheet_agent.py</small><br><code>handle_request()</code><br><small style="color:var(--muted)">app/agents/timesheet_agent.py</small><br><code>Project</code><br><small style="color:var(--muted)">app/models/timesheet.py</small><br>+5 more</td>
+  <td>TimesheetAgent node in app/agents/timesheet_agent.py.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>Project</code><br><small style="color:var(--muted)">app/models/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/models/__init__.py</small><br><code>list_active_projects()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small><br><code>seed_data.py</code><br><small style="color:var(--muted)">backend/data/seed_data.py</small><br>+7 more</td>
+  <td>No direct outbound edge</td>
+  <td>Project node in app/models/timesheet.py.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>TimesheetEntry</code><br><small style="color:var(--muted)">app/models/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/models/__init__.py</small><br><code>seed_data.py</code><br><small style="color:var(--muted)">backend/data/seed_data.py</small><br><code>seed_initial_data()</code><br><small style="color:var(--muted)">backend/data/seed_data.py</small><br>+4 more</td>
+  <td>No direct outbound edge</td>
+  <td>TimesheetEntry node in app/models/timesheet.py.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>TimesheetStatus</code><br><small style="color:var(--muted)">app/models/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/models/__init__.py</small><br><code>export_timesheet_csv()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br><code>get_timesheet_report()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br>+10 more</td>
+  <td>No direct outbound edge</td>
+  <td>TimesheetStatus node in app/models/timesheet.py.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>ProjectResponse</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>timesheets.py</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>ProjectResponse node in app/schemas/timesheet.py.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>TimesheetDecisionRequest</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>batch_decide_timesheets()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small><br><code>timesheets.py</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>TimesheetDecisionRequest node in app/schemas/timesheet.py.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>TimesheetEntryCreate</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>log_time_entry()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small><br><code>test_timesheet_service.py</code><br><small style="color:var(--muted)">backend/tests/test_timesheet_service.py</small><br>+3 more</td>
+  <td>No direct outbound edge</td>
+  <td>TimesheetEntryCreate node in app/schemas/timesheet.py.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>TimesheetEntryResponse</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>get_report_summary()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>test_generate_csv_format()</code><br><small style="color:var(--muted)">backend/tests/test_timesheet_service.py</small><br>+4 more</td>
+  <td><code>TimesheetStatus</code><br><small style="color:var(--muted)">app/models/timesheet.py</small></td>
+  <td>TimesheetEntryResponse node in app/schemas/timesheet.py.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>TimesheetReportFilter</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>export_timesheet_csv()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br><code>get_timesheet_report()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br>+6 more</td>
+  <td><code>TimesheetStatus</code><br><small style="color:var(--muted)">app/models/timesheet.py</small></td>
+  <td>TimesheetReportFilter node in app/schemas/timesheet.py.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>TimesheetReportSummary</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>reports.py</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br><code>test_generate_csv_format()</code><br><small style="color:var(--muted)">backend/tests/test_timesheet_service.py</small><br>+3 more</td>
+  <td>No direct outbound edge</td>
+  <td>TimesheetReportSummary node in app/schemas/timesheet.py.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>TimesheetService</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>batch_decide_timesheets()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small><br><code>export_timesheet_csv()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br><code>get_timesheet_report()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br>+7 more</td>
+  <td><code>AuditLog</code><br><small style="color:var(--muted)">app/models/user.py</small><br><code>decide_entries()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>generate_csv()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br>+11 more</td>
+  <td>TimesheetService node in app/services/timesheet_service.py.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>.handle_request()</code><br><small style="color:var(--muted)">app/agents/timesheet_agent.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>TimesheetAgent</code><br><small style="color:var(--muted)">app/agents/timesheet_agent.py</small></td>
+  <td><code>get_report_summary()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>StructuredAction</code><br><small style="color:var(--muted)">app/schemas/agent.py</small><br><code>TimesheetReportFilter</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small></td>
+  <td>.handle_request() node in app/agents/timesheet_agent.py.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>export_timesheet_csv()</code><br><small style="color:var(--muted)">api/v1/reports.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>generate_csv()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>get_report_summary()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>TimesheetReportFilter</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small><br>+3 more</td>
+  <td>Exports documentation data to a target format.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>get_timesheet_report()</code><br><small style="color:var(--muted)">api/v1/reports.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>get_report_summary()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>TimesheetReportFilter</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small><br><code>TimesheetService</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br>+2 more</td>
+  <td>get_timesheet_report() node in api/v1/reports.py.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>batch_decide_timesheets()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>decide_entries()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>TimesheetDecisionRequest</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small><br><code>TimesheetService</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br>+2 more</td>
+  <td>batch_decide_timesheets() node in api/v1/timesheets.py.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>list_active_projects()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>Project</code><br><small style="color:var(--muted)">app/models/timesheet.py</small><br><code>User</code><br><small style="color:var(--muted)">app/models/user.py</small></td>
+  <td>list_active_projects() node in api/v1/timesheets.py.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>log_time_entry()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>log_entry()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>TimesheetEntryCreate</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small><br><code>TimesheetService</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br>+1 more</td>
+  <td>log_time_entry() node in api/v1/timesheets.py.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>get_db()</code><br><small style="color:var(--muted)">app/core/database.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>agents.py</code><br><small style="color:var(--muted)">api/v1/agents.py</small><br><code>auth.py</code><br><small style="color:var(--muted)">api/v1/auth.py</small><br><code>auth_service.py</code><br><small style="color:var(--muted)">app/services/auth_service.py</small><br>+4 more</td>
+  <td>No direct outbound edge</td>
+  <td>get_db() node in app/core/database.py.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>get_current_user()</code><br><small style="color:var(--muted)">app/services/auth_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>agents.py</code><br><small style="color:var(--muted)">api/v1/agents.py</small><br><code>auth.py</code><br><small style="color:var(--muted)">api/v1/auth.py</small><br><code>leaves.py</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br>+4 more</td>
+  <td><code>decode_access_token()</code><br><small style="color:var(--muted)">app/core/security.py</small><br><code>User</code><br><small style="color:var(--muted)">app/models/user.py</small></td>
+  <td>get_current_user() node in app/services/auth_service.py.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>.decide_entries()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>batch_decide_timesheets()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small><br><code>TimesheetService</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small></td>
+  <td><code>AuditLog</code><br><small style="color:var(--muted)">app/models/user.py</small></td>
+  <td>.decide_entries() node in app/services/timesheet_service.py.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>.generate_csv()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>export_timesheet_csv()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br><code>test_generate_csv_format()</code><br><small style="color:var(--muted)">backend/tests/test_timesheet_service.py</small><br><code>TimesheetService</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>.generate_csv() node in app/services/timesheet_service.py.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>.get_report_summary()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>export_timesheet_csv()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br><code>get_timesheet_report()</code><br><small style="color:var(--muted)">api/v1/reports.py</small><br><code>handle_request()</code><br><small style="color:var(--muted)">app/agents/timesheet_agent.py</small><br>+1 more</td>
+  <td><code>TimesheetEntryResponse</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small></td>
+  <td>.get_report_summary() node in app/services/timesheet_service.py.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>.log_entry()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>log_time_entry()</code><br><small style="color:var(--muted)">api/v1/timesheets.py</small><br><code>TimesheetService</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small></td>
+  <td><code>AuditLog</code><br><small style="color:var(--muted)">app/models/user.py</small></td>
+  <td>.log_entry() node in app/services/timesheet_service.py.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>test_generate_csv_format()</code><br><small style="color:var(--muted)">backend/tests/test_timesheet_service.py</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>generate_csv()</code><br><small style="color:var(--muted)">app/services/timesheet_service.py</small><br><code>TimesheetEntryResponse</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small><br><code>TimesheetReportSummary</code><br><small style="color:var(--muted)">app/schemas/timesheet.py</small><br>+2 more</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>timesheet_agent.py</code><br><small style="color:var(--muted)">app/agents/timesheet_agent.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_agents_llm_provider</code><br><code>app_models_timesheet</code><br><code>app_models_user</code><br>+15 more</td>
+  <td>Module file in app/agents/timesheet_agent.py.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>Any</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Any node in project.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>AsyncSession</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AsyncSession node in project.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>reports.py</code><br><small style="color:var(--muted)">api/v1/reports.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_core_database</code><br><code>app_models_timesheet</code><br><code>app_models_user</code><br>+15 more</td>
+  <td>Module file in api/v1/reports.py.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>AsyncSession</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AsyncSession node in project.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>date</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>date node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>frontend/src/types.ts</code></td><td>12 nodes</td></tr>
+<tr><td><code>app/agents/llm_provider.py</code></td><td>11 nodes</td></tr>
+<tr><td><code>app/schemas/timesheet.py</code></td><td>7 nodes</td></tr>
+<tr><td><code>app/services/onboarding_service.py</code></td><td>7 nodes</td></tr>
+<tr><td><code>app/services/timesheet_service.py</code></td><td>6 nodes</td></tr>
+<tr><td><code>app/agents/timesheet_agent.py</code></td><td>5 nodes</td></tr>
+<tr><td><code>api/v1/onboarding.py</code></td><td>5 nodes</td></tr>
+<tr><td><code>app/models/user.py</code></td><td>5 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x117, imports x116, references x71, contains x64. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 5. Security & Global Graph ====== -->
+<h2 id="security-global">5. Security &amp; Global Graph</h2>
+<p>Security &amp; Global Graph groups implementation around app, backend, guardrails, managerpy, mostly in app/guardrails/guardrails_manager.py, app/core/security.py, app/observability/langsmith_tracer.py. This section covers 36 nodes and 44 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Security &amp; Global Graph (36 nodes, 44 edges)
+    subgraph security_global_app_guardrails_guardrails_manage_6ca47457["app/guardrails/guardrails_manager.py"]
+        backend_app_guardrails_guardrails_manager_2cfe62a9("guardrails_manager.py")
+        backend_app_guardrails_guardrails_manager_guardr_a9702035("GuardrailsManager<br/><small>app/guardrails/guardrails_manager.py</small>")
+        backend_app_guardrails_guardrails_manager_guardr_9e582f9d("__init__()<br/><small>app/guardrails/guardrails_manager.py</small>")
+        backend_app_guardrails_guardrails_manager_guardr_f1ff549b("_init_nemo()<br/><small>app/guardrails/guardrails_manager.py</small>")
+        backend_app_guardrails_guardrails_manager_guardr_2888ccd0("check_input()<br/><small>app/guardrails/guardrails_manager.py</small>")
+        backend_app_guardrails_guardrails_manager_guardr_e45cd85c("check_output()<br/><small>app/guardrails/guardrails_manager.py</small>")
+    end
+    subgraph security_global_app_core_security_py_56f662d8["app/core/security.py"]
+        backend_app_core_security_84caec82("security.py")
+        backend_app_core_security_mask_all_pii_fe46096e("mask_all_pii()<br/><small>app/core/security.py</small>")
+        backend_app_core_security_mask_aadhaar_dc1db1ba("mask_aadhaar()<br/><small>app/core/security.py</small>")
+        backend_app_core_security_mask_pan_d0f7ce8c("mask_pan()<br/><small>app/core/security.py</small>")
+    end
+    subgraph security_global_app_observability_langsmith_trac_b80f6513["app/observability/langsmith_tracer.py"]
+        backend_app_observability_langsmith_tracer_497d76b8("langsmith_tracer.py")
+        backend_app_observability_langsmith_tracer_langs_20e36202("LangSmithTracer<br/><small>app/observability/langsmith_tracer.py</small>")
+        backend_app_observability_langsmith_tracer_langs_0730414a("__init__()<br/><small>app/observability/langsmith_tracer.py</small>")
+        backend_app_observability_langsmith_tracer_langs_cf16b172("trace_agent_run()<br/><small>app/observability/langsmith_tracer.py</small>")
+    end
+    subgraph security_global_External_generated_3fe5b8bb["External / generated"]
+        os_999a3419("os")
+        pydantic_settings_3e506e75("pydantic_settings")
+        re_c387c982("re")
+    end
+    backend_app_core_config_befdc705("config.py")
+    backend_app_guardrails_guardrails_manager_guardr_a9702035 -->|method| backend_app_guardrails_guardrails_manager_guardr_9e582f9d
+    backend_app_guardrails_guardrails_manager_guardr_a9702035 -->|method| backend_app_guardrails_guardrails_manager_guardr_f1ff549b
+    backend_app_guardrails_guardrails_manager_guardr_a9702035 -->|method| backend_app_guardrails_guardrails_manager_guardr_2888ccd0
+    backend_app_guardrails_guardrails_manager_guardr_a9702035 -->|method| backend_app_guardrails_guardrails_manager_guardr_e45cd85c
+    backend_app_observability_langsmith_tracer_langs_20e36202 -->|method| backend_app_observability_langsmith_tracer_langs_0730414a
+    backend_app_observability_langsmith_tracer_langs_20e36202 -->|method| backend_app_observability_langsmith_tracer_langs_cf16b172
+    backend_app_core_security_mask_all_pii_fe46096e -->|calls| backend_app_core_security_mask_aadhaar_dc1db1ba
+    backend_app_core_security_mask_all_pii_fe46096e -->|calls| backend_app_core_security_mask_pan_d0f7ce8c
+    backend_app_guardrails_guardrails_manager_guardr_e45cd85c -->|calls| backend_app_core_security_mask_all_pii_fe46096e
+    backend_app_guardrails_guardrails_manager_guardr_9e582f9d -->|calls| backend_app_guardrails_guardrails_manager_guardr_f1ff549b
+    backend_app_observability_langsmith_tracer_langs_cf16b172 -->|calls| backend_app_core_security_mask_all_pii_fe46096e
+    backend_app_core_config_befdc705 -->|imports| os_999a3419
+    backend_app_core_config_befdc705 -->|imports| pydantic_settings_3e506e75
+    backend_app_core_security_84caec82 -->|imports| re_c387c982
+    backend_app_guardrails_guardrails_manager_2cfe62a9 -->|imports| re_c387c982
+    backend_app_guardrails_guardrails_manager_2cfe62a9 -->|imports| os_999a3419
+    backend_app_guardrails_guardrails_manager_2cfe62a9 -->|imports| backend_app_core_security_mask_all_pii_fe46096e
+    backend_app_observability_langsmith_tracer_497d76b8 -->|imports| os_999a3419
+    backend_app_observability_langsmith_tracer_497d76b8 -->|imports| backend_app_core_security_mask_all_pii_fe46096e
+    %% Omitted for readability: 18 nodes, 0 edges
+    class backend_app_guardrails_guardrails_manager_2cfe62a9 module;
+    class backend_app_guardrails_guardrails_manager_guardr_a9702035 klass;
+    class backend_app_guardrails_guardrails_manager_guardr_9e582f9d function;
+    class backend_app_guardrails_guardrails_manager_guardr_f1ff549b function;
+    class backend_app_guardrails_guardrails_manager_guardr_2888ccd0 function;
+    class backend_app_guardrails_guardrails_manager_guardr_e45cd85c function;
+    class backend_app_core_security_84caec82 module;
+    class backend_app_core_security_mask_all_pii_fe46096e function;
+    class backend_app_core_security_mask_aadhaar_dc1db1ba function;
+    class backend_app_core_security_mask_pan_d0f7ce8c function;
+    class backend_app_observability_langsmith_tracer_497d76b8 module;
+    class backend_app_observability_langsmith_tracer_langs_20e36202 klass;
+    class backend_app_observability_langsmith_tracer_langs_0730414a function;
+    class backend_app_observability_langsmith_tracer_langs_cf16b172 function;
+    class os_999a3419 function;
+    class pydantic_settings_3e506e75 function;
+    class re_c387c982 function;
+    class backend_app_core_config_befdc705 module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>Settings</code><br><small style="color:var(--muted)">app/core/config.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Settings node in app/core/config.py.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>GuardrailsManager</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small><br><code>_init_nemo()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small><br><code>check_input()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small><br>+1 more</td>
+  <td>GuardrailsManager node in app/guardrails/guardrails_manager.py.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>LangSmithTracer</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small><br><code>trace_agent_run()</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td>LangSmithTracer node in app/observability/langsmith_tracer.py.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>mask_aadhaar()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>mask_all_pii()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><code>repl()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td>mask_aadhaar() node in app/core/security.py.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>repl()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>mask_aadhaar()</code><br><small style="color:var(--muted)">app/core/security.py</small><br><code>mask_pan()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>repl() node in app/core/security.py.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>mask_all_pii()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>check_output()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small><br><code>guardrails_manager.py</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small><br><code>langsmith_tracer.py</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small><br>+2 more</td>
+  <td><code>mask_aadhaar()</code><br><small style="color:var(--muted)">app/core/security.py</small><br><code>mask_pan()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td>mask_all_pii() node in app/core/security.py.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>mask_pan()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>mask_all_pii()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><code>repl()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td>mask_pan() node in app/core/security.py.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>repl()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>repl() node in app/core/security.py.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>.check_input()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>GuardrailsManager</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>.check_input() node in app/guardrails/guardrails_manager.py.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>.check_output()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>GuardrailsManager</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><code>mask_all_pii()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td>.check_output() node in app/guardrails/guardrails_manager.py.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>.__init__()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>GuardrailsManager</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><code>_init_nemo()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td>.__init__() node in app/guardrails/guardrails_manager.py.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>._init_nemo()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>__init__()</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small><br><code>GuardrailsManager</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>._init_nemo() node in app/guardrails/guardrails_manager.py.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>.__init__()</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>LangSmithTracer</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>.__init__() node in app/observability/langsmith_tracer.py.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>.trace_agent_run()</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>LangSmithTracer</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td><code>mask_all_pii()</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td>.trace_agent_run() node in app/observability/langsmith_tracer.py.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>config.py</code><br><small style="color:var(--muted)">app/core/config.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>os</code><br><code>pydantic_settings</code><br><code>typing</code></td>
+  <td>Module file in app/core/config.py.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>security.py</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_core_config</code><br><code>bcrypt</code><br><code>datetime</code><br>+3 more</td>
+  <td>Module file in app/core/security.py.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>guardrails_manager.py</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_core_security</code><br><code>mask_all_pii()</code><br><small style="color:var(--muted)">app/core/security.py</small><br><code>nemoguardrails</code><br>+3 more</td>
+  <td>Module file in app/guardrails/guardrails_manager.py.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>langsmith_tracer.py</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_core_config</code><br><code>app_core_security</code><br><code>langsmith</code><br>+4 more</td>
+  <td>Module file in app/observability/langsmith_tracer.py.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>BaseSettings</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>BaseSettings node in project.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>Masks 12-digit Indian Aadhaar numbers, revealing only the last 4 digits.</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Masks 12-digit Indian Aadhaar numbers, revealing only the last 4 digits..</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>Masks Indian PAN numbers, e.g. ABCDE1234F -&gt; ABXXXXXX4F.</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Masks Indian PAN numbers, e.g. ABCDE1234F -&gt; ABXXXXXX4F..</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>Recursively scrub high-risk PII before returning or sending to observability.</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Recursively scrub high-risk PII before returning or sending to observability..</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>Enterprise safety manager running NeMo Guardrails and deterministic DPDP…</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Enterprise safety manager running NeMo Guardrails and deterministic DPDP….</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>Validates input boundaries. Returns: (is_safe: bool, blocked_reason:…</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Validates input boundaries. Returns: (is_safe: bool, blocked_reason:….</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>Validates and sanitizes output boundaries. Returns: (sanitized_response: str,…</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Validates and sanitizes output boundaries. Returns: (sanitized_response: str,….</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>Production observability wrapper for tracking agent runs, tool calls, and…</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Production observability wrapper for tracking agent runs, tool calls, and….</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>Records a run trace, ensuring all PII is scrubbed before logging.</code><br><small style="color:var(--muted)">app/observability/langsmith_tracer.py</small></td>
+  <td><span class="tag tag-func">Concept</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Design note for Records a run trace, ensuring all PII is scrubbed before logging..</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>app_core_security</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>auth.py</code><br><small style="color:var(--muted)">api/v1/auth.py</small><br><code>auth_service.py</code><br><small style="color:var(--muted)">app/services/auth_service.py</small><br><code>guardrails_manager.py</code><br><small style="color:var(--muted)">app/guardrails/guardrails_manager.py</small><br>+4 more</td>
+  <td>No direct outbound edge</td>
+  <td>app_core_security node in project.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>bcrypt</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>security.py</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>bcrypt node in project.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>jose</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>security.py</code><br><small style="color:var(--muted)">app/core/security.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>jose node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>app/core/security.py</code></td><td>9 nodes</td></tr>
+<tr><td><code>app/guardrails/guardrails_manager.py</code></td><td>9 nodes</td></tr>
+<tr><td><code>app/observability/langsmith_tracer.py</code></td><td>6 nodes</td></tr>
+<tr><td><code>app/core/config.py</code></td><td>2 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x9, explains x8, contains x7, method x6. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 6. Tests & Fixtures ====== -->
+<h2 id="tests-fixtures">6. Tests &amp; Fixtures</h2>
+<p>Tests &amp; Fixtures groups implementation around backend, app, test, leave, mostly in app/services/leave_service.py, app/models/leave.py, app/schemas/leave.py. This section covers 109 nodes and 292 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Tests &amp; Fixtures (109 nodes, 292 edges)
+    subgraph tests_fixtures_app_services_leave_service_py_a57a7945["app/services/leave_service.py"]
+        backend_app_services_leave_service_e8b720af("leave_service.py")
+        backend_app_services_leave_service_leaveservice_613e30aa("LeaveService<br/><small>app/services/leave_service.py</small>")
+        backend_app_services_leave_service_leaveservice_efc9c7bd("get_or_create_user_balances()<br/><small>app/services/leave_service.py</small>")
+        backend_app_services_leave_service_leaveservice_a639895b("decide_leave()<br/><small>app/services/leave_service.py</small>")
+        backend_app_services_leave_service_leaveservice_08b19179("get_balance_summary()<br/><small>app/services/leave_service.py</small>")
+        backend_app_services_leave_service_leaveservice_5cc6ced8("check_leave_overlap()<br/><small>app/services/leave_service.py</small>")
+        backend_app_services_leave_service_leaveservice_6e1492ba("apply_leave()<br/><small>app/services/leave_service.py</small>")
+    end
+    subgraph tests_fixtures_api_v1_leaves_py_611b8184["api/v1/leaves.py"]
+        backend_app_api_v1_leaves_8ac8b0d0("leaves.py")
+        backend_app_api_v1_leaves_apply_for_leave_76461a7a("apply_for_leave()<br/><small>api/v1/leaves.py</small>")
+        backend_app_api_v1_leaves_decide_leave_applicati_0b09f8d2("decide_leave_application()<br/><small>api/v1/leaves.py</small>")
+        backend_app_api_v1_leaves_get_my_leave_balances_a3c79bed("get_my_leave_balances()<br/><small>api/v1/leaves.py</small>")
+    end
+    subgraph tests_fixtures_app_models_leave_py_e6ed5b6b["app/models/leave.py"]
+        backend_app_models_leave_leavebalance_400cf5b8("LeaveBalance<br/><small>app/models/leave.py</small>")
+        backend_app_models_leave_leavebalance_available_45172047("available_balance()<br/><small>app/models/leave.py</small>")
+    end
+    backend_app_api_v1_auth_c6326f87("auth.py")
+    backend_app_models_init_7b837b4c("__init__.py")
+    backend_app_schemas_init_a1049654("__init__.py")
+    backend_app_schemas_leave_leavebalanceitem_e090cdd5("LeaveBalanceItem<br/><small>app/schemas/leave.py</small>")
+    backend_tests_test_leave_service_72f7f14f("test_leave_service.py")
+    backend_app_services_leave_service_leaveservice_613e30aa -->|method| backend_app_services_leave_service_leaveservice_efc9c7bd
+    backend_app_services_leave_service_leaveservice_613e30aa -->|method| backend_app_services_leave_service_leaveservice_a639895b
+    backend_app_services_leave_service_leaveservice_613e30aa -->|method| backend_app_services_leave_service_leaveservice_08b19179
+    backend_app_services_leave_service_leaveservice_613e30aa -->|method| backend_app_services_leave_service_leaveservice_5cc6ced8
+    backend_app_services_leave_service_leaveservice_613e30aa -->|method| backend_app_services_leave_service_leaveservice_6e1492ba
+    backend_app_models_leave_leavebalance_400cf5b8 -->|method| backend_app_models_leave_leavebalance_available_45172047
+    backend_app_api_v1_leaves_apply_for_leave_76461a7a -->|calls| backend_app_services_leave_service_leaveservice_6e1492ba
+    backend_app_api_v1_leaves_decide_leave_applicati_0b09f8d2 -->|calls| backend_app_services_leave_service_leaveservice_a639895b
+    backend_app_api_v1_leaves_get_my_leave_balances_a3c79bed -->|calls| backend_app_services_leave_service_leaveservice_08b19179
+    backend_app_services_leave_service_leaveservice_6e1492ba -->|calls| backend_app_services_leave_service_leaveservice_5cc6ced8
+    backend_app_services_leave_service_leaveservice_6e1492ba -->|calls| backend_app_services_leave_service_leaveservice_efc9c7bd
+    backend_app_services_leave_service_leaveservice_08b19179 -->|calls| backend_app_services_leave_service_leaveservice_efc9c7bd
+    backend_app_services_leave_service_leaveservice_08b19179 -->|calls| backend_app_schemas_leave_leavebalanceitem_e090cdd5
+    backend_app_api_v1_leaves_8ac8b0d0 -->|imports| backend_app_services_leave_service_leaveservice_613e30aa
+    backend_app_services_leave_service_e8b720af -->|imports| backend_app_schemas_leave_leavebalanceitem_e090cdd5
+    backend_app_services_leave_service_e8b720af -->|imports| backend_app_models_leave_leavebalance_400cf5b8
+    backend_tests_test_leave_service_72f7f14f -->|imports| backend_app_services_leave_service_leaveservice_613e30aa
+    backend_app_models_init_7b837b4c -->|imports| backend_app_models_leave_leavebalance_400cf5b8
+    backend_app_schemas_init_a1049654 -->|imports| backend_app_schemas_leave_leavebalanceitem_e090cdd5
+    backend_app_services_leave_service_leaveservice_613e30aa -->|uses| backend_app_models_leave_leavebalance_400cf5b8
+    backend_app_services_leave_service_leaveservice_613e30aa -->|uses| backend_app_schemas_leave_leavebalanceitem_e090cdd5
+    backend_app_api_v1_leaves_apply_for_leave_76461a7a -->|uses| backend_app_services_leave_service_leaveservice_613e30aa
+    backend_app_api_v1_leaves_decide_leave_applicati_0b09f8d2 -->|uses| backend_app_services_leave_service_leaveservice_613e30aa
+    backend_app_api_v1_leaves_get_my_leave_balances_a3c79bed -->|uses| backend_app_services_leave_service_leaveservice_613e30aa
+    %% Omitted for readability: 91 nodes, 0 edges
+    class backend_app_services_leave_service_e8b720af module;
+    class backend_app_services_leave_service_leaveservice_613e30aa klass;
+    class backend_app_services_leave_service_leaveservice_efc9c7bd function;
+    class backend_app_services_leave_service_leaveservice_a639895b function;
+    class backend_app_services_leave_service_leaveservice_08b19179 function;
+    class backend_app_services_leave_service_leaveservice_5cc6ced8 function;
+    class backend_app_services_leave_service_leaveservice_6e1492ba function;
+    class backend_app_api_v1_leaves_8ac8b0d0 module;
+    class backend_app_api_v1_leaves_apply_for_leave_76461a7a function;
+    class backend_app_api_v1_leaves_decide_leave_applicati_0b09f8d2 function;
+    class backend_app_api_v1_leaves_get_my_leave_balances_a3c79bed function;
+    class backend_app_models_leave_leavebalance_400cf5b8 klass;
+    class backend_app_models_leave_leavebalance_available_45172047 function;
+    class backend_app_api_v1_auth_c6326f87 module;
+    class backend_app_models_init_7b837b4c module;
+    class backend_app_schemas_init_a1049654 module;
+    class backend_app_schemas_leave_leavebalanceitem_e090cdd5 klass;
+    class backend_tests_test_leave_service_72f7f14f test;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>LeaveApplication</code><br><small style="color:var(--muted)">app/models/leave.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/models/__init__.py</small><br><code>leave_service.py</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>leaves.py</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br>+4 more</td>
+  <td>No direct outbound edge</td>
+  <td>LeaveApplication node in app/models/leave.py.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>LeaveStatus</code><br><small style="color:var(--muted)">app/models/leave.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/models/__init__.py</small><br><code>and overlap validation()</code><br><small style="color:var(--muted)">backend/tests/test_leave_service.py</small><br><code>leave.py</code><br><small style="color:var(--muted)">app/schemas/leave.py</small><br>+8 more</td>
+  <td>No direct outbound edge</td>
+  <td>LeaveStatus node in app/models/leave.py.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>LeaveType</code><br><small style="color:var(--muted)">app/models/leave.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/models/__init__.py</small><br><code>and overlap validation()</code><br><small style="color:var(--muted)">backend/tests/test_leave_service.py</small><br><code>leave.py</code><br><small style="color:var(--muted)">app/schemas/leave.py</small><br>+11 more</td>
+  <td>No direct outbound edge</td>
+  <td>LeaveType node in app/models/leave.py.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>LeaveApplicationResponse</code><br><small style="color:var(--muted)">app/schemas/leave.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>leaves.py</code><br><small style="color:var(--muted)">api/v1/leaves.py</small></td>
+  <td><code>LeaveStatus</code><br><small style="color:var(--muted)">app/models/leave.py</small><br><code>LeaveType</code><br><small style="color:var(--muted)">app/models/leave.py</small></td>
+  <td>LeaveApplicationResponse node in app/schemas/leave.py.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>LeaveApplyRequest</code><br><small style="color:var(--muted)">app/schemas/leave.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>and overlap validation()</code><br><small style="color:var(--muted)">backend/tests/test_leave_service.py</small><br><code>apply_for_leave()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br>+5 more</td>
+  <td><code>LeaveType</code><br><small style="color:var(--muted)">app/models/leave.py</small></td>
+  <td>LeaveApplyRequest node in app/schemas/leave.py.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>LeaveBalanceItem</code><br><small style="color:var(--muted)">app/schemas/leave.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>get_balance_summary()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>leave_service.py</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br>+1 more</td>
+  <td><code>LeaveType</code><br><small style="color:var(--muted)">app/models/leave.py</small></td>
+  <td>LeaveBalanceItem node in app/schemas/leave.py.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>LeaveBalanceSummary</code><br><small style="color:var(--muted)">app/schemas/leave.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>leave_service.py</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>leaves.py</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br>+1 more</td>
+  <td>No direct outbound edge</td>
+  <td>LeaveBalanceSummary node in app/schemas/leave.py.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>LeaveDecisionRequest</code><br><small style="color:var(--muted)">app/schemas/leave.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>__init__.py</code><br><small style="color:var(--muted)">app/schemas/__init__.py</small><br><code>decide_leave_application()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br><code>leaves.py</code><br><small style="color:var(--muted)">api/v1/leaves.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>LeaveDecisionRequest node in app/schemas/leave.py.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td><code>and overlap validation()</code><br><small style="color:var(--muted)">backend/tests/test_leave_service.py</small><br><code>apply_for_leave()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br><code>decide_leave_application()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br>+6 more</td>
+  <td><code>apply_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>AuditLog</code><br><small style="color:var(--muted)">app/models/user.py</small><br><code>check_leave_overlap()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br>+12 more</td>
+  <td>LeaveService node in app/services/leave_service.py.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>apply_for_leave()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>apply_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>LeaveApplyRequest</code><br><small style="color:var(--muted)">app/schemas/leave.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br>+1 more</td>
+  <td>apply_for_leave() node in api/v1/leaves.py.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>decide_leave_application()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>decide_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>LeaveDecisionRequest</code><br><small style="color:var(--muted)">app/schemas/leave.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br>+1 more</td>
+  <td>decide_leave_application() node in api/v1/leaves.py.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>get_my_leave_balances()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>get_balance_summary()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>User</code><br><small style="color:var(--muted)">app/models/user.py</small><br>+1 more</td>
+  <td>get_my_leave_balances() node in api/v1/leaves.py.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>list_leave_applications()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>LeaveApplication</code><br><small style="color:var(--muted)">app/models/leave.py</small><br><code>LeaveStatus</code><br><small style="color:var(--muted)">app/models/leave.py</small><br><code>User</code><br><small style="color:var(--muted)">app/models/user.py</small><br>+1 more</td>
+  <td>list_leave_applications() node in api/v1/leaves.py.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>.apply_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>and overlap validation()</code><br><small style="color:var(--muted)">backend/tests/test_leave_service.py</small><br><code>apply_for_leave()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br>+1 more</td>
+  <td><code>AuditLog</code><br><small style="color:var(--muted)">app/models/user.py</small><br><code>check_leave_overlap()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>get_or_create_user_balances()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td>.apply_leave() node in app/services/leave_service.py.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>.check_leave_overlap()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>apply_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>.check_leave_overlap() node in app/services/leave_service.py.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>.decide_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>decide_leave_application()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><code>AuditLog</code><br><small style="color:var(--muted)">app/models/user.py</small></td>
+  <td>.decide_leave() node in app/services/leave_service.py.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>.get_balance_summary()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>get_my_leave_balances()</code><br><small style="color:var(--muted)">api/v1/leaves.py</small><br><code>handle_request()</code><br><small style="color:var(--muted)">app/agents/leave_agent.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><code>get_or_create_user_balances()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>LeaveBalanceItem</code><br><small style="color:var(--muted)">app/schemas/leave.py</small></td>
+  <td>.get_balance_summary() node in app/services/leave_service.py.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>.get_or_create_user_balances()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>apply_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>get_balance_summary()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td>No direct outbound edge</td>
+  <td>.get_or_create_user_balances() node in app/services/leave_service.py.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>test_invalid_date_range()</code><br><small style="color:var(--muted)">backend/tests/test_leave_service.py</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>apply_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>LeaveApplyRequest</code><br><small style="color:var(--muted)">app/schemas/leave.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br>+2 more</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>test_leave_application_and_overlap_validation()</code><br><small style="color:var(--muted)">backend/tests/test_leave_service.py</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>apply_leave()</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br><code>LeaveApplyRequest</code><br><small style="color:var(--muted)">app/schemas/leave.py</small><br><code>LeaveService</code><br><small style="color:var(--muted)">app/services/leave_service.py</small><br>+3 more</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>leaves.py</code><br><small style="color:var(--muted)">api/v1/leaves.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_core_database</code><br><code>app_models_leave</code><br><code>app_models_user</code><br>+18 more</td>
+  <td>Module file in api/v1/leaves.py.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>AsyncSession</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AsyncSession node in project.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>get</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>get node in project.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>post</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>post node in project.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>str</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>str node in project.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>schemas/leave.py</code><br><small style="color:var(--muted)">app/schemas/leave.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_models_leave</code><br><code>datetime</code><br><code>LeaveStatus</code><br><small style="color:var(--muted)">app/models/leave.py</small><br>+3 more</td>
+  <td>Module file in app/schemas/leave.py.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>BaseModel</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>BaseModel node in project.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>leave_service.py</code><br><small style="color:var(--muted)">app/services/leave_service.py</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>app_models_leave</code><br><code>app_models_user</code><br><code>app_schemas_leave</code><br>+16 more</td>
+  <td>Module file in app/services/leave_service.py.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>AsyncSession</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>AsyncSession node in project.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>date</code><br><small style="color:var(--muted)"></small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>date node in project.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>app/services/leave_service.py</code></td><td>8 nodes</td></tr>
+<tr><td><code>app/models/leave.py</code></td><td>6 nodes</td></tr>
+<tr><td><code>app/schemas/leave.py</code></td><td>6 nodes</td></tr>
+<tr><td><code>backend/tests/test_api_endpoints.py</code></td><td>6 nodes</td></tr>
+<tr><td><code>backend/tests/test_guardrails_adversarial.py</code></td><td>6 nodes</td></tr>
+<tr><td><code>api/v1/auth.py</code></td><td>5 nodes</td></tr>
+<tr><td><code>api/v1/leaves.py</code></td><td>5 nodes</td></tr>
+<tr><td><code>app/schemas/auth.py</code></td><td>5 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: imports x76, imports x44, contains x43, uses x40. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 7. tailwind.config.js ====== -->
+<h2 id="tailwind-config-js">7. tailwind.config.js</h2>
+<p>tailwind.config.js groups implementation around tailwindcss, tailwindconfigjs, frontend, mostly in tailwindcss, frontend/tailwind.config.js. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: tailwind.config.js (2 nodes, 1 edges)
+    frontend_tailwind_config_891dbb99("tailwind.config.js")
+    tailwindcss_34a67857("tailwindcss")
+    frontend_tailwind_config_891dbb99 -->|dynamic import| tailwindcss_34a67857
+    class frontend_tailwind_config_891dbb99 module;
+    class tailwindcss_34a67857 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>tailwindcss</code><br><small style="color:var(--muted)">tailwindcss</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>tailwindcss node in tailwindcss.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>tailwind.config.js</code><br><small style="color:var(--muted)">frontend/tailwind.config.js</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>frontend/tailwind.config.js</code></td><td>1 nodes</td></tr>
+<tr><td><code>tailwindcss</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: dynamic import x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 8. postcss.config.js ====== -->
+<h2 id="postcss-config-js">8. postcss.config.js</h2>
+<p>postcss.config.js groups implementation around postcssconfigjs, frontend, mostly in frontend/postcss.config.js. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: postcss.config.js (1 nodes, 0 edges)
+    frontend_postcss_config_21b874e7("postcss.config.js")
+    class frontend_postcss_config_21b874e7 module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>postcss.config.js</code><br><small style="color:var(--muted)">frontend/postcss.config.js</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>frontend/postcss.config.js</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 9. hr-multiagent-platform-backend ====== -->
+<h2 id="hr-multiagent-platform-backend">9. hr-multiagent-platform-backend</h2>
+<p>hr-multiagent-platform-backend groups implementation around backend, multiagent, platform, pyprojecttoml, mostly in backend/pyproject.toml. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: hr-multiagent-platform-backend (1 nodes, 0 edges)
+    pkg_hr_multiagent_platform_backend_b5506195("hr-multiagent-platform-backend<br/><small>backend/pyproject.toml</small>")
+    class pkg_hr_multiagent_platform_backend_b5506195 module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>hr-multiagent-platform-backend</code><br><small style="color:var(--muted)">backend/pyproject.toml</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>hr-multiagent-platform-backend node in backend/pyproject.toml.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>backend/pyproject.toml</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<h2 id="stats">Project Statistics</h2>
+
+<div class="grid">
+  <div class="card">
+    <h4>Graph</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><td>Nodes</td><td>466</td></tr>
+      <tr><td>Edges</td><td>1240</td></tr>
+      <tr><td>Hyperedges</td><td>0</td></tr>
+      <tr><td>Communities</td><td>19</td></tr>
+      <tr><td>Documented Sections</td><td>8</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Edge Confidence</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><td>EXTRACTED</td><td>1104</td></tr>
+      <tr><td>INFERRED</td><td>136</td></tr>
+      <tr><td>AMBIGUOUS</td><td>0</td></tr>
+    </table>
+  </div>
+</div>
+
+<div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
+  <p>people-ops — Architecture Documentation</p>
+  <p>Generated: 2026-09-18 15:25 UTC · graphify callflow-html</p>
+</div>
+
+</div><!-- .container -->
+
+<script>
+(function () {
+  const mermaidConfig = {
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose',
+    flowchart: { htmlLabels: true, useMaxWidth: true },
+    themeVariables: {
+      primaryColor: '#1e293b',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#38bdf8',
+      secondaryColor: '#0f172a',
+      tertiaryColor: '#334155',
+      lineColor: '#64748b',
+      textColor: '#e2e8f0',
+    }
+  };
+
+  mermaid.initialize(mermaidConfig);
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function enhanceMermaidDiagrams() {
+    document.querySelectorAll('.mermaid').forEach((container) => {
+      if (container.dataset.zoomReady === 'true') return;
+      const svg = container.querySelector('svg');
+      if (!svg) return;
+
+      container.dataset.zoomReady = 'true';
+      container.classList.add('is-enhanced');
+
+      const viewport = document.createElement('div');
+      viewport.className = 'mermaid-viewport';
+      svg.parentNode.insertBefore(viewport, svg);
+      viewport.appendChild(svg);
+
+      const toolbar = document.createElement('div');
+      toolbar.className = 'mermaid-toolbar';
+      toolbar.innerHTML = [
+        '<button type="button" data-action="zoom-out" title="Zoom out">-</button>',
+        '<span class="zoom-level" data-role="level">100%</span>',
+        '<button type="button" data-action="zoom-in" title="Zoom in">+</button>',
+        '<button type="button" data-action="fit" title="Fit width">Fit</button>',
+        '<button type="button" data-action="reset" title="Reset view">Reset</button>'
+      ].join('');
+      container.insertBefore(toolbar, viewport);
+
+      const state = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 };
+      const level = toolbar.querySelector('[data-role="level"]');
+
+      function applyTransform() {
+        svg.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+        level.textContent = `${Math.round(state.scale * 100)}%`;
+      }
+
+      function zoomBy(delta) {
+        state.scale = clamp(state.scale + delta, 0.25, 3);
+        applyTransform();
+      }
+
+      function reset() {
+        state.scale = 1;
+        state.x = 0;
+        state.y = 0;
+        applyTransform();
+      }
+
+      function fitWidth() {
+        const rawWidth = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width
+          ? svg.viewBox.baseVal.width
+          : svg.getBoundingClientRect().width / state.scale;
+        if (!rawWidth) {
+          reset();
+          return;
+        }
+        state.scale = clamp((viewport.clientWidth - 48) / rawWidth, 0.25, 1.4);
+        state.x = 0;
+        state.y = 0;
+        applyTransform();
+      }
+
+      toolbar.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const action = button.dataset.action;
+        if (action === 'zoom-in') zoomBy(0.15);
+        if (action === 'zoom-out') zoomBy(-0.15);
+        if (action === 'fit') fitWidth();
+        if (action === 'reset') reset();
+      });
+
+      viewport.addEventListener('wheel', (event) => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        event.preventDefault();
+        zoomBy(event.deltaY < 0 ? 0.1 : -0.1);
+      }, { passive: false });
+
+      viewport.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        state.dragging = true;
+        state.startX = event.clientX;
+        state.startY = event.clientY;
+        state.originX = state.x;
+        state.originY = state.y;
+        viewport.classList.add('is-dragging');
+        viewport.setPointerCapture(event.pointerId);
+      });
+
+      viewport.addEventListener('pointermove', (event) => {
+        if (!state.dragging) return;
+        state.x = state.originX + event.clientX - state.startX;
+        state.y = state.originY + event.clientY - state.startY;
+        applyTransform();
+      });
+
+      function endDrag(event) {
+        if (!state.dragging) return;
+        state.dragging = false;
+        viewport.classList.remove('is-dragging');
+        if (viewport.hasPointerCapture(event.pointerId)) {
+          viewport.releasePointerCapture(event.pointerId);
+        }
+      }
+
+      viewport.addEventListener('pointerup', endDrag);
+      viewport.addEventListener('pointercancel', endDrag);
+      applyTransform();
+    });
+  }
+
+  function renderMermaid() {
+    const result = mermaid.run
+      ? mermaid.run({ querySelector: '.mermaid' })
+      : Promise.resolve();
+    Promise.resolve(result)
+      .then(enhanceMermaidDiagrams)
+      .catch((error) => {
+        console.error('Mermaid render failed:', error);
+        enhanceMermaidDiagrams();
+      });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderMermaid);
+  } else {
+    renderMermaid();
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -57,6 +57,12 @@ app.include_router(reports_router, prefix=settings.API_V1_STR)
 app.include_router(policy_router, prefix=settings.API_V1_STR)
 app.include_router(agents_router, prefix=settings.API_V1_STR)
 
+# Mount Graphify interactive visualization output
+from fastapi.staticfiles import StaticFiles
+graphify_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "graphify-out")
+if os.path.exists(graphify_dir):
+    app.mount("/graphify", StaticFiles(directory=graphify_dir, html=True), name="graphify")
+
 @app.get("/")
 async def root():
     return {

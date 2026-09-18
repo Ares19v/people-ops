@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>/ — graphify tree viewer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      margin: 20px 0 0 24px;
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #1e3a56;
+    }
+    .controls {
+      margin: 20px 0 15px 24px;
+    }
+    button {
+      margin-right: 10px;
+      padding: 8px 18px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:active {
+      background: #004085;
+    }
+    #tree-container {
+      width: calc(100vw - 48px); /* Adjust for body margin/padding */
+      height: 85vh;
+      overflow: auto;
+      border-radius: 8px;
+      background: #fff;
+      margin-left: 24px;
+      margin-right: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid #ddd;
+    }
+    svg {
+      background: #fff;
+      border-radius: 8px;
+      display: block; /* Important for D3 */
+    }
+    .node circle {
+      stroke-width: 2.5px;
+    }
+    .node text { /* Base style for the <text> container */
+      font: 13px 'Segoe UI', sans-serif;
+      paint-order: stroke fill; /* Ensures text is readable over lines */
+      stroke: #fff; /* White halo */
+      stroke-width: 3px; /* Halo thickness */
+      stroke-linejoin: round;
+      stroke-opacity: 0.85; /* Halo opacity */
+    }
+    .link {
+      fill: none;
+      stroke-opacity: 0.7;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>/ — Knowledge Graph</h1>
+  <div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="resetView()">Reset View</button>
+  </div>
+  <div id="tree-container">
+    <svg id="tree-svg" width="6000" height="8000"></svg>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    const initialJsonData = {"name":"/","total_count":285,"children":[{"name":"backend","total_count":164,"children":[{"name":"app","total_count":145,"children":[{"name":"agents","total_count":26,"children":[{"name":"leave_agent.py","total_count":4,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":".handle_request()","total_count":1,"children":[]},{"name":"Agent responsible for leave balance querying, leave application assistance, and\u2026","total_count":1,"children":[]},{"name":"LeaveAgent","total_count":1,"children":[]}]},{"name":"llm_provider.py","total_count":10,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":".generate_response()","total_count":1,"children":[]},{"name":".generate_response()","total_count":1,"children":[]},{"name":".generate_response()","total_count":1,"children":[]},{"name":"BaseLLMProvider","total_count":1,"children":[]},{"name":"Deterministic local LLM provider for rapid development, testing, and offline\u2026","total_count":1,"children":[]},{"name":"get_llm_provider()","total_count":1,"children":[]},{"name":"MockLLMProvider","total_count":1,"children":[]},{"name":"Production provider using Google Vertex AI / Gemini via Google GenAI SDK.","total_count":1,"children":[]},{"name":"VertexGeminiProvider","total_count":1,"children":[]}]},{"name":"orchestrator.py","total_count":4,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":".process_message()","total_count":1,"children":[]},{"name":"Google ADK Root Orchestrator routing to Leave, Policy (Graph RAG), and\u2026","total_count":1,"children":[]},{"name":"RootOrchestrator","total_count":1,"children":[]}]},{"name":"policy_agent.py","total_count":4,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":".handle_request()","total_count":1,"children":[]},{"name":"Graph RAG Agent responsible for policy, rule, and statutory labour law\u2026","total_count":1,"children":[]},{"name":"HRPolicyAgent","total_count":1,"children":[]}]},{"name":"timesheet_agent.py","total_count":4,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":".handle_request()","total_count":1,"children":[]},{"name":"Agent assisting employees with time logging, submission, and managers with\u2026","total_count":1,"children":[]},{"name":"TimesheetAgent","total_count":1,"children":[]}]}]},{"name":"api","total_count":20,"children":[{"name":"v1","total_count":20,"children":[{"name":"agents.py","total_count":1,"children":[{"name":"chat_with_multi_agent_system()","total_count":1,"children":[]}]},{"name":"auth.py","total_count":4,"children":[{"name":"Developer mock login for instant role switching without requiring external\u2026","total_count":1,"children":[]},{"name":"get_current_user_profile()","total_count":1,"children":[]},{"name":"login_for_access_token()","total_count":1,"children":[]},{"name":"mock_login()","total_count":1,"children":[]}]},{"name":"health.py","total_count":1,"children":[{"name":"health_check()","total_count":1,"children":[]}]},{"name":"leaves.py","total_count":4,"children":[{"name":"apply_for_leave()","total_count":1,"children":[]},{"name":"decide_leave_application()","total_count":1,"children":[]},{"name":"get_my_leave_balances()","total_count":1,"children":[]},{"name":"list_leave_applications()","total_count":1,"children":[]}]},{"name":"onboarding.py","total_count":4,"children":[{"name":"confirm_onboarding_profile()","total_count":1,"children":[]},{"name":"extract_resume_details()","total_count":1,"children":[]},{"name":"initiate_employee_onboarding()","total_count":1,"children":[]},{"name":"upload_onboarding_document()","total_count":1,"children":[]}]},{"name":"policy.py","total_count":1,"children":[{"name":"search_policies()","total_count":1,"children":[]}]},{"name":"reports.py","total_count":2,"children":[{"name":"export_timesheet_csv()","total_count":1,"children":[]},{"name":"get_timesheet_report()","total_count":1,"children":[]}]},{"name":"timesheets.py","total_count":3,"children":[{"name":"batch_decide_timesheets()","total_count":1,"children":[]},{"name":"list_active_projects()","total_count":1,"children":[]},{"name":"log_time_entry()","total_count":1,"children":[]}]}]}]},{"name":"core","total_count":14,"children":[{"name":"config.py","total_count":1,"children":[{"name":"Settings","total_count":1,"children":[]}]},{"name":"database.py","total_count":1,"children":[{"name":"get_db()","total_count":1,"children":[]}]},{"name":"security.py","total_count":12,"children":[{"name":"create_access_token()","total_count":1,"children":[]},{"name":"decode_access_token()","total_count":1,"children":[]},{"name":"get_password_hash()","total_count":1,"children":[]},{"name":"mask_aadhaar()","total_count":1,"children":[]},{"name":"mask_all_pii()","total_count":1,"children":[]},{"name":"mask_pan()","total_count":1,"children":[]},{"name":"Masks 12-digit Indian Aadhaar numbers, revealing only the last 4 digits.","total_count":1,"children":[]},{"name":"Masks Indian PAN numbers, e.g. ABCDE1234F -> ABXXXXXX4F.","total_count":1,"children":[]},{"name":"Recursively scrub high-risk PII before returning or sending to observability.","total_count":1,"children":[]},{"name":"repl()","total_count":1,"children":[]},{"name":"repl()","total_count":1,"children":[]},{"name":"verify_password()","total_count":1,"children":[]}]}]},{"name":"guardrails","total_count":8,"children":[{"name":"guardrails_manager.py","total_count":8,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":"._init_nemo()","total_count":1,"children":[]},{"name":".check_input()","total_count":1,"children":[]},{"name":".check_output()","total_count":1,"children":[]},{"name":"Enterprise safety manager running NeMo Guardrails and deterministic DPDP\u2026","total_count":1,"children":[]},{"name":"GuardrailsManager","total_count":1,"children":[]},{"name":"Validates and sanitizes output boundaries. Returns: (sanitized_response: str,\u2026","total_count":1,"children":[]},{"name":"Validates input boundaries. Returns: (is_safe: bool, blocked_reason:\u2026","total_count":1,"children":[]}]}]},{"name":"main.py","total_count":2,"children":[{"name":"lifespan()","total_count":1,"children":[]},{"name":"root()","total_count":1,"children":[]}]},{"name":"models","total_count":19,"children":[{"name":"leave.py","total_count":5,"children":[{"name":".available_balance()","total_count":1,"children":[]},{"name":"LeaveApplication","total_count":1,"children":[]},{"name":"LeaveBalance","total_count":1,"children":[]},{"name":"LeaveStatus","total_count":1,"children":[]},{"name":"LeaveType","total_count":1,"children":[]}]},{"name":"policy.py","total_count":3,"children":[{"name":"PolicyChunk","total_count":1,"children":[]},{"name":"PolicyDocument","total_count":1,"children":[]},{"name":"PolicyStatus","total_count":1,"children":[]}]},{"name":"timesheet.py","total_count":3,"children":[{"name":"Project","total_count":1,"children":[]},{"name":"TimesheetEntry","total_count":1,"children":[]},{"name":"TimesheetStatus","total_count":1,"children":[]}]},{"name":"user.py","total_count":7,"children":[{"name":"AuditLog","total_count":1,"children":[]},{"name":"Document","total_count":1,"children":[]},{"name":"DocumentType","total_count":1,"children":[]},{"name":"EmployeeProfile","total_count":1,"children":[]},{"name":"OnboardingStatus","total_count":1,"children":[]},{"name":"User","total_count":1,"children":[]},{"name":"UserRole","total_count":1,"children":[]}]},{"name":"__init__.py","total_count":1,"children":[]}]},{"name":"observability","total_count":5,"children":[{"name":"langsmith_tracer.py","total_count":5,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":".trace_agent_run()","total_count":1,"children":[]},{"name":"LangSmithTracer","total_count":1,"children":[]},{"name":"Production observability wrapper for tracking agent runs, tool calls, and\u2026","total_count":1,"children":[]},{"name":"Records a run trace, ensuring all PII is scrubbed before logging.","total_count":1,"children":[]}]}]},{"name":"schemas","total_count":24,"children":[{"name":"agent.py","total_count":4,"children":[{"name":"AgentChatRequest","total_count":1,"children":[]},{"name":"AgentChatResponse","total_count":1,"children":[]},{"name":"CitationItem","total_count":1,"children":[]},{"name":"StructuredAction","total_count":1,"children":[]}]},{"name":"auth.py","total_count":4,"children":[{"name":"LoginRequest","total_count":1,"children":[]},{"name":"MockLoginRequest","total_count":1,"children":[]},{"name":"TokenResponse","total_count":1,"children":[]},{"name":"UserResponse","total_count":1,"children":[]}]},{"name":"leave.py","total_count":5,"children":[{"name":"LeaveApplicationResponse","total_count":1,"children":[]},{"name":"LeaveApplyRequest","total_count":1,"children":[]},{"name":"LeaveBalanceItem","total_count":1,"children":[]},{"name":"LeaveBalanceSummary","total_count":1,"children":[]},{"name":"LeaveDecisionRequest","total_count":1,"children":[]}]},{"name":"onboarding.py","total_count":4,"children":[{"name":"DocumentUploadResponse","total_count":1,"children":[]},{"name":"OnboardingConfirmRequest","total_count":1,"children":[]},{"name":"OnboardingStep1Request","total_count":1,"children":[]},{"name":"ResumeExtractionResponse","total_count":1,"children":[]}]},{"name":"timesheet.py","total_count":6,"children":[{"name":"ProjectResponse","total_count":1,"children":[]},{"name":"TimesheetDecisionRequest","total_count":1,"children":[]},{"name":"TimesheetEntryCreate","total_count":1,"children":[]},{"name":"TimesheetEntryResponse","total_count":1,"children":[]},{"name":"TimesheetReportFilter","total_count":1,"children":[]},{"name":"TimesheetReportSummary","total_count":1,"children":[]}]},{"name":"__init__.py","total_count":1,"children":[]}]},{"name":"services","total_count":27,"children":[{"name":"auth_service.py","total_count":3,"children":[{"name":"get_current_user()","total_count":1,"children":[]},{"name":"require_role()","total_count":1,"children":[]},{"name":"role_checker()","total_count":1,"children":[]}]},{"name":"graph_rag_service.py","total_count":6,"children":[{"name":".__init__()","total_count":1,"children":[]},{"name":"._get_neo4j_driver()","total_count":1,"children":[]},{"name":"._load_local_data()","total_count":1,"children":[]},{"name":".search_policies()","total_count":1,"children":[]},{"name":"GraphRAGService","total_count":1,"children":[]},{"name":"Hybrid retrieval combining graph ontology and policy documents.","total_count":1,"children":[]}]},{"name":"leave_service.py","total_count":7,"children":[{"name":".apply_leave()","total_count":1,"children":[]},{"name":".check_leave_overlap()","total_count":1,"children":[]},{"name":".decide_leave()","total_count":1,"children":[]},{"name":".get_balance_summary()","total_count":1,"children":[]},{"name":".get_or_create_user_balances()","total_count":1,"children":[]},{"name":"LeaveService","total_count":1,"children":[]},{"name":"Returns True if there is an overlapping leave application that is SUBMITTED or\u2026","total_count":1,"children":[]}]},{"name":"onboarding_service.py","total_count":6,"children":[{"name":".confirm_onboarding()","total_count":1,"children":[]},{"name":".create_or_update_employee()","total_count":1,"children":[]},{"name":".extract_resume()","total_count":1,"children":[]},{"name":".upload_document()","total_count":1,"children":[]},{"name":"Controlled resume extraction service returning proposed fields with human-in-\u2026","total_count":1,"children":[]},{"name":"OnboardingService","total_count":1,"children":[]}]},{"name":"timesheet_service.py","total_count":5,"children":[{"name":".decide_entries()","total_count":1,"children":[]},{"name":".generate_csv()","total_count":1,"children":[]},{"name":".get_report_summary()","total_count":1,"children":[]},{"name":".log_entry()","total_count":1,"children":[]},{"name":"TimesheetService","total_count":1,"children":[]}]}]}]},{"name":"data","total_count":1,"children":[{"name":"seed_data.py","total_count":1,"children":[{"name":"seed_initial_data()","total_count":1,"children":[]}]}]},{"name":"pyproject.toml","total_count":1,"children":[{"name":"hr-multiagent-platform-backend","total_count":1,"children":[]}]},{"name":"tests","total_count":17,"children":[{"name":"conftest.py","total_count":1,"children":[{"name":"setup_db()","total_count":1,"children":[]}]},{"name":"test_api_endpoints.py","total_count":5,"children":[{"name":"async_client()","total_count":1,"children":[]},{"name":"test_agent_chat_routing_and_guardrail_block()","total_count":1,"children":[]},{"name":"test_health_check()","total_count":1,"children":[]},{"name":"test_mock_login_flow()","total_count":1,"children":[]},{"name":"test_policy_search_citations()","total_count":1,"children":[]}]},{"name":"test_auth_rbac.py","total_count":3,"children":[{"name":"test_invalid_token_decode()","total_count":1,"children":[]},{"name":"test_jwt_token_generation_and_decode()","total_count":1,"children":[]},{"name":"test_password_hashing()","total_count":1,"children":[]}]},{"name":"test_guardrails_adversarial.py","total_count":5,"children":[{"name":"test_legal_disclaimer_attachment()","total_count":1,"children":[]},{"name":"test_output_pii_masking_dpdp()","total_count":1,"children":[]},{"name":"test_prompt_injection_detection()","total_count":1,"children":[]},{"name":"test_safe_query_passes_input_rail()","total_count":1,"children":[]},{"name":"test_unauthorized_probe_detection()","total_count":1,"children":[]}]},{"name":"test_leave_service.py","total_count":2,"children":[{"name":"test_invalid_date_range()","total_count":1,"children":[]},{"name":"test_leave_application_and_overlap_validation()","total_count":1,"children":[]}]},{"name":"test_timesheet_service.py","total_count":1,"children":[{"name":"test_generate_csv_format()","total_count":1,"children":[]}]}]}]},{"name":"frontend","total_count":118,"children":[{"name":".oxlintrc.json","total_count":5,"children":[{"name":"$schema","total_count":1,"children":[]},{"name":"plugins","total_count":1,"children":[]},{"name":"react/only-export-components","total_count":1,"children":[]},{"name":"react/rules-of-hooks","total_count":1,"children":[]},{"name":"rules","total_count":1,"children":[]}]},{"name":"package.json","total_count":43,"children":[{"name":"@types/node","total_count":1,"children":[]},{"name":"@types/node","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"@types/react-dom","total_count":1,"children":[]},{"name":"@vitejs/plugin-react","total_count":1,"children":[]},{"name":"@vitejs/plugin-react","total_count":1,"children":[]},{"name":"autoprefixer","total_count":1,"children":[]},{"name":"autoprefixer","total_count":1,"children":[]},{"name":"axios","total_count":1,"children":[]},{"name":"axios","total_count":1,"children":[]},{"name":"build","total_count":1,"children":[]},{"name":"clsx","total_count":1,"children":[]},{"name":"clsx","total_count":1,"children":[]},{"name":"dependencies","total_count":1,"children":[]},{"name":"dev","total_count":1,"children":[]},{"name":"devDependencies","total_count":1,"children":[]},{"name":"lint","total_count":1,"children":[]},{"name":"lucide-react","total_count":1,"children":[]},{"name":"lucide-react","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"oxlint","total_count":1,"children":[]},{"name":"oxlint","total_count":1,"children":[]},{"name":"postcss","total_count":1,"children":[]},{"name":"postcss","total_count":1,"children":[]},{"name":"preview","total_count":1,"children":[]},{"name":"private","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"react-dom","total_count":1,"children":[]},{"name":"scripts","total_count":1,"children":[]},{"name":"tailwind-merge","total_count":1,"children":[]},{"name":"tailwind-merge","total_count":1,"children":[]},{"name":"tailwindcss","total_count":1,"children":[]},{"name":"tailwindcss","total_count":1,"children":[]},{"name":"type","total_count":1,"children":[]},{"name":"typescript","total_count":1,"children":[]},{"name":"typescript","total_count":1,"children":[]},{"name":"version","total_count":1,"children":[]},{"name":"vite","total_count":1,"children":[]},{"name":"vite","total_count":1,"children":[]}]},{"name":"src","total_count":31,"children":[{"name":"api.ts","total_count":2,"children":[{"name":"api","total_count":1,"children":[]},{"name":"apiClient","total_count":1,"children":[]}]},{"name":"App.tsx","total_count":1,"children":[{"name":"App()","total_count":1,"children":[]}]},{"name":"components","total_count":5,"children":[{"name":"AgentChatDrawer.tsx","total_count":3,"children":[{"name":"AgentChatDrawer()","total_count":1,"children":[]},{"name":"ChatDrawerProps","total_count":1,"children":[]},{"name":"Message","total_count":1,"children":[]}]},{"name":"Navbar.tsx","total_count":2,"children":[{"name":"Navbar()","total_count":1,"children":[]},{"name":"NavbarProps","total_count":1,"children":[]}]}]},{"name":"pages","total_count":11,"children":[{"name":"Dashboard.tsx","total_count":2,"children":[{"name":"Dashboard()","total_count":1,"children":[]},{"name":"DashboardProps","total_count":1,"children":[]}]},{"name":"LeavePortal.tsx","total_count":2,"children":[{"name":"LeavePortal()","total_count":1,"children":[]},{"name":"LeavePortalProps","total_count":1,"children":[]}]},{"name":"OnboardingWizard.tsx","total_count":2,"children":[{"name":"OnboardingWizard()","total_count":1,"children":[]},{"name":"OnboardingWizardProps","total_count":1,"children":[]}]},{"name":"PolicySearchPortal.tsx","total_count":1,"children":[{"name":"PolicySearchPortal()","total_count":1,"children":[]}]},{"name":"ReportsPortal.tsx","total_count":2,"children":[{"name":"ReportsPortal()","total_count":1,"children":[]},{"name":"ReportsPortalProps","total_count":1,"children":[]}]},{"name":"TimesheetPortal.tsx","total_count":2,"children":[{"name":"TimesheetPortal()","total_count":1,"children":[]},{"name":"TimesheetPortalProps","total_count":1,"children":[]}]}]},{"name":"types.ts","total_count":11,"children":[{"name":"AgentChatResponse","total_count":1,"children":[]},{"name":"CitationItem","total_count":1,"children":[]},{"name":"LeaveApplication","total_count":1,"children":[]},{"name":"LeaveBalanceItem","total_count":1,"children":[]},{"name":"LeaveBalanceSummary","total_count":1,"children":[]},{"name":"Project","total_count":1,"children":[]},{"name":"StructuredAction","total_count":1,"children":[]},{"name":"TimesheetEntry","total_count":1,"children":[]},{"name":"TimesheetReportSummary","total_count":1,"children":[]},{"name":"User","total_count":1,"children":[]},{"name":"UserRole","total_count":1,"children":[]}]},{"name":"main.tsx","total_count":1,"children":[]}]},{"name":"tsconfig.app.json","total_count":18,"children":[{"name":"allowArbitraryExtensions","total_count":1,"children":[]},{"name":"allowImportingTsExtensions","total_count":1,"children":[]},{"name":"compilerOptions","total_count":1,"children":[]},{"name":"include","total_count":1,"children":[]},{"name":"jsx","total_count":1,"children":[]},{"name":"lib","total_count":1,"children":[]},{"name":"module","total_count":1,"children":[]},{"name":"moduleDetection","total_count":1,"children":[]},{"name":"moduleResolution","total_count":1,"children":[]},{"name":"noEmit","total_count":1,"children":[]},{"name":"noFallthroughCasesInSwitch","total_count":1,"children":[]},{"name":"noUnusedLocals","total_count":1,"children":[]},{"name":"noUnusedParameters","total_count":1,"children":[]},{"name":"skipLibCheck","total_count":1,"children":[]},{"name":"target","total_count":1,"children":[]},{"name":"tsBuildInfoFile","total_count":1,"children":[]},{"name":"types","total_count":1,"children":[]},{"name":"verbatimModuleSyntax","total_count":1,"children":[]}]},{"name":"tsconfig.json","total_count":2,"children":[{"name":"files","total_count":1,"children":[]},{"name":"references","total_count":1,"children":[]}]},{"name":"tsconfig.node.json","total_count":16,"children":[{"name":"allowImportingTsExtensions","total_count":1,"children":[]},{"name":"compilerOptions","total_count":1,"children":[]},{"name":"erasableSyntaxOnly","total_count":1,"children":[]},{"name":"include","total_count":1,"children":[]},{"name":"lib","total_count":1,"children":[]},{"name":"module","total_count":1,"children":[]},{"name":"moduleDetection","total_count":1,"children":[]},{"name":"noEmit","total_count":1,"children":[]},{"name":"noFallthroughCasesInSwitch","total_count":1,"children":[]},{"name":"noUnusedLocals","total_count":1,"children":[]},{"name":"noUnusedParameters","total_count":1,"children":[]},{"name":"skipLibCheck","total_count":1,"children":[]},{"name":"target","total_count":1,"children":[]},{"name":"tsBuildInfoFile","total_count":1,"children":[]},{"name":"types","total_count":1,"children":[]},{"name":"verbatimModuleSyntax","total_count":1,"children":[]}]},{"name":"postcss.config.js","total_count":1,"children":[]},{"name":"tailwind.config.js","total_count":1,"children":[]},{"name":"vite.config.ts","total_count":1,"children":[]}]},{"name":"promptfoo","total_count":2,"children":[{"name":"promptfoo_provider.py","total_count":2,"children":[{"name":"call_api()","total_count":1,"children":[]},{"name":"run()","total_count":1,"children":[]}]}]},{"name":"tailwindcss","total_count":1,"children":[]}]};
+
+    function transformData(jsonData) {
+        // Helper function to recursively build the children structure
+        function processNode(node, parentL1StageName) {
+            let displayName = node.name;
+            // Append total_count if it exists and is not already in the name
+            if (node.total_count !== undefined) {
+                if (!/\(Total Count: \d+\)$/.test(displayName)) {
+                    displayName += ` (Total Count: ${node.total_count})`;
+                }
+            }
+
+            const newNode = { name: displayName };
+
+            if (parentL1StageName === "Root") {
+                 newNode.originalStageName = node.name;
+            } else {
+                newNode.originalStageName = parentL1StageName;
+            }
+
+            if (node.children && node.children.length > 0) {
+                const stageNameToPass = (parentL1StageName === "Root") ? node.name : parentL1StageName;
+                newNode.children = node.children.map(child => processNode(child, stageNameToPass));
+            }
+
+            return newNode;
+        }
+
+        let rootDisplayName = jsonData.name;
+        if (jsonData.total_count !== undefined && !/\(Total Count: \d+\)$/.test(rootDisplayName)) {
+            rootDisplayName += ` (Total Count: ${jsonData.total_count})`;
+        }
+
+        return {
+            name: rootDisplayName,
+            originalStageName: "Root",
+            children: (jsonData.children || []).map(child => processNode(child, "Root"))
+        };
+    }
+
+    const treeData = transformData(initialJsonData);
+
+    // Auto-populated phaseColors: every depth-1 child of the root gets
+    // a stable colour from a bigger palette so all top-level dirs are
+    // distinguishable.
+    const PALETTE = [
+      ["#3498DB","#2980B9","#AED6F1"], ["#2ECC71","#27AE60","#A9DFBF"],
+      ["#E74C3C","#C0392B","#F5B7B1"], ["#9B59B6","#8E44AD","#D7BDE2"],
+      ["#F39C12","#D68910","#FAD7A0"], ["#1ABC9C","#117864","#A2D9CE"],
+      ["#34495E","#1B2631","#ABB2B9"], ["#E67E22","#BA4A00","#F5CBA7"],
+      ["#16A085","#0E6655","#A2D9CE"], ["#D35400","#A04000","#EDBB99"],
+      ["#7F8C8D","#566573","#D5DBDB"], ["#C0392B","#7B241C","#F5B7B1"],
+      ["#2E86C1","#1B4F72","#A9CCE3"], ["#28B463","#196F3D","#A9DFBF"],
+      ["#AF7AC5","#6C3483","#D2B4DE"],
+    ];
+    const phaseColors = { "Root": { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+                          "Default": { fill: "#BDC3C7", stroke: "#95A5A6", collapsedFill: "#ECF0F1" } };
+    (initialJsonData.children || []).forEach((c, i) => {
+      const pal = PALETTE[i % PALETTE.length];
+      phaseColors[c.name] = { fill: pal[0], stroke: pal[1], collapsedFill: pal[2] };
+    });
+
+    const levelSpecificPalettes = {
+      0: { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+      2: { fill: "#6ab04c", stroke: "#508a38", collapsedFill: "#a3d391" },
+      3: { fill: "#f0932b", stroke: "#d0730f", collapsedFill: "#f6c07e" },
+      4: { fill: "#be2edd", stroke: "#a01cb3", collapsedFill: "#e08bf2" },
+      5: { fill: "#00a8ff", stroke: "#007ac1", collapsedFill: "#74d2ff" },
+      6: { fill: "#e55039", stroke: "#c23620", collapsedFill: "#f09a8d" },
+      default: { fill: "#747d8c", stroke: "#57606f", collapsedFill: "#a4b0be" }
+    };
+
+    const svgElement = d3.select("#tree-svg");
+    const initialSvgWidth = +svgElement.attr("width");
+    const initialSvgHeight = +svgElement.attr("height");
+    const margin = { top: 40, right: 120, bottom: 80, left: 450 };
+    let width = initialSvgWidth - margin.left - margin.right;
+    let height = initialSvgHeight - margin.top - margin.bottom;
+    const duration = 500;
+    let nodeCounter = 0;
+    const g = svgElement.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    const treemap = d3.tree().nodeSize([40, 0]);
+    let rootNode = d3.hierarchy(treeData, d => d.children);
+    rootNode.x0 = 0;
+    rootNode.y0 = 0;
+
+    if (rootNode.children) {
+      rootNode.children.forEach(d_child => {
+        if (d_child.children) { collapseBranch(d_child); }
+      });
+    }
+    updateTree(rootNode);
+
+    function collapseBranch(d) { if (d.children) { d._children = d.children; d._children.forEach(collapseBranch); d.children = null; } }
+    function expandBranch(d) { if (d._children) { d.children = d._children; d._children = null; } if (d.children) { d.children.forEach(expandBranch); } }
+    window.expandAll = () => { expandBranch(rootNode); updateTree(rootNode); };
+    window.collapseAll = () => { if (rootNode.children) { rootNode.children.forEach(collapseBranch); } updateTree(rootNode); };
+    window.resetView = () => { if (rootNode.children) { rootNode.children.forEach(d_child => { if (d_child.children || d_child._children) { collapseBranch(d_child); } }); } if (rootNode._children && !rootNode.children) { rootNode.children = rootNode._children; rootNode._children = null; } updateTree(rootNode); };
+
+    function updateTree(source) {
+      const treeLayoutData = treemap(rootNode);
+      let nodes = treeLayoutData.descendants();
+      let links = treeLayoutData.descendants().slice(1);
+
+      let minX = 0;
+      let maxX = 0;
+      if (nodes.length > 0) {
+        minX = d3.min(nodes, d => d.x);
+        maxX = d3.max(nodes, d => d.x);
+      }
+
+      let neededHeight = Math.max(initialSvgHeight, maxX - minX + margin.top + margin.bottom + 100);
+      svgElement.transition().duration(duration / 2).attr("height", neededHeight);
+      g.transition().duration(duration / 2).attr("transform", `translate(${margin.left},${margin.top - minX + 40})`);
+
+      nodes.forEach(d => { d.y = d.depth * 400; }); // Adjust horizontal separation if needed
+
+      const node = g.selectAll('g.node').data(nodes, d => d.id || (d.id = ++nodeCounter));
+      const nodeEnter = node.enter().append('g')
+        .attr('class', d => "node" + (d.children || d._children ? " node--internal" : " node--leaf") + (d._children ? " _children" : ""))
+        .attr('transform', d => `translate(${source.y0},${source.x0})`)
+        .on('click', (event, d) => { if (d.children) { d._children = d.children; d.children = null; } else if (d._children) { d.children = d._children; d._children = null; } updateTree(d); })
+        .style('cursor', d => (d.children || d._children) ? 'pointer' : 'default');
+
+      nodeEnter.append('circle').attr('r', 1e-6);
+
+      nodeEnter.append('text')
+        .attr('dy', '.35em')
+        .attr('x', d => d.children || d._children ? -14 : 14)
+        .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+        .style("fill-opacity", 1e-6)
+        .call(wrapText, 380);
+
+      const nodeUpdate = nodeEnter.merge(node);
+      nodeUpdate.transition().duration(duration)
+        .attr('transform', d => `translate(${d.y},${d.x})`)
+        .attr('class', d => "node" + (d.children ? " node--internal" : " node--leaf") + (d._children ? " node--internal _children" : ""));
+
+      nodeUpdate.select('circle').attr('r', 8.5)
+        .style('fill', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            if (d._children) return palette.collapsedFill;
+            if (d.children) return palette.fill;
+            return "#fff";
+        })
+        .style('stroke', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            return palette.stroke;
+        });
+      nodeUpdate.select('text').style("fill-opacity", 1).call(wrapText, 380);
+
+      const nodeExit = node.exit().transition().duration(duration).attr('transform', d => `translate(${source.y},${source.x})`).remove();
+      nodeExit.select('circle').attr('r', 1e-6);
+      nodeExit.select('text').style('fill-opacity', 1e-6);
+
+      const link = g.selectAll('path.link').data(links, d => d.id);
+      const linkEnter = link.enter().insert('path', "g").attr('class', 'link').attr('d', d => { const o = { x: source.x0, y: source.y0 }; return diagonal(o, o); });
+
+      linkEnter.merge(link).transition().duration(duration).attr('d', d => diagonal(d, d.parent))
+        .style('stroke', d => {
+            const sourceNode = d.parent;
+            if (!sourceNode) return phaseColors.Default.stroke;
+            const l1AncestorName = sourceNode.data.originalStageName;
+            const colorPalette = phaseColors[l1AncestorName] || phaseColors.Default;
+            return colorPalette.stroke;
+        });
+      link.exit().transition().duration(duration).attr('d', d => { const o = { x: source.x, y: source.y }; return diagonal(o, o); }).remove();
+      nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+    }
+
+    function diagonal(s, d) { return `M ${s.y} ${s.x} C ${(s.y + d.y) / 2} ${s.x}, ${(s.y + d.y) / 2} ${d.x}, ${d.y} ${d.x}`; }
+
+    function wrapText(textElements, maxWidth) {
+        const textPartColors = {
+            name: '#343a40',
+            count: '#0056b3'
+        };
+        const countRegex = /(\s\(Total Count: \d+\))$/;
+
+        textElements.each(function () {
+            const textD3 = d3.select(this);
+            const originalNodeText = textD3.datum().data.name;
+            const x = parseFloat(textD3.attr("x") || 0);
+            const initialDy = textD3.attr("dy");
+            const textAnchor = textD3.attr("text-anchor");
+            const lineHeight = 1.1;
+
+            textD3.text(null);
+
+            let namePart = originalNodeText;
+            let countPartText = "";
+
+            const countMatch = originalNodeText.match(countRegex);
+            if (countMatch && originalNodeText.endsWith(countMatch[0])) {
+                namePart = originalNodeText.substring(0, originalNodeText.length - countMatch[0].length).trim();
+                countPartText = countMatch[0].trim();
+            }
+
+            const tokens = [];
+            namePart.split(/\s+/).filter(Boolean).forEach(word => {
+                tokens.push({ text: word, type: 'name' });
+            });
+            if (countPartText) {
+                tokens.push({ text: countPartText, type: 'count' });
+            }
+
+            if (tokens.length === 0 && originalNodeText) {
+                tokens.push({ text: originalNodeText, type: 'name' });
+            }
+
+            let currentTspan = textD3.append("tspan").attr("x", x).attr("dy", initialDy);
+            if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+
+            let lineTokens = [];
+
+            for (let i = 0; i < tokens.length; i++) {
+                const tokenObj = tokens[i];
+
+                lineTokens.push(tokenObj);
+                currentTspan.text(lineTokens.map(t => t.text).join(" "));
+
+                if (currentTspan.node().getComputedTextLength() > maxWidth && lineTokens.length > 1) {
+                    lineTokens.pop();
+
+                    currentTspan.text(null);
+                    lineTokens.forEach((prevToken, idx) => {
+                        currentTspan.append("tspan")
+                            .text((idx > 0 ? " " : "") + prevToken.text)
+                            .style("fill", textPartColors[prevToken.type] || textPartColors.name)
+                            .style("font-weight", prevToken.type === 'count' ? "bold" : "normal");
+                    });
+
+                    lineTokens = [tokenObj];
+                    currentTspan = textD3.append("tspan").attr("x", x).attr("dy", lineHeight + "em");
+                    if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+                }
+            }
+
+            currentTspan.text(null);
+            lineTokens.forEach((token, idx) => {
+                currentTspan.append("tspan")
+                    .text((idx > 0 ? " " : "") + token.text)
+                    .style("fill", textPartColors[token.type] || textPartColors.name)
+                    .style("font-weight", token.type === 'count' ? "bold" : "normal");
+            });
+
+            if (textD3.selectAll("tspan > tspan").empty() && textD3.select("tspan").text().length === 0 && originalNodeText) {
+                let t = textD3.select("tspan");
+                let displayText = originalNodeText;
+                t.text(displayText).style("fill", textPartColors.name);
+                if (t.node() && t.node().getComputedTextLength() > maxWidth && displayText.length > 20) {
+                    let estimatedChars = Math.floor(maxWidth / (t.node().getComputedTextLength()/displayText.length) );
+                    displayText = displayText.substring(0, Math.max(0, estimatedChars - 3)) + "...";
+                    t.text(displayText);
+                }
+            }
+        });
+    }
+  </script>
+</body>
+</html>
