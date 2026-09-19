@@ -57,7 +57,7 @@ app.include_router(reports_router, prefix=settings.API_V1_STR)
 app.include_router(policy_router, prefix=settings.API_V1_STR)
 app.include_router(agents_router, prefix=settings.API_V1_STR)
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {
         "message": f"Welcome to {settings.APP_NAME}",
