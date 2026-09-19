@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { api } from '../api';
 import { User, UserRole } from '../types';
 import {
@@ -425,7 +425,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-slate-600 leading-relaxed">
                 <div className="font-display font-bold text-slate-900">Digital Personal Data Protection (DPDP) Act, 2023 Notice:</div>
                 <p>
-                  I hereby authorize Antigravity Global Technologies Pvt Ltd to process my KYC documents, employment credentials, and professional history exclusively for internal HR management, payroll calculation, and statutory compliance.
+                  I hereby authorize Intelera Technologies Pvt Ltd to process my KYC documents, employment credentials, and professional history exclusively for internal HR management, payroll calculation, and statutory compliance.
                 </p>
               </div>
 

@@ -1,4 +1,4 @@
-import re
+﻿import re
 from datetime import date, timedelta
 from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +12,7 @@ from app.agents.llm_provider import get_llm_provider
 class LeaveAgent:
     """Agent responsible for leave balance querying, leave application assistance, and rule validation."""
 
-    SYSTEM_PROMPT = """You are the Leave Management Agent for Antigravity Global Technologies.
+    SYSTEM_PROMPT = """You are the Leave Management Agent for Intelera Technologies.
 Your responsibilities:
 - Show accurate leave balances and history retrieved from the authoritative database.
 - Assist users in applying for Earned Leave (EL), Casual Leave (CL), Sick Leave (SL), or Leave Without Pay (LWP).

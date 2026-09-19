@@ -1,4 +1,4 @@
-from typing import Dict, Any, List
+﻿from typing import Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
@@ -9,7 +9,7 @@ from app.schemas.agent import StructuredAction
 class HRPolicyAgent:
     """Graph RAG Agent responsible for policy, rule, and statutory labour law questions."""
 
-    SYSTEM_PROMPT = """You are the HR Policy & Legal Knowledge Agent for Antigravity Global Technologies.
+    SYSTEM_PROMPT = """You are the HR Policy & Legal Knowledge Agent for Intelera Technologies.
 Your responsibilities:
 - Retrieve answers from the indexed policy documents and Maharashtra Labour Law knowledge graph.
 - Clearly distinguish between:

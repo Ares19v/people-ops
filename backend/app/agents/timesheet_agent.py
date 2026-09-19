@@ -1,4 +1,4 @@
-import re
+﻿import re
 from datetime import date
 from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +14,7 @@ from app.agents.llm_provider import get_llm_provider
 class TimesheetAgent:
     """Agent assisting employees with time logging, submission, and managers with reporting."""
 
-    SYSTEM_PROMPT = """You are the Timesheet Assistant for Antigravity Global Technologies.
+    SYSTEM_PROMPT = """You are the Timesheet Assistant for Intelera Technologies.
 Your responsibilities:
 - Guide employees to accurately record project tasks, daily hours, and billable status.
 - Enforce validation rules: max 16 hours/day, no duplicates, valid projects.

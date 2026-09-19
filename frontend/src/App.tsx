@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { api } from './api';
 import { User, UserRole, LeaveBalanceSummary } from './types';
 import { Navbar } from './components/Navbar';
@@ -181,7 +181,7 @@ export const App: React.FC = () => {
               <Shield className="w-4 h-4 text-blue-600" />
               <span>Google ADK Multi-Agent Architecture &bull; NVIDIA NeMo Guardrails &bull; DPDP Act 2023 Compliant</span>
             </div>
-            <div>Antigravity Global Technologies Pvt Ltd &bull; Maharashtra Shops & Establishments 2017</div>
+            <div>Intelera Technologies Pvt Ltd &bull; Maharashtra Shops & Establishments 2017</div>
           </div>
         </footer>
       </div>
