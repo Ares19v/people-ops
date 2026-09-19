@@ -23,8 +23,8 @@ class GuardrailsManager:
 
     # Unauthorized access probes (BOLA / Privacy)
     UNAUTHORIZED_PROBE_PATTERNS = [
-        re.compile(r"(salary|compensation|paycheck)\s+of\s+(other|another|all|colleague)", re.IGNORECASE),
-        re.compile(r"(aadhaar|pan)(\s+card)?\s+of\s+(other|another|colleague)", re.IGNORECASE),
+        re.compile(r"(salary|compensation|paycheck)(\s+\w+)?\s+of\s+", re.IGNORECASE),
+        re.compile(r"(aadhaar|pan)(\s+\w+)?\s+of\s+", re.IGNORECASE),
         re.compile(r"bypass\s+(manager|approval|authorization)", re.IGNORECASE),
     ]
 
