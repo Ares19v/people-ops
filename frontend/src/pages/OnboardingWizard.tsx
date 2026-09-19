@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { api } from '../api';
 import { User, UserRole } from '../types';
 import {
@@ -16,7 +16,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
 
   // Step 1 Details
   const [fullName, setFullName] = useState('Ananya Sen');
-  const [email, setEmail] = useState('ananya.sen@antigravity.corp');
+  const [email, setEmail] = useState('ananya.sen@intelera.corp');
   const [department, setDepartment] = useState('Engineering');
   const [designation, setDesignation] = useState('Full-Stack Engineer');
   const [dob, setDob] = useState('1998-05-20');

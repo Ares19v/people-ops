@@ -2,7 +2,7 @@
 metadata:
   name: "Leave Management Agent"
   version: "1.4.0"
-  owner: "Devansh Tyagi <devansh@antigravity.corp>"
+  owner: "Devansh Tyagi <devansh@intelera.corp>"
   last_updated: "2026-03-15"
   change_notes: "Enforced deterministic backend service contracts and JSON action output."
 ---

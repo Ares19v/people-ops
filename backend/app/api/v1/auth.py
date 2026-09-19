@@ -1,4 +1,4 @@
-from datetime import timedelta
+﻿from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,10 +58,10 @@ async def mock_login(
     if not user:
         # Create default user for this role on the fly if seed not run
         email_map = {
-            UserRole.EMPLOYEE: "employee@antigravity.corp",
-            UserRole.HR_ASSOCIATE: "associate@antigravity.corp",
-            UserRole.HR_MANAGER: "manager@antigravity.corp",
-            UserRole.ADMIN: "admin@antigravity.corp",
+            UserRole.EMPLOYEE: "employee@intelera.corp",
+            UserRole.HR_ASSOCIATE: "associate@intelera.corp",
+            UserRole.HR_MANAGER: "manager@intelera.corp",
+            UserRole.ADMIN: "admin@intelera.corp",
         }
         name_map = {
             UserRole.EMPLOYEE: "Aarav Sharma (Staff Engineer)",
@@ -70,7 +70,7 @@ async def mock_login(
             UserRole.ADMIN: "Devansh Tyagi (System Admin)",
         }
         user = User(
-            email=payload.email or email_map.get(payload.role, "user@antigravity.corp"),
+            email=payload.email or email_map.get(payload.role, "user@intelera.corp"),
             full_name=name_map.get(payload.role, "Test User"),
             role=payload.role,
             department="Human Resources" if payload.role != UserRole.EMPLOYEE else "Engineering",

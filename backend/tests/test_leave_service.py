@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from datetime import date, timedelta
 from app.core.database import AsyncSessionLocal
 from app.models.user import User, UserRole
@@ -11,7 +11,7 @@ from sqlalchemy.future import select
 async def test_leave_application_and_overlap_validation():
     async with AsyncSessionLocal() as db:
         # Fetch seeded employee
-        res = await db.execute(select(User).filter(User.email == "employee@antigravity.corp"))
+        res = await db.execute(select(User).filter(User.email == "employee@intelera.corp"))
         employee = res.scalars().first()
         assert employee is not None
 
@@ -42,7 +42,7 @@ async def test_leave_application_and_overlap_validation():
 @pytest.mark.asyncio
 async def test_invalid_date_range():
     async with AsyncSessionLocal() as db:
-        res = await db.execute(select(User).filter(User.email == "employee@antigravity.corp"))
+        res = await db.execute(select(User).filter(User.email == "employee@intelera.corp"))
         employee = res.scalars().first()
 
         req = LeaveApplyRequest(

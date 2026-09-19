@@ -2,7 +2,7 @@
 metadata:
   name: "HR Policy Graph RAG Agent"
   version: "2.1.0"
-  owner: "Devansh Tyagi <devansh@antigravity.corp>"
+  owner: "Devansh Tyagi <devansh@intelera.corp>"
   last_updated: "2026-03-15"
   change_notes: "Enhanced with Maharashtra Labour Law statutory citations and legal disclaimer."
 ---

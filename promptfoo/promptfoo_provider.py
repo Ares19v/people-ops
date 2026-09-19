@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import os
 import sys
 
@@ -17,7 +17,7 @@ def call_api(prompt, options, context):
         async with AsyncSessionLocal() as db:
             mock_user = User(
                 id="eval-user-id",
-                email="eval@antigravity.corp",
+                email="eval@intelera.corp",
                 full_name="Evaluation Evaluator",
                 role=UserRole.EMPLOYEE,
                 department="QA",

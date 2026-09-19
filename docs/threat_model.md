@@ -1,7 +1,7 @@
-# Threat Model & Security Compliance Analysis
+﻿# Threat Model & Security Compliance Analysis
 
 ## 1. Scope & Standards
-This threat model assesses the security and privacy architecture of the Antigravity Multi-Agent HR Platform against:
+This threat model assesses the security and privacy architecture of the Intelera Multi-Agent HR Platform against:
 - **OWASP Top 10 for Large Language Model Applications (2025/2026)**
 - **OWASP API Security Top 10**
 - **Digital Personal Data Protection (DPDP) Act, 2023 (India)**

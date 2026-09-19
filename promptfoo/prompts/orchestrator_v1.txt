@@ -2,7 +2,7 @@
 metadata:
   name: "Google ADK Root Orchestrator"
   version: "1.2.0"
-  owner: "Devansh Tyagi <devansh@antigravity.corp>"
+  owner: "Devansh Tyagi <devansh@intelera.corp>"
   last_updated: "2026-03-15"
   change_notes: "Added strict intent isolation and NeMo Guardrail hook."
 ---

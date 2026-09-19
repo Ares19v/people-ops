@@ -1,4 +1,4 @@
-# Production HR Multi-Agent Platform (Google ADK & NVIDIA NeMo Guardrails)
+﻿# Production HR Multi-Agent Platform (Google ADK & NVIDIA NeMo Guardrails)
 
 A production-oriented, enterprise Human Resources platform featuring a hierarchical multi-agent architecture built with **Google Agent Development Kit (Google ADK)**, **FastAPI**, **React 18 + TypeScript (Vite)**, and a dual-boundary defense powered by **NVIDIA NeMo Guardrails** (`nemoguardrails==0.24.1`).
 
@@ -168,7 +168,7 @@ Detailed threat modeling documentation is available at [docs/threat_model.md](do
 
 | Persona | Role | Default Email | Capabilities |
 | :--- | :--- | :--- | :--- |
-| **Aarav Sharma** | `EMPLOYEE` | `employee@antigravity.corp` | View personal balances, apply for leave, submit daily timesheet entries. |
-| **Priya Patel** | `HR_ASSOCIATE` | `associate@antigravity.corp` | Initiate employee onboarding, review resume extraction, upload KYC. |
-| **Vikram Malhotra**| `HR_MANAGER` | `manager@antigravity.corp` | Approve/reject leaves, review team timesheets, download CSV reports. |
-| **Devansh Tyagi** | `ADMIN` | `admin@antigravity.corp` | Full platform access, security configurations, policy approvals. |
+| **Aarav Sharma** | `EMPLOYEE` | `employee@intelera.corp` | View personal balances, apply for leave, submit daily timesheet entries. |
+| **Priya Patel** | `HR_ASSOCIATE` | `associate@intelera.corp` | Initiate employee onboarding, review resume extraction, upload KYC. |
+| **Vikram Malhotra**| `HR_MANAGER` | `manager@intelera.corp` | Approve/reject leaves, review team timesheets, download CSV reports. |
+| **Devansh Tyagi** | `ADMIN` | `admin@intelera.corp` | Full platform access, security configurations, policy approvals. |

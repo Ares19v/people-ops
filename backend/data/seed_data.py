@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 from datetime import date, timedelta
 from sqlalchemy.future import select
 
@@ -11,13 +11,13 @@ from app.models.timesheet import Project, TimesheetEntry, TimesheetStatus
 async def seed_initial_data():
     async with AsyncSessionLocal() as db:
         # 1. Seed Users if not existing
-        res = await db.execute(select(User).filter(User.email == "admin@antigravity.corp"))
+        res = await db.execute(select(User).filter(User.email == "admin@intelera.corp"))
         if res.scalars().first():
             return # Already seeded
 
         # Admin
         admin = User(
-            email="admin@antigravity.corp",
+            email="admin@intelera.corp",
             hashed_password=get_password_hash("Admin@12345"),
             full_name="Devansh Tyagi",
             role=UserRole.ADMIN,
@@ -29,7 +29,7 @@ async def seed_initial_data():
 
         # HR Manager
         manager = User(
-            email="manager@antigravity.corp",
+            email="manager@intelera.corp",
             hashed_password=get_password_hash("Manager@12345"),
             full_name="Vikram Malhotra",
             role=UserRole.HR_MANAGER,
@@ -42,7 +42,7 @@ async def seed_initial_data():
 
         # HR Associate
         associate = User(
-            email="associate@antigravity.corp",
+            email="associate@intelera.corp",
             hashed_password=get_password_hash("Associate@12345"),
             full_name="Priya Patel",
             role=UserRole.HR_ASSOCIATE,
@@ -55,7 +55,7 @@ async def seed_initial_data():
 
         # Employee
         employee = User(
-            email="employee@antigravity.corp",
+            email="employee@intelera.corp",
             hashed_password=get_password_hash("Employee@12345"),
             full_name="Aarav Sharma",
             role=UserRole.EMPLOYEE,
@@ -81,7 +81,7 @@ async def seed_initial_data():
 
         # 2. Seed Projects
         p1 = Project(name="Core Banking Modernization", code="PROJ-BNK-01", client_name="HDFC Financial")
-        p2 = Project(name="AI Observability & Guardrails Platform", code="PROJ-AI-02", client_name="Antigravity Internal")
+        p2 = Project(name="AI Observability & Guardrails Platform", code="PROJ-AI-02", client_name="Intelera Internal")
         p3 = Project(name="Enterprise HR Workflow", code="PROJ-HR-03", client_name="Internal Corporate")
         db.add_all([p1, p2, p3])
         await db.flush()
