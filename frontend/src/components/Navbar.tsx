@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { User, UserRole } from '../types';
-import { Bot, Calendar, Clock, FileText, LayoutDashboard, UserPlus, Shield, Sparkles, Maximize2, Minimize2 } from 'lucide-react';
+import { Bot, Maximize2, Minimize2, ChevronDown, Check } from 'lucide-react';
 
 interface NavbarProps {
   currentUser: User | null;
@@ -25,6 +25,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   isFullscreen,
   onToggleFullscreen,
 }) => {
+  const [roleOpen, setRoleOpen] = useState(false);
+  const roleRef = useRef<HTMLDivElement>(null);
+
   const roles: { label: string; value: UserRole }[] = [
     { label: 'Employee', value: 'EMPLOYEE' },
     { label: 'HR Associate', value: 'HR_ASSOCIATE' },
@@ -40,6 +43,19 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'policy', label: 'HR Policy RAG' },
     ...(currentRole !== 'EMPLOYEE' ? [{ id: 'onboarding', label: 'Onboarding' }] : []),
   ];
+
+  const currentRoleLabel = roles.find((r) => r.value === currentRole)?.label ?? 'Employee';
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (roleRef.current && !roleRef.current.contains(e.target as Node)) {
+        setRoleOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   return (
     <nav className="olixer-nav">
@@ -79,28 +95,46 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           className="btn-pill-outline hidden sm:inline-flex outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
           onClick={onToggleFullscreen}
-          title={isFullscreen ? "Switch to Framed Card View" : "Switch to Full Screen (Default)"}
+          title={isFullscreen ? 'Switch to Framed Card View' : 'Switch to Full Screen (Default)'}
         >
           {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-          <span>{isFullscreen ? "Framed View" : "Full Screen"}</span>
+          <span>{isFullscreen ? 'Framed View' : 'Full Screen'}</span>
         </button>
 
-        {/* Role Switcher Pill */}
-        <div className="relative inline-flex items-center">
-          <select
-            value={currentRole}
-            onChange={(e) => onRoleSwitch(e.target.value as UserRole)}
-            className="btn-pill-outline appearance-none pr-8 cursor-pointer bg-white text-xs font-semibold outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+        {/* Custom Role Switcher */}
+        <div className="role-switcher" ref={roleRef}>
+          <button
+            className="role-switcher-trigger outline-none focus:outline-none focus-visible:outline-none"
+            onClick={() => setRoleOpen((prev) => !prev)}
           >
-            {roles.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
-            ▼
-          </div>
+            <span>{currentRoleLabel}</span>
+            <ChevronDown
+              size={13}
+              className="role-switcher-chevron"
+              style={{ transform: roleOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+          </button>
+
+          {roleOpen && (
+            <div className="role-switcher-dropdown">
+              {roles.map((r) => {
+                const isSelected = r.value === currentRole;
+                return (
+                  <button
+                    key={r.value}
+                    className={`role-switcher-option ${isSelected ? 'selected' : ''}`}
+                    onClick={() => {
+                      onRoleSwitch(r.value);
+                      setRoleOpen(false);
+                    }}
+                  >
+                    <span>{r.label}</span>
+                    {isSelected && <Check size={13} className="text-blue-600 ml-auto shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Ask HR AI Deep Charcoal Pill Button */}
