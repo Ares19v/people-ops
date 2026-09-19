@@ -34,7 +34,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <strong>orchestrated by autonomous agents.</strong>
         </h1>
         <p className="hero-subtext">
-          Welcome back, <span className="font-semibold text-slate-900">{currentUser?.full_name || 'Team Member'}</span> ({currentRole}).
           Enforcing Maharashtra Shops & Establishments Act 2017 rules, automated leave ledgers, and DPDP-compliant PII redaction.
         </p>
 
