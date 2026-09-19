@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from './api';
 import { User, UserRole, LeaveBalanceSummary } from './types';
 import { Navbar } from './components/Navbar';
@@ -175,7 +175,7 @@ export const App: React.FC = () => {
         />
 
         {/* Footer */}
-        <footer className="app-footer text-xs text-slate-500 mt-auto">
+        <footer className="app-footer text-xs text-slate-500">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-blue-600" />
