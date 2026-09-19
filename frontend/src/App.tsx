@@ -96,7 +96,7 @@ export const App: React.FC = () => {
         />
 
         {/* Mobile Navigation Pills */}
-        <div className="flex lg:hidden overflow-x-auto gap-2 pb-3 mb-6 border-b border-slate-100">
+        <div className="flex md:hidden overflow-x-auto gap-2 pb-3 mb-6 border-b border-slate-100">
           {[
             { id: 'dashboard', label: 'Dashboard' },
             { id: 'leaves', label: 'Leaves' },

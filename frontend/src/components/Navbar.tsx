@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Center Nav Links with Active Indicator Dot */}
-      <div className="hidden lg:flex nav-center-menu">
+      <div className="hidden md:flex nav-center-menu">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
