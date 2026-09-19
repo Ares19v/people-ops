@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Bot, ShieldCheck, ShieldAlert, Cpu, ArrowRight, Zap,
-  FileText, Calendar, Clock, Sparkles, CheckCircle2, ChevronRight
-} from 'lucide-react';
+import { Cpu, FileText, Calendar, Clock } from 'lucide-react';
 
 interface AgentFlowCircuitProps {
   onSelectQuery?: (query: string) => void;
@@ -93,17 +90,7 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
           </p>
         </div>
 
-        {/* Status Indicators Pill Group */}
-        <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
-          <span className="badge-statutory-green text-[11px] font-medium py-1 px-2.5">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Colang 2.0 Rails Active</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
-            <Zap className="w-3 h-3 text-blue-600" />
-            <span>Routing Latency: 42ms</span>
-          </span>
-        </div>
+        {/* Status Indicators removed */}
       </div>
 
       {/* High-End 3-Stage Circuit Architecture */}
@@ -179,30 +166,6 @@ export const AgentFlowCircuit: React.FC<AgentFlowCircuitProps> = ({ onSelectQuer
               <h4 className="font-display font-bold text-xs tracking-tight text-white">
                 Root Orchestrator
               </h4>
-              <span className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">
-                Google ADK Kernel
-              </span>
-            </div>
-
-            {/* Live Security & Routing Metrics */}
-            <div className="w-full my-3.5 pt-3 border-t border-slate-800/90 space-y-2 text-[10px]">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">NeMo Rail:</span>
-                <span className="font-bold text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-2.5 h-2.5" />
-                  PASSED
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">Active Route:</span>
-                <span className="font-bold text-blue-300 font-mono">
-                  {current.targetAgent.split(' ')[0]} Agent
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400">DPDP Privacy:</span>
-                <span className="font-bold text-emerald-400">SCRUBBED</span>
-              </div>
             </div>
           </div>
         </div>

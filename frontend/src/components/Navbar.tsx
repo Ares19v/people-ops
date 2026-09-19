@@ -66,9 +66,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
         <div>
           <div className="brand-title">
-            PeopleOps<span style={{ color: 'var(--blue-brand)' }}>.adk</span>
+            PeopleOps
           </div>
-          <div className="brand-sub">Google ADK &bull; NeMo Guardrails</div>
         </div>
       </div>
 
