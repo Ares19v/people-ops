@@ -86,6 +86,7 @@ body.is-fullscreen {
 #root {
   width: 100%;
   max-width: 1400px;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -94,10 +95,13 @@ body.is-fullscreen {
 .floating-canvas {
   width: 100%;
   max-width: 1400px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-card);
   border-radius: var(--r-canvas);
   box-shadow: var(--shadow-canvas);
-  padding: 28px 40px 48px;
+  padding: 28px 40px 24px;
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.95);
@@ -108,12 +112,15 @@ body.is-fullscreen {
 .floating-canvas.is-fullscreen {
   width: 100%;
   max-width: 1400px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   border-radius: 0;
   border: none;
   box-shadow: none;
-  min-height: 100vh;
-  padding: 24px 44px 48px;
+  padding: 24px 44px 24px;
   margin: 0 auto;
+  overflow: visible;
 }
 
 /* Subtle Geometric Dot Grid Backdrop */
@@ -150,6 +157,23 @@ body.is-fullscreen {
   position: relative;
   z-index: 1;
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Sticky Bottom Footer Bar ── */
+.app-footer {
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding-top: 18px;
+  padding-bottom: 14px;
+  border-top: 1px solid rgba(226, 232, 240, 0.85);
 }
 
 /* ── Top Navigation Bar (Olixer Nav) ── */

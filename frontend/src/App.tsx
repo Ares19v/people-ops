@@ -120,7 +120,7 @@ export const App: React.FC = () => {
         </div>
 
         {/* Main Content Area */}
-        <main className="w-full">
+        <main className="w-full flex-1">
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[420px] text-slate-500">
               <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
@@ -175,7 +175,7 @@ export const App: React.FC = () => {
         />
 
         {/* Footer */}
-        <footer className="mt-16 pt-6 border-t border-slate-200/70 text-xs text-slate-500">
+        <footer className="app-footer text-xs text-slate-500 mt-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-blue-600" />
