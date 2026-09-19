@@ -16,6 +16,15 @@
   <b>A production-grade, statutory-compliant Human Resources multi-agent system combining Google Agent Development Kit (ADK) orchestration, NVIDIA NeMo Guardrails dual-boundary safety, and Graph RAG over Indian labour law.</b>
 </p>
 
+<p align="center">
+  <a href="https://people-ops-intel.vercel.app/" target="_blank">
+    <img src="https://img.shields.io/badge/🚀_Live_Demo-people--ops--intel.vercel.app-2563eb?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
+  </a>
+  <a href="https://people-ops-api.onrender.com/docs" target="_blank">
+    <img src="https://img.shields.io/badge/📡_API_Docs-people--ops--api.onrender.com-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="API Docs" />
+  </a>
+</p>
+
 </div>
 
 ---
