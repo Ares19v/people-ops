@@ -284,7 +284,7 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
       {/* Apply Leave Modal */}
       {showApplyModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="card-olixer max-w-lg w-full bg-white p-6 sm:p-8 shadow-2xl relative">
+          <div className="card-olixer modal-animate max-w-lg w-full bg-white p-6 sm:p-8 shadow-2xl relative">
             <button
               onClick={() => setShowApplyModal(false)}
               className="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"

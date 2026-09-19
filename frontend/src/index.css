@@ -516,3 +516,214 @@ body.is-fullscreen {
   margin: 0 auto;
 }
 
+
+/* =========================================================
+   ── Subtle Global Animations ── Smooth, high-end micro-interactions
+   ========================================================= */
+
+/* ── 1. Page content fade + lift in on every tab switch ── */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main > * {
+  animation: pageEnter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── 2. Hero title fade-up with slight delay ── */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-main-title {
+  animation: fadeUp 0.44s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+
+.hero-subtext {
+  animation: fadeUp 0.44s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.hero-wrapper .mt-6 {
+  animation: fadeUp 0.44s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+/* ── 3. Card hover lift — consistent, smooth ── */
+.card-olixer {
+  will-change: transform, box-shadow;
+}
+
+.card-olixer:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 44px -8px rgba(15, 23, 42, 0.09), 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+/* ── 4. Pill button press + hover feedback ── */
+.btn-pill-dark {
+  transition: background 0.18s ease, transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
+}
+
+.btn-pill-dark:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(11, 19, 41, 0.28);
+}
+
+.btn-pill-dark:active {
+  transform: translateY(0px) scale(0.97);
+  transition-duration: 0.08s;
+}
+
+.btn-pill-outline {
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.15s ease;
+}
+
+.btn-pill-outline:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+}
+
+.btn-pill-outline:active {
+  transform: translateY(0px) scale(0.97);
+  transition-duration: 0.08s;
+}
+
+/* ── 5. Nav link hover — smooth underline slide ── */
+.nav-item-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 1.5px;
+  background: var(--blue-brand);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nav-item-link:hover::after {
+  width: 80%;
+}
+
+.nav-item-link.active::after {
+  width: 0;
+}
+
+/* ── 6. Brand block subtle scale on click ── */
+.brand-block {
+  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brand-block:hover {
+  transform: scale(1.02);
+}
+
+.brand-block:active {
+  transform: scale(0.98);
+}
+
+/* ── 7. Entity dossier (onboarding cards) ── */
+.entity-dossier {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+  will-change: transform;
+}
+
+/* ── 8. Badge subtle pop in on load ── */
+@keyframes badgePop {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.badge-statutory-green,
+.badge-statutory-amber,
+.badge-statutory-red {
+  animation: badgePop 0.3s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+
+/* ── 9. Circuit active card transition ── */
+.circuit-card-active,
+.circuit-target-active {
+  transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* ── 10. Footer slide-in from bottom ── */
+@keyframes footerRise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-footer {
+  animation: footerRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+/* ── 11. Modal / drawer entrance ── */
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Applied via Tailwind in modal wrappers — class hook */
+.modal-animate {
+  animation: modalEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── 12. Select / input focus glow ── */
+input:focus,
+select:focus,
+textarea:focus {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+/* ── 13. Table row hover ── */
+tr {
+  transition: background 0.14s ease;
+}
+
+/* ── 14. Spin keyframe (reuse for loading) ── */
+@keyframes smoothSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── 15. Subtle ambient background drift on viewport ── */
+@keyframes bgDrift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body {
+  background-size: 200% 200%;
+  animation: bgDrift 24s ease infinite;
+}
