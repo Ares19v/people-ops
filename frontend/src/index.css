@@ -83,11 +83,17 @@ body.is-fullscreen {
   background: var(--bg-card);
 }
 
+#root {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── Floating Canvas Workspace Container ── */
 .floating-canvas {
   width: 100%;
   max-width: 1400px;
-  min-width: 950px;
   background: var(--bg-card);
   border-radius: var(--r-canvas);
   box-shadow: var(--shadow-canvas);
@@ -96,23 +102,18 @@ body.is-fullscreen {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.95);
   transition: all 0.25s ease;
+  margin: 0 auto;
 }
 
 .floating-canvas.is-fullscreen {
-  max-width: 100%;
-  min-width: 950px;
+  width: 100%;
+  max-width: 1400px;
   border-radius: 0;
   border: none;
   box-shadow: none;
   min-height: 100vh;
   padding: 24px 44px 48px;
-}
-
-@media (max-width: 950px) {
-  .floating-canvas,
-  .floating-canvas.is-fullscreen {
-    min-width: 100%;
-  }
+  margin: 0 auto;
 }
 
 /* Subtle Geometric Dot Grid Backdrop */
@@ -149,13 +150,6 @@ body.is-fullscreen {
   position: relative;
   z-index: 1;
   width: 100%;
-  min-width: 950px;
-}
-
-@media (max-width: 950px) {
-  .canvas-content {
-    min-width: 100%;
-  }
 }
 
 /* ── Top Navigation Bar (Olixer Nav) ── */
@@ -210,7 +204,7 @@ body.is-fullscreen {
 .nav-center-menu {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 18px;
   flex-shrink: 0;
 }
 
