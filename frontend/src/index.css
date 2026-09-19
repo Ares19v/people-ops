@@ -63,6 +63,11 @@
   --font-mono:     'JetBrains Mono', monospace;
 }
 
+html {
+  width: 100%;
+  min-height: 100vh;
+}
+
 body {
   font-family: var(--font-body);
   background: linear-gradient(135deg, var(--bg-viewport) 0%, var(--bg-viewport-2) 100%);
@@ -75,12 +80,34 @@ body {
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
+  width: 100%;
   transition: padding 0.25s ease;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body:not(.is-fullscreen) #root {
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: center;
 }
 
 body.is-fullscreen {
   padding: 0;
   background: var(--bg-card);
+  display: block;
+  width: 100%;
+}
+
+body.is-fullscreen #root {
+  max-width: 100%;
+  width: 100%;
+  align-items: stretch;
 }
 
 /* ── Floating Canvas Workspace Container ── */
@@ -95,15 +122,19 @@ body.is-fullscreen {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.95);
   transition: all 0.25s ease;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .floating-canvas.is-fullscreen {
-  max-width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   border-radius: 0;
   border: none;
   box-shadow: none;
   min-height: 100vh;
   padding: 24px 44px 48px;
+  box-sizing: border-box;
 }
 
 /* Subtle Geometric Dot Grid Backdrop */
@@ -139,6 +170,10 @@ body.is-fullscreen {
 .canvas-content {
   position: relative;
   z-index: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /* ── Top Navigation Bar (Olixer Nav) ── */
@@ -146,6 +181,7 @@ body.is-fullscreen {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding-bottom: 22px;
   border-bottom: 1px solid var(--border-light);
   margin-bottom: 32px;
@@ -158,6 +194,7 @@ body.is-fullscreen {
   align-items: center;
   gap: 12px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .brand-icon-box {
@@ -192,6 +229,7 @@ body.is-fullscreen {
   display: flex;
   align-items: center;
   gap: 24px;
+  flex-shrink: 0;
 }
 
 .nav-item-link {
@@ -242,6 +280,7 @@ body.is-fullscreen {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 /* ── Pill Buttons ── */
