@@ -34,13 +34,21 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
     loadData();
   }, [selectedProjectId, startDate, endDate, currentRole]);
 
-  const handleDownloadCSV = () => {
-    const filters: Record<string, any> = {};
-    if (selectedProjectId) filters.project_id = selectedProjectId;
-    if (startDate) filters.start_date = startDate;
-    if (endDate) filters.end_date = endDate;
-    const url = api.getTimesheetCSVUrl(filters);
-    window.open(url, '_blank');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadCSV = async () => {
+    setIsExporting(true);
+    try {
+      const filters: Record<string, any> = {};
+      if (selectedProjectId) filters.project_id = selectedProjectId;
+      if (startDate) filters.start_date = startDate;
+      if (endDate) filters.end_date = endDate;
+      await api.downloadTimesheetCSV(filters);
+    } catch (err: any) {
+      alert(`Export failed: ${err.response?.data?.detail || err.message || 'Unknown error'}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const overtimeHours = report?.entries ? report.entries.reduce((acc, e) => acc + Math.max(0, e.hours - 9), 0) : 0;
@@ -59,10 +67,11 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
         </div>
         <button
           onClick={handleDownloadCSV}
-          className="btn-pill-dark self-start sm:self-auto"
+          disabled={isExporting}
+          className="btn-pill-dark self-start sm:self-auto disabled:opacity-60 cursor-pointer"
         >
-          <Download className="w-4 h-4" />
-          <span>Export Timesheets (CSV)</span>
+          <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+          <span>{isExporting ? 'Generating CSV...' : 'Export Timesheets (CSV)'}</span>
         </button>
       </div>
 

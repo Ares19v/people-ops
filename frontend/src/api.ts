@@ -94,6 +94,21 @@ export const api = {
     const params = new URLSearchParams(filters).toString();
     return `${API_BASE_URL}/reports/timesheets/csv?${params}`;
   },
+  downloadTimesheetCSV: async (filters?: Record<string, any>) => {
+    const res = await apiClient.get('/reports/timesheets/csv', {
+      params: filters,
+      responseType: 'blob',
+    });
+    const blob = new Blob([res.data], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `timesheets_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
 
   // Policy Graph RAG
   searchPolicies: async (query: string) => {
