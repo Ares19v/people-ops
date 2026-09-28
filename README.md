@@ -1,31 +1,47 @@
-# PeopleOps: Enterprise HR Multi-Agent Platform
-
 <div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Google ADK](https://img.shields.io/badge/Google_ADK-Multi--Agent-4285F4?style=for-the-badge&logo=google&logoColor=white)
-![NVIDIA NeMo](https://img.shields.io/badge/NVIDIA_NeMo-Guardrails-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
-![DPDP Act 2023](https://img.shields.io/badge/DPDP_Act_2023-Compliant-success?style=for-the-badge)
-![Maharashtra Act 2017](https://img.shields.io/badge/Maharashtra_Act_2017-Statutory_Audited-blue?style=for-the-badge)
+# 🏢 PeopleOps
+### Enterprise HR Multi-Agent Platform
 
 <p align="center">
-  <b>A production-grade, statutory-compliant Human Resources multi-agent system combining Google Agent Development Kit (ADK) orchestration, NVIDIA NeMo Guardrails dual-boundary safety, and Graph RAG over Indian labour law.</b>
+  <b>Autonomous • Statutory-Compliant • Dual-Boundary Guardrailed</b>
+  <br>
+  <i>Built with Google Agent Development Kit (ADK), NVIDIA NeMo Guardrails, and Policy Graph RAG</i>
 </p>
 
+<!-- Live Action Buttons -->
 <p align="center">
   <a href="https://people-ops-intel.vercel.app/" target="_blank">
-    <img src="https://img.shields.io/badge/🚀_Live_Demo-people--ops--intel.vercel.app-2563eb?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
+    <img src="https://img.shields.io/badge/▶_Launch_Live_App-people--ops--intel.vercel.app-0070F3?style=for-the-badge&logo=vercel&logoColor=white" height="34" alt="Launch Live App" />
   </a>
+  &nbsp;&nbsp;
   <a href="https://people-ops-api.onrender.com/docs" target="_blank">
-    <img src="https://img.shields.io/badge/📡_API_Docs-people--ops--api.onrender.com-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="API Docs" />
+    <img src="https://img.shields.io/badge/📡_API_Swagger_Docs-people--ops--api.onrender.com-009688?style=for-the-badge&logo=fastapi&logoColor=white" height="34" alt="API Documentation" />
   </a>
+</p>
+
+<!-- Modern Minimalist Tech Badges -->
+<p align="center">
+  <img src="https://img.shields.io/badge/Google_ADK-Multi--Agent_Fleet-4285F4?style=flat-square&logo=google&logoColor=white" alt="Google ADK" />
+  <img src="https://img.shields.io/badge/NVIDIA_NeMo-Dual--Boundary_Rails-76B900?style=flat-square&logo=nvidia&logoColor=white" alt="NVIDIA NeMo" />
+  <img src="https://img.shields.io/badge/DPDP_Act_2023-PII_Redacted-10B981?style=flat-square&logo=shield&logoColor=white" alt="DPDP Act" />
+  <img src="https://img.shields.io/badge/Maharashtra_Act_2017-Statutory_Audited-6366F1?style=flat-square&logo=balance-scale&logoColor=white" alt="Labour Law" />
+  <br />
+  <img src="https://img.shields.io/badge/Python_3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript_5.5-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Tests-15%2F15_Passing-success?style=flat-square" alt="Tests" />
 </p>
 
 </div>
+
+### ⚡ Architectural Stack & Capabilities
+
+| 🤖 AI & Multi-Agent | 🛡️ Safety & Compliance | ⚙️ Backend & ACID Ledger | 🎨 Modern Frontend |
+| :--- | :--- | :--- | :--- |
+| • **Google ADK** (Hierarchical Fleet)<br>• **Root Orchestrator Agent**<br>• **Policy Graph RAG Agent**<br>• **Leave & Timesheet Agents** | • **NVIDIA NeMo Guardrails**<br>• **OWASP LLM01 / API1 Defense**<br>• **DPDP Act 2023** (PII Scrubbed)<br>• **MH Labour Law 2017 Rules** | • **FastAPI** (Python 3.11 ASGI)<br>• **SQLAlchemy + ACID Ledger**<br>• **Pydantic v2 Contracts**<br>• **JWT / Role-Based Access Control** | • **React 19 + TypeScript 5.5**<br>• **Vite Production Bundler**<br>• **Tailwind CSS + Olixer Theme**<br>• **Lucide Vector Micro-Icons** |
 
 ---
 
