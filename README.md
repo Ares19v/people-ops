@@ -9,8 +9,12 @@
 [![NVIDIA NeMo](https://img.shields.io/badge/NVIDIA%20NeMo-Guardrails-8E24AA?logo=nvidia&logoColor=white)](https://github.com/NVIDIA/NeMo-Guardrails)
 [![Maharashtra Act](https://img.shields.io/badge/Maharashtra%20Act-2017-E65100)](https://www.indiacode.nic.in)
 [![DPDP](https://img.shields.io/badge/DPDP-Compliant-689F38)](https://www.meity.gov.in)
+[![HIPAA Safe Harbor](https://img.shields.io/badge/HIPAA-Safe%20Harbor%2018-red)](https://hhs.gov)
+[![LangGraph](https://img.shields.io/badge/LangGraph-1.2-blue)](https://langchain.com)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-Hybrid%20RAG-orange)](https://trychroma.com)
+[![Langfuse](https://img.shields.io/badge/Observability-LangSmith%20%2B%20Langfuse-purple)](https://cloud.langfuse.com)
 
-> **PeopleOps** is a production-grade, autonomous enterprise HR platform engineered to automate complex workflows using a hierarchical multi-agent fleet (Google ADK), dual-boundary safety defenses (NVIDIA NeMo Guardrails), and Graph RAG over statutory Indian labour law (Maharashtra Shops & Establishments Act 2017 & DPDP Act 2023).
+> **PeopleOps** is a production-grade, autonomous enterprise HR & Occupational Health platform engineered to automate complex workflows using a stateful multi-agent fleet (LangGraph & Google ADK), dual-boundary safety defenses (NVIDIA NeMo Guardrails & Emergency Medical Triage Rails), and Advanced Hybrid & Graph RAG over statutory labour law, health benefits, and privacy regulations (Maharashtra Act 2017, DPDP Act 2023 & HIPAA Safe Harbor 18).
 >
 > 🚀 **Live Demo:** [people-ops-intel.vercel.app](https://people-ops-intel.vercel.app/) &nbsp;•&nbsp; 📡 **API Docs:** [people-ops-api.onrender.com/docs](https://people-ops-api.onrender.com/docs)
 
@@ -306,10 +310,43 @@ people-ops/
 
 ---
 
+## 🏥 Advanced Curriculum Features: Health Enterprise & LangGraph
+
+PeopleOps incorporates an enterprise **Occupational Health & Medical Benefits** vertical alongside advanced AI engineering patterns:
+
+### 1. HIPAA Safe Harbor 18 & DPDP Compliance Engine
+- **Automated Entity Identification**: Detects all 18 HIPAA Safe Harbor identifiers (MRNs, Health Plan IDs, Patient/Employee names, Admission/Sick dates, SSNs) and Indian DPDP identifiers (Aadhaar, PAN).
+- **Surrogate Tokenization**: Converts sensitive entities into non-identifying tokens (`[NAME_1]`, `[HEALTH_PLAN_ID_1]`, `[MRN_1]`).
+- **Encrypted Session Token Vault**: Safely stores mapping during processing.
+- **Role-Based Reversible De-Redaction**: Authorized personnel (`Admin`, `HR_Manager`, `Medical_Officer`) view real details seamlessly, while unauthorized callers and external LLM traces receive masked formats (`XXXX-XXXX-1234` or `***REDACTED***`).
+
+### 2. Clinical Emergency Input Rails & Medical Disclaimers
+- **Acute Medical Emergency Guardrails**: Intercepts life-threatening symptoms (crushing chest pain, severe dyspnea, stroke indicators) and short-circuits execution with an immediate 911 / 112 emergency escalation alert.
+- **Statutory & Clinical Disclaimers**: Automatically appends non-diagnostic administrative health and non-legal statutory disclaimers.
+
+### 3. Stateful LangGraph Multi-Agent Orchestrator
+- **State Machine Architecture**: Implemented via LangGraph's `StateGraph` with a typed `EnterpriseState`.
+- **Supervisor Routing**: Dynamically dispatches between `LEAVE_AGENT`, `TIMESHEET_AGENT`, `POLICY_AGENT`, and `HEALTH_AGENT`.
+- **Human-In-The-Loop (HITL)**: Automatically gates medical leaves exceeding 2 days (mandating certified medical documentation) and overtime exceeding statutory limits for manager/medical officer approval.
+
+### 4. Advanced Hybrid & Graph RAG
+- **Hierarchical Markdown Chunking**: Chunks statutory acts and occupational health policies along clinical and legal clause headings.
+- **Hybrid Search**: Combines **ChromaDB** dense vector similarity with **BM25** sparse keyword scoring, unified via **Reciprocal Rank Fusion (RRF)**:
+  $$RRF\_Score(d) = \sum_{m \in M} \frac{1}{60 + \text{rank}_m(d)}$$
+- **NetworkX Policy Knowledge Graph**: Models multi-hop relationships between Statutory Acts, Sections, Leave types, and Health insurance benefits (`MANDATED_BY`, `GOVERNS`, `SUPPORTS`, `PROTECTS`).
+- **Agentic RAG**: Adaptive query evaluation cross-referencing company policy against statutory minimum baselines.
+
+### 5. Dual Observability (LangSmith & Langfuse)
+- **Telemetry & Tracing**: Logs execution runs across both **LangSmith** and **Langfuse**.
+- **Automated Compliance Scoring**: Tracks latency, token consumption, and automated `compliance_safety_score` with zero unredacted PII exposure.
+
+---
+
 ## 📜 License & Compliance Attribution
 
 Distributed under the **MIT License**.
 
-- **Statutory Provisions**: Referenced from the *Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017 (Act LXI of 2017)* and *Digital Personal Data Protection Act, 2023 (Act No. 22 of 2023)*.
+- **Statutory Provisions**: Referenced from the *Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017 (Act LXI of 2017)*, *Digital Personal Data Protection Act, 2023 (Act No. 22 of 2023)*, and *HIPAA Safe Harbor 18 (45 CFR § 164.514)*.
 - **Safety Framework**: Built on *NVIDIA NeMo Guardrails* under the Apache 2.0 license.
-- **Agent Orchestration**: Designed around *Google Agent Development Kit (ADK)* patterns.
+- **Agent Orchestration**: Designed around *LangGraph* and *Google Agent Development Kit (ADK)* patterns.
+- **Vector & Observability**: Powered by *ChromaDB*, *NetworkX*, *LangSmith*, and *Langfuse*.

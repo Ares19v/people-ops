@@ -47,11 +47,15 @@ class Settings(BaseSettings):
     # NeMo Guardrails
     NEMO_GUARDRAILS_CONFIG_DIR: str = "app/guardrails/config"
     
-    # Observability (LangSmith)
+    # Observability (LangSmith & Langfuse)
     LANGCHAIN_TRACING_V2: bool = True
     LANGCHAIN_ENDPOINT: str = "https://api.smith.langchain.com"
     LANGCHAIN_API_KEY: Optional[str] = None
     LANGCHAIN_PROJECT: str = "hr-multiagent-platform"
+    
+    LANGFUSE_PUBLIC_KEY: Optional[str] = None
+    LANGFUSE_SECRET_KEY: Optional[str] = None
+    LANGFUSE_HOST: str = "https://cloud.langfuse.com"
 
     model_config = SettingsConfigDict(
         env_file=".env",

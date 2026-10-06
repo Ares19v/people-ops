@@ -28,6 +28,13 @@ class GuardrailsManager:
         re.compile(r"bypass\s+(manager|approval|authorization)", re.IGNORECASE),
     ]
 
+    # Acute emergency clinical red flags
+    EMERGENCY_PATTERNS = [
+        re.compile(r"\b(?:severe\s+chest\s+pain|crushing\s+chest\s+pressure|radiating\s+to\s+jaw|left\s+arm\s+pain)\b", re.IGNORECASE),
+        re.compile(r"\b(?:difficulty\s+breathing|can'?t\s+breathe|gasping\s+for\s+air|anaphylaxis|throat\s+closing)\b", re.IGNORECASE),
+        re.compile(r"\b(?:facial\s+droop|slurred\s+speech|stroke\s+symptoms|loss\s+of\s+consciousness)\b", re.IGNORECASE),
+    ]
+
     def __init__(self):
         self._rails = None
         self._init_nemo()
@@ -57,7 +64,16 @@ class GuardrailsManager:
                     "Safety Boundary Alert: Your request was identified as a prompt-injection or security-override attempt and has been blocked."
                 )
 
-        # 2. Check unauthorized employee data probe
+        # 2. Check acute emergency medical red flags
+        for pattern in self.EMERGENCY_PATTERNS:
+            if pattern.search(user_message):
+                return (
+                    False,
+                    "EMERGENCY_TRIAGE_ESCALATION",
+                    "🚨 EMERGENCY MEDICAL ALERT: The symptoms described indicate a potentially life-threatening emergency. IMMEDIATE ACTION REQUIRED: Call emergency medical services (112 / 911) or proceed immediately to the nearest Emergency Department. Do not rely on HR AI tools for acute clinical distress."
+                )
+
+        # 3. Check unauthorized employee data probe
         for pattern in self.UNAUTHORIZED_PROBE_PATTERNS:
             if pattern.search(user_message):
                 return (
@@ -68,7 +84,7 @@ class GuardrailsManager:
 
         return True, None, None
 
-    def check_output(self, raw_response: str, is_policy_query: bool = False) -> Tuple[str, str, Optional[str]]:
+    def check_output(self, raw_response: str, is_policy_query: bool = False, is_health_query: bool = False) -> Tuple[str, str, Optional[str]]:
         """
         Validates and sanitizes output boundaries.
         Returns: (sanitized_response: str, guardrail_status: str, tripped_rail: Optional[str])
@@ -88,6 +104,12 @@ class GuardrailsManager:
             sanitized += "\n\n> **Statutory Disclaimer**: *This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.*"
             if not tripped_rail:
                 tripped_rail = "LEGAL_DISCLAIMER_ATTACHED"
+
+        # 3. Enforce medical decision support disclaimer for health queries
+        if is_health_query and "clinical decision support" not in sanitized:
+            sanitized += "\n\n> **Clinical & HIPAA Disclaimer**: *This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship.*"
+            if not tripped_rail:
+                tripped_rail = "HEALTH_DISCLAIMER_ATTACHED"
 
         return sanitized, status, tripped_rail
 

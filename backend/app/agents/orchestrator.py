@@ -8,6 +8,7 @@ from app.guardrails.guardrails_manager import guardrails_manager
 from app.agents.leave_agent import leave_agent
 from app.agents.policy_agent import policy_agent
 from app.agents.timesheet_agent import timesheet_agent
+from app.agents.health_agent import health_agent
 from app.observability.langsmith_tracer import langsmith_tracer
 from app.schemas.agent import AgentChatResponse, CitationItem, StructuredAction
 
@@ -55,8 +56,13 @@ class RootOrchestrator:
         msg_lower = message.lower()
         routed_agent = "ROOT_ORCHESTRATOR"
         is_policy = False
+        is_health = False
 
-        if target_agent == "LEAVE" or (target_agent is None and any(w in msg_lower for w in ["balance", "apply leave", "casual leave", "earned leave", "sick leave", "take leave", "vacation", "day off"])):
+        if target_agent == "HEALTH" or (target_agent is None and any(w in msg_lower for w in ["doctor certificate", "medical certificate", "mediclaim", "health insurance", "hospitalization", "occupational health"])):
+            routed_agent = "HEALTH_AGENT"
+            is_health = True
+            result = await health_agent.handle_request(db, user, message)
+        elif target_agent == "LEAVE" or (target_agent is None and any(w in msg_lower for w in ["balance", "apply leave", "casual leave", "earned leave", "sick leave", "take leave", "vacation", "day off"])):
             routed_agent = "LEAVE_AGENT"
             result = await leave_agent.handle_request(db, user, message)
         elif target_agent == "TIMESHEET" or (target_agent is None and any(w in msg_lower for w in ["timesheet", "log hours", "working hours", "project time", "weekly hours"])):
@@ -78,7 +84,7 @@ class RootOrchestrator:
 
         # 3. NeMo Output Guardrail Boundary Check & DPDP Masking
         sanitized_response, g_status, g_tripped = guardrails_manager.check_output(
-            raw_response, is_policy_query=is_policy
+            raw_response, is_policy_query=is_policy, is_health_query=is_health
         )
 
         duration = (time.perf_counter() - start_time) * 1000
