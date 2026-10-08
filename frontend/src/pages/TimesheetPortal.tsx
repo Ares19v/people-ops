@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, UserRole, Project, TimesheetEntry, TimesheetReportSummary } from '../types';
 import { Clock, CheckCircle2, Plus, AlertCircle, FileText, Check, X, ShieldCheck } from 'lucide-react';
+import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
 
 interface TimesheetPortalProps {
   currentUser: User | null;
@@ -105,10 +106,13 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600" />
-            Timesheet Management & Overtime Audit
-          </h2>
+          <div className="flex items-center">
+            <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-600" />
+              Timesheet Management & Overtime Audit
+            </h2>
+            <FeatureExplainerIcon featureKey="timesheet_grid" />
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Logs project hours, verifies Maharashtra 9h/day & 48h/week statutory limits, and audits overtime.
           </p>
@@ -123,13 +127,16 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
               <span>Approve All ({submittedEntries.length})</span>
             </button>
           ) : null}
-          <button
-            onClick={() => setShowLogModal(true)}
-            className="btn-pill-dark"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Log Working Hours</span>
-          </button>
+          <div className="flex items-center">
+            <button
+              onClick={() => setShowLogModal(true)}
+              className="btn-pill-dark"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Log Working Hours</span>
+            </button>
+            <FeatureExplainerIcon featureKey="quarterly_overtime_cap" />
+          </div>
         </div>
       </div>
 
@@ -158,7 +165,10 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
 
         <div className="card-olixer p-5">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-display font-semibold text-slate-600">Billable Hours</span>
+            <div className="flex items-center">
+              <span className="font-display font-semibold text-slate-600">Billable Hours</span>
+              <FeatureExplainerIcon featureKey="billable_ratio_tracking" />
+            </div>
             <span className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
               <Clock className="w-4 h-4" />
             </span>
@@ -178,7 +188,10 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
 
         <div className="card-olixer p-5">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-display font-semibold text-slate-600">Statutory Overtime</span>
+            <div className="flex items-center">
+              <span className="font-display font-semibold text-slate-600">Statutory Overtime</span>
+              <FeatureExplainerIcon featureKey="overtime_statutory_audit" />
+            </div>
             <span className="p-2 rounded-xl bg-amber-50 text-amber-600">
               <AlertCircle className="w-4 h-4" />
             </span>
@@ -198,7 +211,10 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
 
         <div className="card-olixer p-5">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span className="font-display font-semibold text-slate-600">Pending Review</span>
+            <div className="flex items-center">
+              <span className="font-display font-semibold text-slate-600">Pending Review</span>
+              <FeatureExplainerIcon featureKey="timesheet_manager_approval" />
+            </div>
             <span className="p-2 rounded-xl bg-purple-50 text-purple-600">
               <FileText className="w-4 h-4" />
             </span>
@@ -320,8 +336,11 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
 
       {/* Log Time Modal */}
       {showLogModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="card-olixer modal-animate max-w-lg w-full bg-white p-6 sm:p-8 shadow-2xl relative">
+        <div 
+          className="fixed inset-0 z-50 popup-screen-blur flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowLogModal(false); }}
+        >
+          <div className="card-olixer modal-animate max-w-lg w-full bg-white p-6 sm:p-8 glass-modal-card relative">
             <button
               onClick={() => setShowLogModal(false)}
               className="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"

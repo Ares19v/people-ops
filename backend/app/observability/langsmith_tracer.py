@@ -1,5 +1,6 @@
 import os
 import time
+from contextlib import contextmanager
 from typing import Dict, Any, Optional
 from app.core.config import settings
 from app.core.security import mask_all_pii
@@ -16,8 +17,25 @@ try:
 except ImportError:
     LANGFUSE_AVAILABLE = False
 
+
+class _DummyObservation:
+    """Safe fallback observation that swallows updates when Langfuse is offline."""
+    def update(self, *args, **kwargs):
+        pass
+
+
 class LangSmithTracer:
-    """Production dual-observability wrapper for tracking agent runs across LangSmith and Langfuse."""
+    """Production dual-observability wrapper for tracking agent runs across LangSmith and Langfuse.
+    
+    Supports hierarchical waterfall spans:
+      TOTAL ROUND-TRIP
+      ├── Input Guardrails
+      ├── Orchestrator
+      │   ├── Subagent
+      │   └── Tool Selection
+      │       └── Tool Execution
+      └── Output Guardrails
+    """
 
     def __init__(self):
         self._client = None
@@ -37,10 +55,55 @@ class LangSmithTracer:
                 self._langfuse = Langfuse(
                     public_key=settings.LANGFUSE_PUBLIC_KEY,
                     secret_key=settings.LANGFUSE_SECRET_KEY,
-                    host=settings.LANGFUSE_HOST,
+                    host=settings.LANGFUSE_BASE_URL or settings.LANGFUSE_HOST,
                 )
             except Exception:
                 self._langfuse = None
+
+    @contextmanager
+    def span(
+        self,
+        name: str,
+        as_type: str = "span",
+        input: Optional[Any] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
+        """Context manager for hierarchical waterfall spans in Langfuse."""
+        if self._langfuse:
+            try:
+                # Mask sensitive PII before sending to telemetry
+                safe_input = mask_all_pii(str(input)) if input is not None else None
+                with self._langfuse.start_as_current_observation(
+                    name=name,
+                    as_type=as_type,
+                    input=safe_input,
+                    metadata=metadata or {},
+                ) as obs:
+                    yield obs
+                    return
+            except Exception:
+                pass
+        yield _DummyObservation()
+
+    def score(self, name: str, value: float, comment: Optional[str] = None):
+        """Attach a score to the active trace in Langfuse."""
+        if self._langfuse:
+            try:
+                self._langfuse.score_current_trace(
+                    name=name,
+                    value=value,
+                    comment=comment,
+                )
+            except Exception:
+                pass
+
+    def flush(self):
+        """Flush all pending observations to Langfuse cloud immediately."""
+        if self._langfuse:
+            try:
+                self._langfuse.flush()
+            except Exception:
+                pass
 
     def trace_agent_run(
         self,
@@ -75,28 +138,11 @@ class LangSmithTracer:
             "timestamp": time.time()
         }
 
-        # If live Langfuse client is available, log trace and score
-        if self._langfuse:
-            try:
-                lf_trace = self._langfuse.trace(
-                    name=agent_name,
-                    session_id=session_id,
-                    metadata={"user_role": user_role, "guardrail_status": guardrail_status}
-                )
-                lf_trace.generation(
-                    name=f"{agent_name}_generation",
-                    input=scrubbed_input,
-                    output=scrubbed_output,
-                    metadata={"duration_ms": duration_ms, "token_usage": token_usage}
-                )
-                lf_trace.score(
-                    name="compliance_safety_score",
-                    value=safety_score,
-                    comment="Automated DPDP/HIPAA guardrail safety score"
-                )
-            except Exception:
-                pass
+        # Flush to Langfuse if available
+        self.flush()
 
         return trace_payload
 
+
 langsmith_tracer = LangSmithTracer()
+

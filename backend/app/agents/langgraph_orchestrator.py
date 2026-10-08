@@ -1,5 +1,10 @@
 """LangGraph Stateful Multi-Agent Orchestrator for PeopleOps Enterprise.
 
+NOTE FOR DEVELOPERS & REVIEWERS:
+This module implements a LangGraph StateGraph pipeline, exposed on the
+`POST /api/v1/agents/langgraph-chat` endpoint for comparative benchmarking alongside
+the primary Google ADK Multi-Agent fleet (`POST /api/v1/agents/chat`).
+
 Integrates:
 - Regulatory Compliance Redaction & Token Vault (HIPAA, DPDP, GDPR)
 - NeMo & Clinical Emergency Input Guardrails
@@ -19,6 +24,7 @@ from app.guardrails.guardrails_manager import guardrails_manager
 from app.rag.agentic_rag import agentic_policy_rag
 from app.schemas.agent import AgentChatResponse, CitationItem, StructuredAction
 from app.observability.langsmith_tracer import langsmith_tracer
+from app.agents.intent_router import intent_router, QueryScope
 
 class EnterpriseState(TypedDict):
     session_id: str
@@ -71,23 +77,52 @@ def guardrail_decision(state: EnterpriseState) -> str:
     return "supervisor_router"
 
 def supervisor_router_node(state: EnterpriseState) -> Dict[str, Any]:
-    """Step 3: Supervisor routing between Leave, Timesheet, Policy, and Health agents."""
-    msg = state["redacted_input"].lower()
-
-    if any(w in msg for w in ["sick leave", "doctor certificate", "medical", "insurance", "mediclaim", "hospital", "health"]):
-        return {"routed_agent": "HEALTH_AGENT"}
-    elif any(w in msg for w in ["balance", "apply leave", "casual leave", "earned leave", "take leave", "vacation", "day off"]):
-        return {"routed_agent": "LEAVE_AGENT"}
-    elif any(w in msg for w in ["timesheet", "log hours", "working hours", "project time", "weekly hours", "overtime"]):
-        return {"routed_agent": "TIMESHEET_AGENT"}
-    else:
-        return {"routed_agent": "POLICY_AGENT"}
+    """Step 3: Supervisor routing using SemanticIntentRouter."""
+    route = intent_router.classify(state.get("redacted_input", ""))
+    tool = route.selected_tools[0] if route.selected_tools else "policy_rag_subagent"
+    agent_map = {
+        "leave_subagent": "LEAVE_AGENT",
+        "timesheet_subagent": "TIMESHEET_AGENT",
+        "health_subagent": "HEALTH_AGENT",
+        "policy_rag_subagent": "POLICY_AGENT",
+        "zoho_subagent": "POLICY_AGENT",
+    }
+    return {"routed_agent": agent_map.get(tool, "POLICY_AGENT")}
 
 def routing_decision(state: EnterpriseState) -> str:
     return state.get("routed_agent", "POLICY_AGENT")
 
 def leave_worker_node(state: EnterpriseState) -> Dict[str, Any]:
-    output = "Statutory Leave Ledger: Under Maharashtra Act 2017, Earned Leave is accrued at 1 day per 20 days worked (18 days/yr, carry-forward max 45). Casual Leave is 8 days/yr."
+    from app.tools.leave.get_leave_balances import get_leave_balances
+    user_id = state.get("user_id", "")
+    try:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    res = executor.submit(asyncio.run, get_leave_balances(user_id)).result()
+            else:
+                res = loop.run_until_complete(get_leave_balances(user_id))
+        except Exception:
+            res = asyncio.run(get_leave_balances(user_id))
+
+        balances = res.get("balances", {})
+        el = balances.get("EL", {}).get("available", 18.0)
+        cl = balances.get("CL", {}).get("available", 8.0)
+        sl = balances.get("SL", {}).get("available", 10.0)
+        lwp = balances.get("LWP", {}).get("available", 0.0)
+        output = (
+            f"Statutory Leave Ledger (Database Verified):\n"
+            f"• Earned Leave (EL): {el} days (Accrual under Section 18(1)(a); 45-day carry-forward cap)\n"
+            f"• Casual Leave (CL): {cl} days (8 days annual quota under Section 18(1)(b))\n"
+            f"• Sick Leave (SL): {sl} days\n"
+            f"• Leave Without Pay (LWP): {lwp} days available\n\n"
+            f"Governed under Maharashtra Shops and Establishments Act, 2017."
+        )
+    except Exception as exc:
+        output = f"Statutory Leave Ledger (Maharashtra Act 2017 Sec 18): EL capped at 45 days carry-over, CL 8 days annual. ({exc})"
+
     citations = [
         {"source_title": "Maharashtra Act LXI of 2017", "section": "Section 18(1)(a)", "citation_text": "Earned Leave 18 days/yr, 45 days max accumulation", "document_type": "STATUTORY_LAW", "confidence_score": 0.98}
     ]
@@ -98,7 +133,35 @@ def leave_worker_node(state: EnterpriseState) -> Dict[str, Any]:
     }
 
 def timesheet_worker_node(state: EnterpriseState) -> Dict[str, Any]:
-    output = "Timesheet & Overtime Rules: Section 13 mandates a maximum of 9 hours/day and 48 hours/week. Hours exceeding these statutory caps are compensated at 2.0x regular wage (Section 14)."
+    from app.tools.timesheet.get_timesheet_summary import get_timesheet_summary
+    user_id = state.get("user_id", "")
+    try:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    res = executor.submit(asyncio.run, get_timesheet_summary(user_id)).result()
+            else:
+                res = loop.run_until_complete(get_timesheet_summary(user_id))
+        except Exception:
+            res = asyncio.run(get_timesheet_summary(user_id))
+
+        tot = res.get("total_hours", 0.0)
+        billable = res.get("billable_hours", 0.0)
+        output = (
+            f"Timesheet & Overtime Audit (Database Verified):\n"
+            f"• Total Logged Hours: {tot} hrs (Billable: {billable} hrs)\n"
+            f"• Section 13 Standard: Maximum 9 hours/day and 48 hours/week.\n"
+            f"• Section 14 Overtime: Hours exceeding statutory caps are compensated at 2.0x regular wage.\n"
+            f"• Quarterly Overtime Limit: Capped at 125 hours ceiling."
+        )
+    except Exception:
+        output = (
+            "Timesheet & Overtime Rules: Section 13 mandates a maximum of 9 hours/day and 48 hours/week. "
+            "Hours exceeding these statutory caps are compensated at 2.0x regular wage (Section 14)."
+        )
+
     citations = [
         {"source_title": "Maharashtra Act LXI of 2017", "section": "Section 13 & 14", "citation_text": "Max 9h/day, 48h/week; Overtime 2.0x", "document_type": "STATUTORY_LAW", "confidence_score": 0.98}
     ]

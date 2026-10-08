@@ -9,7 +9,10 @@ import { TimesheetPortal } from './pages/TimesheetPortal';
 import { ReportsPortal } from './pages/ReportsPortal';
 import { PolicySearchPortal } from './pages/PolicySearchPortal';
 import { OnboardingWizard } from './pages/OnboardingWizard';
-import { Shield, Sparkles } from 'lucide-react';
+import { Shield, Sparkles, Maximize2 } from 'lucide-react';
+import { DemoModeProvider } from './context/DemoModeContext';
+import { FeatureExplainerModal } from './components/FeatureExplainerModal';
+import { DemoModeToggleBar } from './components/DemoModeToggleBar';
 
 export const App: React.FC = () => {
   const [currentRole, setCurrentRole] = useState<UserRole>('EMPLOYEE');
@@ -17,6 +20,7 @@ export const App: React.FC = () => {
   const [balances, setBalances] = useState<LeaveBalanceSummary | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatFullScreen, setIsChatFullScreen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [autoOpenApplyModal, setAutoOpenApplyModal] = useState(false);
@@ -29,8 +33,9 @@ export const App: React.FC = () => {
     setAutoOpenLogModal(!!options?.openLogModal);
   };
 
-  const handleOpenChat = (prompt?: string) => {
+  const handleOpenChat = (prompt?: string, fullScreen: boolean = false) => {
     if (prompt) setChatInitialPrompt(prompt);
+    setIsChatFullScreen(fullScreen);
     setIsChatOpen(true);
   };
 
@@ -75,117 +80,140 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <div className={`floating-canvas ${isFullscreen ? 'is-fullscreen' : ''}`}>
-      {/* Background Decorative Grid and Ambient Glow */}
-      <div className="canvas-grid-bg" />
-      <div className="canvas-glow" />
+    <DemoModeProvider>
+      <div className={`floating-canvas ${isFullscreen ? 'is-fullscreen' : ''}`}>
+        {/* Background Decorative Grid and Ambient Glow */}
+        <div className="canvas-grid-bg" />
+        <div className="canvas-glow" />
 
-      {/* Main Container Content */}
-      <div className="canvas-content">
-        {/* Top Navbar */}
-        <Navbar
-          currentUser={currentUser}
-          currentRole={currentRole}
-          onRoleSwitch={handleRoleSwitch}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          toggleChat={() => setIsChatOpen((prev) => !prev)}
-          isChatOpen={isChatOpen}
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
-        />
+        {/* Main Container Content */}
+        <div className="canvas-content">
+          {/* Top Navbar */}
+          <Navbar
+            currentUser={currentUser}
+            currentRole={currentRole}
+            onRoleSwitch={handleRoleSwitch}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            toggleChat={() => {
+              setIsChatFullScreen(false);
+              setIsChatOpen((prev) => !prev);
+            }}
+            isChatOpen={isChatOpen}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
+          />
 
-        {/* Mobile Navigation Pills */}
-        <div className="flex md:hidden overflow-x-auto gap-2 pb-3 mb-6 border-b border-slate-100">
-          {[
-            { id: 'dashboard', label: 'Dashboard' },
-            { id: 'leaves', label: 'Leaves' },
-            { id: 'timesheets', label: 'Timesheets' },
-            { id: 'reports', label: 'Reports' },
-            { id: 'policy', label: 'HR Policy RAG' },
-            ...(currentRole !== 'EMPLOYEE' ? [{ id: 'onboarding', label: 'Onboarding' }] : []),
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                activeTab === item.id
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Main Content Area */}
-        <main className="w-full flex-1">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center min-h-[420px] text-slate-500">
-              <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
-              <span className="text-xs font-semibold">Switching authenticated role & initializing Google ADK tools...</span>
-            </div>
-          ) : (
-            <>
-              {activeTab === 'dashboard' && (
-                <Dashboard
-                  currentUser={currentUser}
-                  currentRole={currentRole}
-                  balances={balances}
-                  onNavigate={handleNavigate}
-                  openChat={handleOpenChat}
-                />
-              )}
-              {activeTab === 'leaves' && (
-                <LeavePortal
-                  currentUser={currentUser}
-                  currentRole={currentRole}
-                  balances={balances}
-                  onRefreshBalances={refreshBalances}
-                  initialOpenApplyModal={autoOpenApplyModal}
-                />
-              )}
-              {activeTab === 'timesheets' && (
-                <TimesheetPortal
-                  currentUser={currentUser}
-                  currentRole={currentRole}
-                  initialOpenLogModal={autoOpenLogModal}
-                />
-              )}
-              {activeTab === 'reports' && (
-                <ReportsPortal currentUser={currentUser} currentRole={currentRole} />
-              )}
-              {activeTab === 'policy' && <PolicySearchPortal />}
-              {activeTab === 'onboarding' && (
-                <OnboardingWizard currentUser={currentUser} currentRole={currentRole} />
-              )}
-            </>
-          )}
-        </main>
-
-        {/* AI Assistant Chat Drawer */}
-        <AgentChatDrawer
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          initialPrompt={chatInitialPrompt}
-          onActionExecuted={() => {
-            refreshBalances();
-          }}
-        />
-
-        {/* Footer */}
-        <footer className="app-footer text-xs text-slate-500">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-blue-600" />
-              <span>Google ADK Multi-Agent Architecture &bull; NVIDIA NeMo Guardrails &bull; DPDP Act 2023 Compliant</span>
-            </div>
-            <div>Intelera Technologies Pvt Ltd &bull; Maharashtra Shops & Establishments 2017</div>
+          {/* Mobile Navigation Pills */}
+          <div className="flex md:hidden overflow-x-auto gap-2 pb-3 mb-6 border-b border-slate-100">
+            {[
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'leaves', label: 'Leaves' },
+              { id: 'timesheets', label: 'Timesheets' },
+              { id: 'reports', label: 'Reports' },
+              { id: 'policy', label: 'HR Policy RAG' },
+              ...(currentRole !== 'EMPLOYEE' ? [{ id: 'onboarding', label: 'Onboarding' }] : []),
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                  activeTab === item.id
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
-        </footer>
+
+          {/* Main Content Area */}
+          <main className="w-full flex-1">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center min-h-[420px] text-slate-500">
+                <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+                <span className="text-xs font-semibold">Switching authenticated role & initializing Google ADK tools...</span>
+              </div>
+            ) : (
+              <>
+                {activeTab === 'dashboard' && (
+                  <Dashboard
+                    currentUser={currentUser}
+                    currentRole={currentRole}
+                    balances={balances}
+                    onNavigate={handleNavigate}
+                    openChat={handleOpenChat}
+                  />
+                )}
+                {activeTab === 'leaves' && (
+                  <LeavePortal
+                    currentUser={currentUser}
+                    currentRole={currentRole}
+                    balances={balances}
+                    onRefreshBalances={refreshBalances}
+                    initialOpenApplyModal={autoOpenApplyModal}
+                  />
+                )}
+                {activeTab === 'timesheets' && (
+                  <TimesheetPortal
+                    currentUser={currentUser}
+                    currentRole={currentRole}
+                    initialOpenLogModal={autoOpenLogModal}
+                  />
+                )}
+                {activeTab === 'reports' && (
+                  <ReportsPortal currentUser={currentUser} currentRole={currentRole} />
+                )}
+                {activeTab === 'policy' && <PolicySearchPortal />}
+                {activeTab === 'onboarding' && (
+                  <OnboardingWizard currentUser={currentUser} currentRole={currentRole} />
+                )}
+              </>
+            )}
+          </main>
+
+          {/* AI Assistant Chat Drawer */}
+          <AgentChatDrawer
+            isOpen={isChatOpen}
+            initialFullScreen={isChatFullScreen}
+            onClose={() => {
+              setIsChatOpen(false);
+              setIsChatFullScreen(false);
+            }}
+            initialPrompt={chatInitialPrompt}
+            onActionExecuted={() => {
+              refreshBalances();
+            }}
+          />
+
+          {/* Footer with Master Demo Mode Toggle & Fullscreen AI Launcher */}
+          <footer className="app-footer text-xs text-slate-500">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-slate-400" />
+                <span>Google ADK Multi-Agent Architecture &bull; NVIDIA NeMo Guardrails &bull; DPDP Act 2023 Compliant</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <DemoModeToggleBar />
+                <button
+                  onClick={() => handleOpenChat(undefined, true)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-full transition-colors outline-none focus:outline-none"
+                  title="Open Fullscreen PeopleOps AI Chat Mode"
+                >
+                  <Maximize2 size={13} />
+                </button>
+                <div className="hidden lg:block text-slate-300">|</div>
+                <div className="hidden lg:block">Maharashtra Shops & Establishments 2017</div>
+              </div>
+            </div>
+          </footer>
+        </div>
       </div>
-    </div>
+
+      {/* Feature Explainer Modal with 25% screen blur */}
+      <FeatureExplainerModal />
+    </DemoModeProvider>
   );
 };
 

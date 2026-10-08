@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, UserRole, Project, TimesheetReportSummary } from '../types';
 import { Download, Filter, FileSpreadsheet, CheckCircle2, TrendingUp, Clock } from 'lucide-react';
+import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
 
 interface ReportsPortalProps {
   currentUser: User | null;
@@ -57,22 +58,28 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-            Timesheet Reports & CSV Export
-          </h2>
+          <div className="flex items-center">
+            <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+              Timesheet Reports & CSV Export
+            </h2>
+            <FeatureExplainerIcon featureKey="reports_summary_kpis" />
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Aggregate project hours, audit billable utilization, and generate official payroll exports.
           </p>
         </div>
-        <button
-          onClick={handleDownloadCSV}
-          disabled={isExporting}
-          className="btn-pill-dark self-start sm:self-auto disabled:opacity-60 cursor-pointer"
-        >
-          <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
-          <span>{isExporting ? 'Generating CSV...' : 'Export Timesheets (CSV)'}</span>
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={handleDownloadCSV}
+            disabled={isExporting}
+            className="btn-pill-dark self-start sm:self-auto disabled:opacity-60 cursor-pointer"
+          >
+            <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+            <span>{isExporting ? 'Generating CSV...' : 'Export Timesheets (CSV)'}</span>
+          </button>
+          <FeatureExplainerIcon featureKey="reports_csv_export" />
+        </div>
       </div>
 
       {/* Filter Card */}

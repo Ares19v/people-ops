@@ -26,41 +26,22 @@ class StructuredStatutoryAssessment(BaseModel):
     requires_manager_approval: bool = Field(True, description="True for all state-changing actions")
     cot_reasoning: str = Field(..., description="Chain-of-thought statutory reasoning steps")
 
-ENTERPRISE_SYSTEM_PROMPT = """
-You are the PeopleOps Enterprise Autonomous Assistant, operating under the Maharashtra Shops & Establishments Act, 2017 and DPDP Act, 2023.
-OPERATIONAL MANDATES:
-1. PRIVACY: Never reveal raw Aadhaar, PAN, or personal contact details. All PII is masked.
-2. STATUTORY RIGOR: Always benchmark leave quotas and working hours against Maharashtra Act LXI of 2017:
-   - Earned Leave (EL): 1 day per 20 days worked (up to 18 days/yr), accumulation capped at 45 days (Section 18).
-   - Casual Leave (CL): 8 days/yr, lapses Dec 31, non-encashable (Section 18).
-   - Standard hours: Max 9 hours/day, 48 hours/week (Section 13). Overtime compensated at 2.0x regular wage (Section 14).
-3. HEALTH BOUNDARIES: Sick leaves > 2 days mandate medical certificate verification. Provide administrative guidance, not medical diagnosis.
-4. THINKING: Employ Chain-of-Thought reasoning to verify eligibility and statutory limits before suggesting actions.
-"""
+from app.services.langfuse_prompt_service import langfuse_prompt_service
 
-FEW_SHOT_STATUTORY_EXAMPLES = """
-[EXAMPLE 1: EARNED LEAVE APPLICATION]
-Query: "I've completed 240 working days this year. Can I take 15 days of earned leave?"
-CoT Reasoning:
-1. Under Section 18(1)(a) of Maharashtra Act 2017, employee accrues 1 day EL per 20 days worked (240 / 20 = 12 days statutory minimum, company policy grants up to 18).
-2. 15 days is within the 18 days annual quota.
-3. Verified carry-forward cap does not exceed 45 days.
-Statutory Intent: LEAVE_APPLICATION
-Applicable Sections: ["Section 18(1)(a)"]
-Requires Medical Cert: False
-Requires Manager Approval: True
+# Prompts are fully migrated out of the codebase into Langfuse & decoupled registry.
+# Dynamic resolution with local cache fallback:
+def get_enterprise_system_prompt() -> str:
+    return langfuse_prompt_service.get_prompt("peopleops-enterprise-system", label="production")
 
-[EXAMPLE 2: SICK LEAVE WITH MEDICAL CERTIFICATE]
-Query: "I have high fever and need 4 days of sick leave starting tomorrow."
-CoT Reasoning:
-1. Sick leave entitlement is 12 days per year.
-2. Duration is 4 consecutive days, which exceeds the 2-day threshold.
-3. In accordance with Occupational Health Policy, medical certificate from registered physician is required.
-Statutory Intent: OCCUPATIONAL_HEALTH
-Applicable Sections: ["Occupational Health Policy 2026", "Section 18"]
-Requires Medical Cert: True
-Requires Manager Approval: True
-"""
+def get_few_shot_statutory_examples() -> str:
+    return langfuse_prompt_service.get_prompt("peopleops-few-shot-examples", label="production")
+
+def get_root_orchestrator_prompt() -> str:
+    return langfuse_prompt_service.get_prompt("peopleops-root-orchestrator", label="production")
+
+# Dynamic property aliases for backward compatibility
+ENTERPRISE_SYSTEM_PROMPT = get_enterprise_system_prompt()
+FEW_SHOT_STATUTORY_EXAMPLES = get_few_shot_statutory_examples()
 
 def generate_statutory_cot_prompt(query: str, employee_context: str = "") -> str:
     """Combines System Mandates, Few-Shot Demonstrations, and Chain-of-Thought prompting."""

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { Bot, Maximize2, Minimize2, ChevronDown, Check } from 'lucide-react';
+import { FeatureExplainerIcon } from './FeatureExplainerIcon';
 
 interface NavbarProps {
   currentUser: User | null;
@@ -64,10 +65,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="brand-icon-box">
           <Bot size={22} className="text-slate-900" />
         </div>
-        <div>
+        <div className="flex items-center">
           <div className="brand-title">
             PeopleOps
           </div>
+          <FeatureExplainerIcon featureKey="navbar_brand" />
         </div>
       </div>
 
@@ -91,60 +93,69 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Right Actions */}
       <div className="nav-actions">
         {/* Fullscreen / Framed View Toggle */}
-        <button
-          className="btn-pill-outline hidden sm:inline-flex outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
-          onClick={onToggleFullscreen}
-          title={isFullscreen ? 'Switch to Framed Card View' : 'Switch to Full Screen (Default)'}
-        >
-          {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-          <span>{isFullscreen ? 'Framed View' : 'Full Screen'}</span>
-        </button>
+        <div className="hidden sm:inline-flex items-center">
+          <button
+            className="btn-pill-outline outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+            onClick={onToggleFullscreen}
+            title={isFullscreen ? 'Switch to Framed Card View' : 'Switch to Full Screen (Default)'}
+          >
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            <span>{isFullscreen ? 'Framed View' : 'Full Screen'}</span>
+          </button>
+          <FeatureExplainerIcon featureKey="fullscreen_toggle" />
+        </div>
 
         {/* Custom Role Switcher */}
-        <div className="role-switcher" ref={roleRef}>
-          <button
-            className="role-switcher-trigger outline-none focus:outline-none focus-visible:outline-none"
-            onClick={() => setRoleOpen((prev) => !prev)}
-          >
-            <span>{currentRoleLabel}</span>
-            <ChevronDown
-              size={13}
-              className="role-switcher-chevron"
-              style={{ transform: roleOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-            />
-          </button>
+        <div className="flex items-center">
+          <div className="role-switcher" ref={roleRef}>
+            <button
+              className="role-switcher-trigger outline-none focus:outline-none focus-visible:outline-none"
+              onClick={() => setRoleOpen((prev) => !prev)}
+            >
+              <span>{currentRoleLabel}</span>
+              <ChevronDown
+                size={13}
+                className="role-switcher-chevron"
+                style={{ transform: roleOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              />
+            </button>
 
-          {roleOpen && (
-            <div className="role-switcher-dropdown">
-              {roles.map((r) => {
-                const isSelected = r.value === currentRole;
-                return (
-                  <button
-                    key={r.value}
-                    className={`role-switcher-option ${isSelected ? 'selected' : ''}`}
-                    onClick={() => {
-                      onRoleSwitch(r.value);
-                      setRoleOpen(false);
-                    }}
-                  >
-                    <span>{r.label}</span>
-                    {isSelected && <Check size={13} className="text-blue-600 ml-auto shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            {roleOpen && (
+              <div className="role-switcher-dropdown">
+                {roles.map((r) => {
+                  const isSelected = r.value === currentRole;
+                  return (
+                    <button
+                      key={r.value}
+                      className={`role-switcher-option ${isSelected ? 'selected' : ''}`}
+                      onClick={() => {
+                        onRoleSwitch(r.value);
+                        setRoleOpen(false);
+                      }}
+                    >
+                      <span>{r.label}</span>
+                      {isSelected && <Check size={13} className="text-blue-600 ml-auto shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <FeatureExplainerIcon featureKey="role_switcher" />
         </div>
 
         {/* Ask HR AI Deep Charcoal Pill Button */}
-        <button
-          onClick={toggleChat}
-          className="btn-pill-dark outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
-          title="Open Google ADK HR Assistant"
-        >
-          <Bot size={15} className="text-blue-400" />
-          <span>Ask HR AI</span>
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={toggleChat}
+            className="btn-pill-dark outline-none focus:outline-none focus-visible:outline-none focus:ring-0"
+            title="Open PeopleOps AI Assistant"
+          >
+            <Bot size={15} className="text-blue-400" />
+            <span>Ask HR AI</span>
+          </button>
+          <FeatureExplainerIcon featureKey="agent_drawer_launcher" />
+        </div>
       </div>
     </nav>
   );

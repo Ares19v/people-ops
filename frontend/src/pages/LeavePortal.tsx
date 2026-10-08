@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, UserRole, LeaveBalanceSummary, LeaveApplication } from '../types';
 import { Calendar, CheckCircle2, Clock, XCircle, AlertCircle, Plus, ShieldCheck, X } from 'lucide-react';
+import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
 
 interface LeavePortalProps {
   currentUser: User | null;
@@ -94,21 +95,27 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-600" />
-            Leave Ledger & Balance Tracking
-          </h2>
+          <div className="flex items-center">
+            <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              Leave Ledger & Balance Tracking
+            </h2>
+            <FeatureExplainerIcon featureKey="leave_quota_cards" />
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Authoritative balance ledger compliant with Maharashtra Shops & Establishments Act, 2017.
           </p>
         </div>
-        <button
-          onClick={() => setShowApplyModal(true)}
-          className="btn-pill-dark self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Apply for Leave</span>
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={() => setShowApplyModal(true)}
+            className="btn-pill-dark self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Apply for Leave</span>
+          </button>
+          <FeatureExplainerIcon featureKey="leave_apply_workflow" />
+        </div>
       </div>
 
       {/* Verified Balances Grid */}
@@ -142,17 +149,18 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-full border border-slate-200/80">
           <button
             onClick={() => setActiveTab('my_leaves')}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all outline-none focus:outline-none ${
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all inline-flex items-center gap-1 outline-none focus:outline-none ${
               activeTab === 'my_leaves'
                 ? 'bg-slate-900 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            My Leave History ({applications.length})
+            <span>My Leave History ({applications.length})</span>
+            <FeatureExplainerIcon featureKey="leave_history_table" />
           </button>
           {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && (
             <button
@@ -169,6 +177,7 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
                   {pendingApprovals.length}
                 </span>
               )}
+              <FeatureExplainerIcon featureKey="leave_approval_queue" />
             </button>
           )}
         </div>
@@ -283,8 +292,11 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
 
       {/* Apply Leave Modal */}
       {showApplyModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="card-olixer modal-animate max-w-lg w-full bg-white p-6 sm:p-8 shadow-2xl relative">
+        <div 
+          className="fixed inset-0 z-50 popup-screen-blur flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowApplyModal(false); }}
+        >
+          <div className="card-olixer modal-animate max-w-lg w-full bg-white p-6 sm:p-8 glass-modal-card relative">
             <button
               onClick={() => setShowApplyModal(false)}
               className="absolute top-6 right-6 text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
@@ -292,9 +304,12 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="font-display text-lg font-bold text-slate-900 mb-1">
-              Apply for Statutory Leave
-            </h3>
+            <div className="flex items-center gap-1.5 mb-1">
+              <h3 className="font-display text-lg font-bold text-slate-900">
+                Apply for Statutory Leave
+              </h3>
+              <FeatureExplainerIcon featureKey="leave_collision_engine" />
+            </div>
             <p className="text-xs text-slate-500 mb-6">
               Requests are validated against your available ledger and the Maharashtra Shops & Establishments Act 2017.
             </p>

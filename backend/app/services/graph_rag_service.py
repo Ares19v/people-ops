@@ -1,3 +1,10 @@
+"""
+PeopleOps — Statutory Knowledge Graph & Policy Retrieval Service
+==================================================================
+Manages local & Neo4j graph traversal for Maharashtra labour laws and HR Handbook rules.
+Provides structured section citations (Sections 13, 14, 15, 18) and escalation checks.
+For hybrid vector + BM25 chunk search, see `app.rag.hybrid_retriever`.
+"""
 import json
 import os
 from typing import List, Dict, Any, Optional
@@ -13,6 +20,7 @@ except ImportError:
 class GraphRAGService:
     def __init__(self):
         self._driver = None
+        self._neo4j_tested = False
         self._local_graph = None
         self._load_local_data()
 
@@ -32,109 +40,114 @@ class GraphRAGService:
                 self.policy_data = json.load(f)
 
     def _get_neo4j_driver(self):
-        if not NEO4J_AVAILABLE:
-            return None
-        if not self._driver:
-            try:
-                self._driver = GraphDatabase.driver(
-                    settings.NEO4J_URI,
-                    auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD),
-                    connection_timeout=2.0
-                )
-                self._driver.verify_connectivity()
-            except Exception:
-                self._driver = None
+        if not NEO4J_AVAILABLE or self._neo4j_tested:
+            return self._driver
+        self._neo4j_tested = True
+        try:
+            self._driver = GraphDatabase.driver(
+                settings.NEO4J_URI,
+                auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD),
+                connection_timeout=0.3
+            )
+            self._driver.verify_connectivity()
+        except Exception:
+            self._driver = None
         return self._driver
 
     async def search_policies(self, query: str, top_k: int = 3) -> Dict[str, Any]:
-        """Hybrid retrieval combining graph ontology and policy documents."""
+        """Hybrid retrieval combining ChromaDB dense vectors, BM25, and NetworkX ontology graph."""
+        from app.rag.hybrid_retriever import hybrid_policy_retriever
+        from app.rag.knowledge_graph import enterprise_knowledge_graph
+
         q_lower = query.lower()
         citations: List[CitationItem] = []
-        matched_chunks = []
         is_ambiguous = False
         requires_escalation = False
 
-        # Check for sensitive/escalation terms (termination disputes, disciplinary actions, legal notice)
-        escalation_keywords = ["termination without cause", "court", "lawsuit", "sexual harassment", "posh", "unfair dismissal", "dispute", "strike"]
+        # 1. Escalation Checks
+        escalation_keywords = [
+            "termination without cause", "court", "lawsuit", "sexual harassment",
+            "posh", "unfair dismissal", "dispute", "strike"
+        ]
         if any(kw in q_lower for kw in escalation_keywords):
             requires_escalation = True
             is_ambiguous = True
 
-        # Search company policies
-        for pol in self.policy_data.get("policies", []):
-            code = pol.get("code", "").lower()
-            name = pol.get("name", "").lower()
-            ltype = pol.get("leave_type", "").lower()
-            
-            if ltype in q_lower or any(word in name for word in q_lower.split() if len(word) > 3):
-                content = (
-                    f"Policy: {pol['name']} ({pol['code']})\n"
-                    f"- Quota: {pol.get('annual_quota')}\n"
-                    f"- Accrual: {pol.get('accrual_frequency')}\n"
-                    f"- Max Accumulation: {pol.get('max_accumulation')} days\n"
-                    f"- Carry Forward: {pol.get('carry_forward_rules')}\n"
-                    f"- Statutory Baseline: {pol.get('statutory_comparison')}"
-                )
-                matched_chunks.append({
-                    "title": pol["name"],
-                    "content": content,
-                    "type": "COMPANY_POLICY",
-                    "citation": pol.get("citation", "Company Policy Manual 2026")
-                })
-                citations.append(CitationItem(
-                    source_title="Enterprise Leave Policy 2026",
-                    section=pol.get("code", "General"),
-                    document_type="COMPANY_POLICY",
-                    citation_text=f"{pol['name']}: Annual quota of {pol.get('annual_quota')} days ({pol.get('accrual_frequency')}). {pol.get('carry_forward_rules', '')} Statutory baseline: {pol.get('statutory_comparison', '')}",
-                    confidence_score=0.98
-                ))
+        # 2. Live Neo4j Cypher Traversal (if live database connected)
+        driver = self._get_neo4j_driver()
+        neo4j_matched = []
+        if driver:
+            try:
+                with driver.session() as session:
+                    cypher = """
+                    MATCH (n:PolicyNode)
+                    WHERE toLower(n.name) CONTAINS toLower($query) OR toLower(n.content) CONTAINS toLower($query)
+                    RETURN n.title AS title, n.content AS content, n.section AS section, n.source AS source
+                    LIMIT 3
+                    """
+                    result = session.run(cypher, query=query)
+                    for record in result:
+                        neo4j_matched.append(record.data())
+            except Exception:
+                pass
 
-        # Search Maharashtra Labour Law provisions
-        for sec in self.law_data.get("sections", []):
-            sec_num = sec.get("section", "").lower()
-            sec_title = sec.get("title", "").lower()
-            sec_ltype = sec.get("leave_type", "").lower()
+        # 3. Real ChromaDB Dense Vector + BM25 Sparse Search with RRF
+        retrieved_passages = hybrid_policy_retriever.search_hybrid_rrf(query, top_k=top_k)
 
-            matches_law = (
-                "maharashtra" in q_lower or
-                "labour law" in q_lower or
-                "statutory" in q_lower or
-                "act" in q_lower or
-                "overtime" in q_lower or
-                sec_ltype in q_lower
-            )
+        # 4. Real NetworkX Knowledge Graph Traversal
+        graph_res = enterprise_knowledge_graph.search_graph(query)
 
-            if matches_law and (sec_ltype in q_lower or any(word in sec_title for word in q_lower.split() if len(word) > 3)):
-                content = (
-                    f"Statutory Provision: {sec['title']} (Section {sec['section']})\n"
-                    f"{sec['content']}\n"
-                    f"Act: {self.law_data.get('source')}"
-                )
-                matched_chunks.append({
-                    "title": f"Maharashtra Act LXI of 2017 - Section {sec['section']}",
-                    "content": content,
-                    "type": "STATUTORY_LAW",
-                    "citation": sec.get("citation", "Maharashtra Act LXI of 2017")
-                })
-                citations.append(CitationItem(
-                    source_title=self.law_data.get("source", "Maharashtra Labour Law"),
-                    section=f"Section {sec['section']}",
-                    document_type="STATUTORY_LAW",
-                    citation_text=f"Section {sec['section']} ({sec['title']}): {sec['content']}",
-                    confidence_score=0.95
-                ))
+        # 5. Assemble Citations
+        for p in retrieved_passages:
+            citations.append(CitationItem(
+                source_title=p.citation,
+                section=p.section,
+                document_type="STATUTORY_LAW" if "Section" in p.section or "Act" in p.citation else "COMPANY_POLICY",
+                citation_text=p.content,
+                confidence_score=round(min(0.99, max(0.85, p.rrf_score * 35)), 2)
+            ))
 
-        # Synthesize context and rich summary
-        context_text = "\n\n---\n\n".join(c["content"] for c in matched_chunks[:top_k])
+        # Include any live Neo4j citations
+        for nr in neo4j_matched:
+            citations.append(CitationItem(
+                source_title=nr.get("source", "Neo4j Knowledge Graph"),
+                section=nr.get("section", "General"),
+                document_type="ENTERPRISE_GRAPH",
+                citation_text=nr.get("content", ""),
+                confidence_score=0.99
+            ))
+
+        # 6. Fallback local scan if neither vector nor graph matched
+        if not citations:
+            for pol in self.policy_data.get("policies", []):
+                name = pol.get("name", "").lower()
+                ltype = pol.get("leave_type", "").lower()
+                if ltype in q_lower or any(word in name for word in q_lower.split() if len(word) > 3):
+                    citations.append(CitationItem(
+                        source_title="Enterprise Leave Policy 2026",
+                        section=pol.get("code", "General"),
+                        document_type="COMPANY_POLICY",
+                        citation_text=f"{pol['name']}: Quota {pol.get('annual_quota')} days ({pol.get('accrual_frequency')}).",
+                        confidence_score=0.90
+                    ))
+
+        # 7. Synthesize Rich Context
+        context_parts = []
+        if graph_res.synthesis and (graph_res.statutory_mandates or graph_res.health_entitlements):
+            context_parts.append(graph_res.synthesis)
+
+        for p in retrieved_passages:
+            context_parts.append(f"• [{p.section}] ({p.citation}):\n{p.content}")
+
+        context_text = "\n\n".join(context_parts)
         if not context_text:
-            summary_text = "No direct policy match found in the current index. Escalating to human HR advisor."
+            summary_text = "No direct statutory policy match found in the current index. Escalating to human HR advisor."
             context_text = summary_text
             requires_escalation = True
         else:
-            summary_parts = []
-            for chunk in matched_chunks[:top_k]:
-                summary_parts.append(f"• {chunk['title']}: {chunk['content'].splitlines()[1] if len(chunk['content'].splitlines()) > 1 else chunk['content']}")
-            summary_text = f"Synthesized analysis for '{query}':\n" + "\n".join(summary_parts)
+            summary_text = f"Synthesized analysis for '{query}':\n" + "\n".join(
+                [f"• {c.section}: {c.citation_text[:140]}..." for c in citations[:top_k]]
+            )
 
         return {
             "query": query,

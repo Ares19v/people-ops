@@ -4,6 +4,7 @@ import { User, UserRole } from '../types';
 import {
   UserPlus, UploadCloud, FileCheck, CheckCircle2, Shield, AlertCircle, ArrowRight, ShieldCheck
 } from 'lucide-react';
+import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
 
 interface OnboardingWizardProps {
   currentUser: User | null;
@@ -76,22 +77,30 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
     try {
       const targetId = createdUserId || currentUser?.id || 'demo-user-id';
 
+      let docId = '';
       if (resumeFile) {
         const docResp = await api.uploadDocument(targetId, 'RESUME', resumeFile);
+        docId = docResp.document_id;
         setUploadedResumeDocId(docResp.document_id);
       } else {
-        const dummyResume = new File(['Dummy Resume Content'], 'Ananya_Sen_Resume.pdf', { type: 'application/pdf' });
+        const dummyResume = new File(['Candidate Profile Summary\nSkills: React, TypeScript, Python, FastAPI, Docker\nExperience: 3.5 years of experience\nEducation: Bachelor of Technology'], 'Candidate_Resume.pdf', { type: 'application/pdf' });
         const docResp = await api.uploadDocument(targetId, 'RESUME', dummyResume);
+        docId = docResp.document_id;
         setUploadedResumeDocId(docResp.document_id);
       }
 
       setStep(3);
       setExtracting(true);
-      setTimeout(async () => {
-        setExtractedSkills(['React', 'TypeScript', 'FastAPI', 'Docker', 'PostgreSQL']);
-        setExtractedExp(3.5);
+      try {
+        const parsed = await api.extractResume(docId);
+        setExtractedSkills(parsed.extracted_skills && parsed.extracted_skills.length > 0 ? parsed.extracted_skills : ['React', 'TypeScript', 'FastAPI']);
+        setExtractedExp(parsed.extracted_experience_years || experienceYears || 2.0);
+      } catch (extractErr) {
+        setExtractedSkills(skills.split(',').map((s) => s.trim()).filter(Boolean));
+        setExtractedExp(experienceYears);
+      } finally {
         setExtracting(false);
-      }, 1000);
+      }
     } catch (err: any) {
       setErrorMsg(err.response?.data?.detail || err.message || 'Document upload failed.');
     } finally {
@@ -128,10 +137,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ currentUser,
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-          <UserPlus className="w-5 h-5 text-blue-600" />
-          Guided Employee Onboarding Wizard
-        </h2>
+        <div className="flex items-center">
+          <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-blue-600" />
+            Guided Employee Onboarding Wizard
+          </h2>
+          <FeatureExplainerIcon featureKey="onboarding_workflow" />
+        </div>
         <p className="text-xs text-slate-500 mt-0.5">
           Secure KYC document ingestion, resume parsing review, and DPDP Act 2023 statutory consent validation.
         </p>

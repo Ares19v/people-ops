@@ -47,6 +47,7 @@ class User(Base):
     leave_balances = relationship("LeaveBalance", back_populates="user")
     leave_applications = relationship("LeaveApplication", back_populates="user", foreign_keys="LeaveApplication.user_id")
     timesheet_entries = relationship("TimesheetEntry", back_populates="user", foreign_keys="TimesheetEntry.user_id")
+    chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
 
 class EmployeeProfile(Base):
     __tablename__ = "employee_profiles"

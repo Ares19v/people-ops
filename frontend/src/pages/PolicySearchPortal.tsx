@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { CitationItem } from '../types';
 import { Search, Shield, FileText, AlertTriangle, BookOpen, ExternalLink, Sparkles, ShieldCheck } from 'lucide-react';
+import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
 
 export const PolicySearchPortal: React.FC = () => {
   const [query, setQuery] = useState('casual leave maharashtra');
@@ -37,10 +38,13 @@ export const PolicySearchPortal: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-          <Shield className="w-5 h-5 text-blue-600" />
-          HR Policy & Maharashtra Labour Law Graph RAG
-        </h2>
+        <div className="flex items-center">
+          <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-blue-600" />
+            HR Policy & Maharashtra Labour Law Graph RAG
+          </h2>
+          <FeatureExplainerIcon featureKey="policy_rag_search" />
+        </div>
         <p className="text-xs text-slate-500 mt-0.5">
           Explore authoritative policies indexed against the Maharashtra Shops & Establishments Act, 2017 with statutory citations.
         </p>
@@ -126,10 +130,10 @@ export const PolicySearchPortal: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {results.citations?.map((c: CitationItem, idx: number) => (
-                <div key={idx} className="entity-dossier">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-display font-bold text-xs text-slate-900">{c.source_title}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">
+                <div key={idx} className="entity-dossier overflow-hidden">
+                  <div className="flex items-center justify-between gap-2 min-w-0 mb-2">
+                    <span className="font-display font-bold text-xs text-slate-900 flex-1 min-w-0 truncate" title={c.source_title}>{c.source_title}</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 shrink-0">
                       {c.section}
                     </span>
                   </div>

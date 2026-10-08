@@ -1,0 +1,30 @@
+{
+  "leave_records": [
+    {
+      "record_id": "ZOHO-LV-901",
+      "leave_type": "Earned Leave",
+      "from_date": "2026-11-02",
+      "to_date": "2026-11-04",
+      "days": 3.0,
+      "status": "Approved",
+      "approval_status": "Manager Approved"
+    },
+    {
+      "record_id": "ZOHO-LV-902",
+      "leave_type": "Casual Leave",
+      "from_date": "2026-11-18",
+      "to_date": "2026-11-18",
+      "days": 1.0,
+      "status": "Pending",
+      "approval_status": "Pending Manager Sign-Off"
+    }
+  ],
+  "default_employee": {
+    "zoho_id": "ZOHO-EMP-4421",
+    "employee_id": "INTEL-104",
+    "department": "Engineering",
+    "designation": "Senior Systems Architect",
+    "manager_name": "Rajesh Verma (HR Director)",
+    "status": "Active"
+  }
+}

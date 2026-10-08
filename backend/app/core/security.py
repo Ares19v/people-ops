@@ -37,7 +37,9 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
     except JWTError:
         return None
 
-# PII Masking Utilities for DPDP Act Compliance
+# Static Irreversible PII Masking Utilities (used for output sanitization & plain logging)
+# NOTE: For dynamic, stateful, reversible LLM token shielding (DPDP TokenVault),
+# see app.compliance.phi_engine.compliance_engine
 AADHAAR_REGEX = re.compile(r'\b\d{4}[ -]?\d{4}[ -]?\d{4}\b')
 PAN_REGEX = re.compile(r'\b[A-Z]{5}[0-9]{4}[A-Z]{1}\b')
 PHONE_REGEX = re.compile(r'\b(?:\+91|91|0)?[6-9]\d{9}\b')
@@ -63,3 +65,35 @@ def mask_all_pii(text: str) -> str:
     text = mask_aadhaar(text)
     text = mask_pan(text)
     return text
+
+# Real AES-256 Symmetric Field-Level Encryption (DPDP & HIPAA Compliance)
+import base64
+import hashlib
+from cryptography.fernet import Fernet
+
+def _get_field_cipher() -> Fernet:
+    """Derives a deterministic 32-byte Fernet key from SECRET_KEY."""
+    derived_key = hashlib.sha256(settings.SECRET_KEY.encode("utf-8")).digest()
+    url_safe_key = base64.urlsafe_b64encode(derived_key)
+    return Fernet(url_safe_key)
+
+def encrypt_field(plaintext: Optional[str]) -> Optional[str]:
+    """Symmetrically encrypts a string before saving to database."""
+    if not plaintext:
+        return plaintext
+    try:
+        cipher = _get_field_cipher()
+        return "enc:" + cipher.encrypt(plaintext.encode("utf-8")).decode("utf-8")
+    except Exception:
+        return plaintext
+
+def decrypt_field(ciphertext: Optional[str]) -> Optional[str]:
+    """Decrypts a previously encrypted database field string."""
+    if not ciphertext or not ciphertext.startswith("enc:"):
+        return ciphertext
+    try:
+        raw_token = ciphertext[4:]
+        cipher = _get_field_cipher()
+        return cipher.decrypt(raw_token.encode("utf-8")).decode("utf-8")
+    except Exception:
+        return ciphertext

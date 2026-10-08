@@ -14,16 +14,18 @@ class GuardrailsManager:
 
     # Jailbreak and injection patterns (OWASP LLM01)
     INJECTION_PATTERNS = [
-        re.compile(r"ignore\s+(all\s+)?(previous|prior)\s+(instructions|prompts)", re.IGNORECASE),
+        re.compile(r"ignore\s+(all\s+)?(?:safety|security|system|previous|prior|existing)?\s*(?:rules|guidelines|instructions|prompts|boundaries|policies)", re.IGNORECASE),
         re.compile(r"(system\s+prompt|hidden\s+prompt|internal\s+instructions)", re.IGNORECASE),
         re.compile(r"you\s+are\s+now\s+(dan|unrestricted|god\s*mode)", re.IGNORECASE),
-        re.compile(r"(dump|drop|select\s+\*\s+from)\s+(users|credentials|passwords|database)", re.IGNORECASE),
-        re.compile(r"(reveal|show|print)\s+(all\s+)?(secrets|credentials|tokens|keys)", re.IGNORECASE)
+        re.compile(r"(dump|drop|select\s+\*\s+from|output|leak|expose)\s+.*(users|credentials|passwords|database|secret_key|keys)", re.IGNORECASE),
+        re.compile(r"(reveal|show|print|output)\s+(all\s+)?(secrets|credentials|tokens|keys|passwords)", re.IGNORECASE)
     ]
 
     # Unauthorized access probes (BOLA / Privacy)
     UNAUTHORIZED_PROBE_PATTERNS = [
         re.compile(r"(salary|compensation|paycheck)(\s+\w+)?\s+of\s+", re.IGNORECASE),
+        re.compile(r"(everyone'?s?|colleagues?'?|all\s+employees?)\s+(salary|salaries|compensation|pay)", re.IGNORECASE),
+        re.compile(r"(reveal|show|tell\s+me|give\s+me)\s+.*(salary|salaries|compensation|paycheck)", re.IGNORECASE),
         re.compile(r"(aadhaar|pan)(\s+\w+)?\s+of\s+", re.IGNORECASE),
         re.compile(r"bypass\s+(manager|approval|authorization)", re.IGNORECASE),
     ]
@@ -101,13 +103,13 @@ class GuardrailsManager:
         # 2. Enforce legal disclaimer if answering statutory/policy queries
         disclaimer_marker = "does not constitute formal legal advice"
         if is_policy_query and disclaimer_marker not in sanitized:
-            sanitized += "\n\n> **Statutory Disclaimer**: *This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.*"
+            sanitized += "\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice."
             if not tripped_rail:
                 tripped_rail = "LEGAL_DISCLAIMER_ATTACHED"
 
         # 3. Enforce medical decision support disclaimer for health queries
         if is_health_query and "clinical decision support" not in sanitized:
-            sanitized += "\n\n> **Clinical & HIPAA Disclaimer**: *This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship.*"
+            sanitized += "\n\nClinical & HIPAA Note: This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship."
             if not tripped_rail:
                 tripped_rail = "HEALTH_DISCLAIMER_ATTACHED"
 

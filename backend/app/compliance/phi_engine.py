@@ -134,19 +134,22 @@ class EnterpriseComplianceEngine:
         self,
         text: str,
         session_id: str,
-        user_role: str = "HR_Manager",
+        user_role: str = "HR_MANAGER",
         authorized_roles: Optional[List[str]] = None,
     ) -> str:
         """Restores surrogate tokens back to original plaintext values IF authorized."""
         if authorized_roles is None:
-            # HR Managers, Admins, and Medical Officers can view real employee identity
-            authorized_roles = ["Admin", "HR_Manager", "HR Manager", "Medical_Officer", "Doctor", "Clinician"]
+            authorized_roles = [
+                "ADMIN", "HR_MANAGER", "HR_ASSOCIATE", "MEDICAL_OFFICER"
+            ]
 
         tokens = self.vault.get_tokens(session_id)
         if not tokens:
             return text
 
-        is_authorized = user_role in authorized_roles
+        normalized_user_role = str(user_role).upper().replace(" ", "_")
+        normalized_authorized = {str(r).upper().replace(" ", "_") for r in authorized_roles}
+        is_authorized = normalized_user_role in normalized_authorized
         output = text
 
         for token, raw_val in tokens.items():

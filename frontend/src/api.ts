@@ -125,6 +125,20 @@ export const api = {
     });
     return res.data;
   },
+  getChatMemory: async (sessionId: string) => {
+    const res = await apiClient.get<{
+      session_id: string;
+      turns_count: number;
+      history: Array<{ role: string; content: string }>;
+      entities: Record<string, any>;
+    }>(`/agents/memory/${sessionId}`);
+    return res.data;
+  },
+  clearChatMemory: async (sessionId: string) => {
+    const res = await apiClient.delete(`/agents/memory/${sessionId}`);
+    return res.data;
+  },
+
 
   // Onboarding
   initiateOnboarding: async (payload: any) => {

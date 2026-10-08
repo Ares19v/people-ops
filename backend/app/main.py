@@ -4,6 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.logging_config import configure_logging
+
+configure_logging()
 from app.core.database import engine, Base
 from app.api.v1.auth import router as auth_router
 from app.api.v1.onboarding import router as onboarding_router
@@ -49,6 +52,7 @@ app.add_middleware(
 
 # Register routers
 app.include_router(health_router)
+app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(onboarding_router, prefix=settings.API_V1_STR)
 app.include_router(leaves_router, prefix=settings.API_V1_STR)
