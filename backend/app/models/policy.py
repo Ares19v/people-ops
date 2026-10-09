@@ -21,8 +21,8 @@ class PolicyDocument(Base):
     status = Column(Enum(PolicyStatus), default=PolicyStatus.ACTIVE_APPROVED, nullable=False)
     reviewed_by = Column(String(255), nullable=True)
     raw_content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class PolicyChunk(Base):
     __tablename__ = "policy_chunks"
@@ -35,4 +35,4 @@ class PolicyChunk(Base):
     metadata_json = Column(JSON, default=dict)
     # Stored embedding (as JSON list for cross-DB compatibility, or pgvector in Postgres)
     embedding_json = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

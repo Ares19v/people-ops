@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 from datetime import date, timedelta
 from sqlalchemy.future import select
 
@@ -17,6 +17,7 @@ async def seed_initial_data():
 
         # Admin
         admin = User(
+            id="USR-ADM-001",
             email="admin@intelera.corp",
             hashed_password=get_password_hash("Admin@12345"),
             full_name="Devansh Tyagi",
@@ -29,6 +30,7 @@ async def seed_initial_data():
 
         # HR Manager
         manager = User(
+            id="USR-MGR-002",
             email="manager@intelera.corp",
             hashed_password=get_password_hash("Manager@12345"),
             full_name="Vikram Malhotra",
@@ -42,6 +44,7 @@ async def seed_initial_data():
 
         # HR Associate
         associate = User(
+            id="USR-ASC-003",
             email="associate@intelera.corp",
             hashed_password=get_password_hash("Associate@12345"),
             full_name="Priya Patel",
@@ -55,6 +58,7 @@ async def seed_initial_data():
 
         # Employee
         employee = User(
+            id="USR-EMP-004",
             email="employee@intelera.corp",
             hashed_password=get_password_hash("Employee@12345"),
             full_name="Aarav Sharma",
@@ -68,6 +72,7 @@ async def seed_initial_data():
 
         # Profiles
         emp_profile = EmployeeProfile(
+            id="PRF-EMP-004",
             user_id=employee.id,
             date_of_birth="1995-08-15",
             address_encrypted="102 Horizon Towers, BKC, Mumbai, Maharashtra 400051",
@@ -80,21 +85,22 @@ async def seed_initial_data():
         db.add(emp_profile)
 
         # 2. Seed Projects
-        p1 = Project(name="Core Banking Modernization", code="PROJ-BNK-01", client_name="HDFC Financial")
-        p2 = Project(name="AI Observability & Guardrails Platform", code="PROJ-AI-02", client_name="Intelera Internal")
-        p3 = Project(name="Enterprise HR Workflow", code="PROJ-HR-03", client_name="Internal Corporate")
+        p1 = Project(id="PRJ-BNK-01", name="Core Banking Modernization", code="PROJ-BNK-01", client_name="HDFC Financial")
+        p2 = Project(id="PRJ-AI-02", name="AI Observability & Guardrails Platform", code="PROJ-AI-02", client_name="Intelera Internal")
+        p3 = Project(id="PRJ-HR-03", name="Enterprise HR Workflow", code="PROJ-HR-03", client_name="Internal Corporate")
         db.add_all([p1, p2, p3])
         await db.flush()
 
         # 3. Seed Leave Balances for Aarav Sharma (2026)
-        b_el = LeaveBalance(user_id=employee.id, year=2026, leave_type=LeaveType.EL, total_allocated=18.0, used_days=2.0, pending_days=0.0, carry_forwarded=3.0)
-        b_cl = LeaveBalance(user_id=employee.id, year=2026, leave_type=LeaveType.CL, total_allocated=8.0, used_days=1.0, pending_days=0.0, carry_forwarded=0.0)
-        b_sl = LeaveBalance(user_id=employee.id, year=2026, leave_type=LeaveType.SL, total_allocated=10.0, used_days=0.0, pending_days=0.0, carry_forwarded=2.0)
-        b_lwp = LeaveBalance(user_id=employee.id, year=2026, leave_type=LeaveType.LWP, total_allocated=0.0, used_days=0.0, pending_days=0.0, carry_forwarded=0.0)
+        b_el = LeaveBalance(id="BAL-EL-004", user_id=employee.id, year=2026, leave_type=LeaveType.EL, total_allocated=18.0, used_days=2.0, pending_days=0.0, carry_forwarded=3.0)
+        b_cl = LeaveBalance(id="BAL-CL-004", user_id=employee.id, year=2026, leave_type=LeaveType.CL, total_allocated=8.0, used_days=1.0, pending_days=0.0, carry_forwarded=0.0)
+        b_sl = LeaveBalance(id="BAL-SL-004", user_id=employee.id, year=2026, leave_type=LeaveType.SL, total_allocated=10.0, used_days=0.0, pending_days=0.0, carry_forwarded=2.0)
+        b_lwp = LeaveBalance(id="BAL-LWP-004", user_id=employee.id, year=2026, leave_type=LeaveType.LWP, total_allocated=0.0, used_days=0.0, pending_days=0.0, carry_forwarded=0.0)
         db.add_all([b_el, b_cl, b_sl, b_lwp])
 
         # 4. Sample Leave Applications
         app1 = LeaveApplication(
+            id="LV-2026-001",
             user_id=employee.id,
             leave_type=LeaveType.EL,
             start_date=date(2026, 2, 10),
@@ -105,6 +111,7 @@ async def seed_initial_data():
             approver_id=manager.id
         )
         app2 = LeaveApplication(
+            id="LV-2026-002",
             user_id=employee.id,
             leave_type=LeaveType.CL,
             start_date=date(2026, 3, 5),
@@ -118,6 +125,7 @@ async def seed_initial_data():
 
         # 5. Sample Timesheets
         t1 = TimesheetEntry(
+            id="TS-2026-001",
             user_id=employee.id,
             project_id=p1.id,
             task_name="API Gateway & Auth Integration",
@@ -128,6 +136,7 @@ async def seed_initial_data():
             approver_id=manager.id
         )
         t2 = TimesheetEntry(
+            id="TS-2026-002",
             user_id=employee.id,
             project_id=p2.id,
             task_name="NeMo Guardrails Input Validation Setup",

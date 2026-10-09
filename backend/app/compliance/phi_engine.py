@@ -21,13 +21,24 @@ class RedactionResult:
     session_id: str
     processing_time_ms: float
 
+import os
+import json
+from app.core.security import encrypt_field, decrypt_field
+
 class TokenVault:
-    """Thread-safe session-scoped storage for reversible pseudonymization tokens."""
+    """Thread-safe persistent encrypted storage for reversible pseudonymization tokens."""
     def __init__(self, ttl_seconds: int = 3600):
         self._vault: Dict[str, Dict[str, str]] = {}  # session_id -> {token: raw_value}
         self._timestamps: Dict[str, float] = {}
         self._ttl_seconds = ttl_seconds
         self._lock = threading.Lock()
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        self._storage_dir = os.path.join(base_dir, "data", "token_vault")
+        os.makedirs(self._storage_dir, exist_ok=True)
+
+    def _get_vault_file(self, session_id: str) -> str:
+        safe_sid = "".join(c for c in session_id if c.isalnum() or c in ("-", "_"))
+        return os.path.join(self._storage_dir, f"{safe_sid}.vault")
 
     def store_tokens(self, session_id: str, tokens: Dict[str, str]):
         with self._lock:
@@ -35,6 +46,18 @@ class TokenVault:
                 self._vault[session_id] = {}
             self._vault[session_id].update(tokens)
             self._timestamps[session_id] = time.time()
+            # Persist encrypted to disk
+            try:
+                vault_path = self._get_vault_file(session_id)
+                payload_json = json.dumps({
+                    "timestamp": self._timestamps[session_id],
+                    "tokens": self._vault[session_id]
+                })
+                encrypted = encrypt_field(payload_json)
+                with open(vault_path, "w", encoding="utf-8") as f:
+                    f.write(encrypted)
+            except Exception:
+                pass
 
     def get_tokens(self, session_id: str) -> Dict[str, str]:
         with self._lock:
@@ -42,13 +65,41 @@ class TokenVault:
             if ts and (time.time() - ts > self._ttl_seconds):
                 self._vault.pop(session_id, None)
                 self._timestamps.pop(session_id, None)
+                try:
+                    os.remove(self._get_vault_file(session_id))
+                except Exception:
+                    pass
                 return {}
-            return self._vault.get(session_id, {}).copy()
+            
+            if session_id in self._vault:
+                return self._vault[session_id].copy()
+            
+            # Attempt to restore from persistent encrypted vault on disk
+            try:
+                vault_path = self._get_vault_file(session_id)
+                if os.path.exists(vault_path):
+                    with open(vault_path, "r", encoding="utf-8") as f:
+                        encrypted_str = f.read().strip()
+                    decrypted_json = decrypt_field(encrypted_str)
+                    data = json.loads(decrypted_json)
+                    file_ts = data.get("timestamp", 0)
+                    if time.time() - file_ts <= self._ttl_seconds:
+                        self._vault[session_id] = data.get("tokens", {})
+                        self._timestamps[session_id] = file_ts
+                        return self._vault[session_id].copy()
+            except Exception:
+                pass
+                
+            return {}
 
     def clear_session(self, session_id: str):
         with self._lock:
             self._vault.pop(session_id, None)
             self._timestamps.pop(session_id, None)
+            try:
+                os.remove(self._get_vault_file(session_id))
+            except Exception:
+                pass
 
 class EnterpriseComplianceEngine:
     """Unified engine for DPDP 2023, GDPR, and HIPAA Safe Harbor 18."""

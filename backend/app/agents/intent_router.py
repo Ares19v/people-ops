@@ -190,7 +190,7 @@ class SemanticIntentRouter:
                 confidences["policy_rag_subagent"] = 0.75
 
         # ── Domain 5: Statutory Policy & Legal Knowledge ──────────────────────
-        if is_pure_policy and "policy_rag_subagent" not in selected_tools:
+        if (is_pure_policy or has_policy_mention) and "policy_rag_subagent" not in selected_tools:
             selected_tools.append("policy_rag_subagent")
             confidences["policy_rag_subagent"] = 0.95
 

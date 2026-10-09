@@ -31,7 +31,7 @@ class LeaveBalance(Base):
     used_days = Column(Float, default=0.0)
     pending_days = Column(Float, default=0.0)
     carry_forwarded = Column(Float, default=0.0)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="leave_balances")
 
@@ -54,8 +54,8 @@ class LeaveApplication(Base):
     status = Column(Enum(LeaveStatus), default=LeaveStatus.SUBMITTED, nullable=False)
     approver_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     approver_comments = Column(Text, nullable=True)
-    applied_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    decided_at = Column(DateTime, nullable=True)
+    applied_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    decided_at = Column(DateTime(timezone=True), nullable=True)
 
     user = relationship("User", back_populates="leave_applications", foreign_keys=[user_id])
     approver = relationship("User", foreign_keys=[approver_id])

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr, ConfigDict
 from app.models.user import UserRole
 
@@ -17,6 +17,7 @@ class TokenResponse(BaseModel):
     email: str
     full_name: str
     role: UserRole
+    permissions: List[str] = []
 
 class UserResponse(BaseModel):
     id: str
@@ -27,5 +28,6 @@ class UserResponse(BaseModel):
     designation: str
     manager_id: Optional[str] = None
     is_active: bool
+    permissions: List[str] = []
 
     model_config = ConfigDict(from_attributes=True)

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, UserRole, Project, TimesheetReportSummary } from '../types';
-import { Download, Filter, FileSpreadsheet, CheckCircle2, TrendingUp, Clock } from 'lucide-react';
+import { Download, Filter, FileSpreadsheet, CheckCircle2, TrendingUp, Clock, Database } from 'lucide-react';
 import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
+import { DatabaseInspector } from '../components/DatabaseInspector';
 
 interface ReportsPortalProps {
   currentUser: User | null;
@@ -15,6 +16,7 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [isDbMode, setIsDbMode] = useState<boolean>(false);
 
   const loadData = async () => {
     try {
@@ -60,27 +62,52 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
         <div>
           <div className="flex items-center">
             <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-              Timesheet Reports & CSV Export
+              <button
+                onClick={() => setIsDbMode(!isDbMode)}
+                className="group relative p-1 -m-1 rounded-xl transition-all duration-200 hover:bg-slate-100 active:scale-95 cursor-pointer focus:outline-none"
+                title={isDbMode ? "Click icon to return to Reports View" : "Click icon to switch to Database Mode"}
+              >
+                {isDbMode ? (
+                  <Database className="w-5 h-5 text-slate-800 transition-transform duration-200 group-hover:scale-110" />
+                ) : (
+                  <FileSpreadsheet className="w-5 h-5 text-slate-700 transition-transform duration-200 group-hover:scale-110" />
+                )}
+                <span className="sr-only">Toggle Database Mode</span>
+              </button>
+              <span>{isDbMode ? "Database Mode & SQL Inspector" : "Timesheet Reports & CSV Export"}</span>
+              {isDbMode && (
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700">
+                  Active
+                </span>
+              )}
             </h2>
             <FeatureExplainerIcon featureKey="reports_summary_kpis" />
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Aggregate project hours, audit billable utilization, and generate official payroll exports.
+            {isDbMode
+              ? "Clean relational PostgreSQL SQL views, joined tables, and conversation turns."
+              : "Aggregate project hours, audit billable utilization, and generate official payroll exports."}
           </p>
         </div>
-        <div className="flex items-center">
-          <button
-            onClick={handleDownloadCSV}
-            disabled={isExporting}
-            className="btn-pill-dark self-start sm:self-auto disabled:opacity-60 cursor-pointer"
-          >
-            <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
-            <span>{isExporting ? 'Generating CSV...' : 'Export Timesheets (CSV)'}</span>
-          </button>
-          <FeatureExplainerIcon featureKey="reports_csv_export" />
-        </div>
+        {!isDbMode && (
+          <div className="flex items-center">
+            <button
+              onClick={handleDownloadCSV}
+              disabled={isExporting}
+              className="btn-pill-dark self-start sm:self-auto disabled:opacity-60 cursor-pointer"
+            >
+              <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+              <span>{isExporting ? 'Generating CSV...' : 'Export Timesheets (CSV)'}</span>
+            </button>
+            <FeatureExplainerIcon featureKey="reports_csv_export" />
+          </div>
+        )}
       </div>
+
+      {isDbMode ? (
+        <DatabaseInspector />
+      ) : (
+        <>
 
       {/* Filter Card */}
       <div className="card-olixer p-5">
@@ -240,6 +267,8 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
           </table>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

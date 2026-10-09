@@ -10,7 +10,7 @@ import {
   AgentChatResponse,
 } from './types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -26,8 +26,14 @@ apiClient.interceptors.request.use((config) => {
 
 export const api = {
   // Auth
+  login: async (email: string, password: string) => {
+    const res = await apiClient.post<{ access_token: string; role: UserRole; full_name: string; permissions: string[] }>('/auth/login', { email, password });
+    localStorage.setItem('token', res.data.access_token);
+    localStorage.setItem('user_role', res.data.role);
+    return res.data;
+  },
   mockLogin: async (role: UserRole) => {
-    const res = await apiClient.post<{ access_token: string; role: UserRole; full_name: string }>('/auth/mock-login', { role });
+    const res = await apiClient.post<{ access_token: string; role: UserRole; full_name: string; permissions: string[] }>('/auth/mock-login', { role });
     localStorage.setItem('token', res.data.access_token);
     localStorage.setItem('user_role', res.data.role);
     return res.data;
@@ -39,6 +45,10 @@ export const api = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user_role');
+  },
+  getPrompts: async () => {
+    const res = await apiClient.get('/agents/prompts');
+    return res.data;
   },
 
   // Leaves
@@ -115,6 +125,10 @@ export const api = {
     const res = await apiClient.get('/policy/search', { params: { q: query } });
     return res.data;
   },
+  getKnowledgeGraph: async () => {
+    const res = await apiClient.get('/policy/graph');
+    return res.data;
+  },
 
   // Multi-Agent Chat
   chatWithAgent: async (message: string, sessionId?: string, targetAgent?: string) => {
@@ -136,6 +150,16 @@ export const api = {
   },
   clearChatMemory: async (sessionId: string) => {
     const res = await apiClient.delete(`/agents/memory/${sessionId}`);
+    return res.data;
+  },
+
+  // Zoho People HRMS Integration
+  getZohoStatus: async () => {
+    const res = await apiClient.get('/agents/zoho/status');
+    return res.data;
+  },
+  syncZohoAttendance: async (date: string, hours: number) => {
+    const res = await apiClient.post('/agents/zoho/sync-attendance', { date, hours });
     return res.data;
   },
 
@@ -161,6 +185,31 @@ export const api = {
   },
   confirmOnboarding: async (payload: any) => {
     const res = await apiClient.post('/onboarding/confirm', payload);
+    return res.data;
+  },
+
+  // Database Inspector & SQL Views
+  getDatabaseViews: async () => {
+    const res = await apiClient.get<Array<{
+      key: string;
+      title: string;
+      description: string;
+      icon: string;
+      category: string;
+      rowCount: number;
+    }>>('/reports/db-inspector/views');
+    return res.data;
+  },
+  getDatabaseViewData: async (viewName: string, search?: string, limit?: number) => {
+    const res = await apiClient.get<{
+      view_name: string;
+      meta: { title: string; description: string; category: string; icon: string };
+      columns: string[];
+      rows: Array<Record<string, any>>;
+      total_returned: number;
+    }>(`/reports/db-inspector/view/${viewName}`, {
+      params: { search, limit: limit || 100 }
+    });
     return res.data;
   },
 };

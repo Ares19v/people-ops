@@ -58,3 +58,29 @@ async def export_timesheet_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/db-inspector/views")
+async def list_database_views(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Lists all clean SQL views and their row counts for the visual inspector."""
+    from app.core.db_views import get_available_views_metadata
+    return await get_available_views_metadata(db)
+
+@router.get("/db-inspector/view/{view_name}")
+async def get_view_data(
+    view_name: str,
+    search: Optional[str] = Query(None),
+    limit: int = Query(100, ge=1, le=500),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Fetches formatted records and schema columns for a given SQL view."""
+    from app.core.db_views import fetch_view_records
+    from fastapi import HTTPException
+    try:
+        return await fetch_view_records(db, view_name, search=search, limit=limit)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

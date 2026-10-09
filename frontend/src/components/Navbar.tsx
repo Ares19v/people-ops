@@ -13,6 +13,7 @@ interface NavbarProps {
   isChatOpen: boolean;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  onOpenAuthModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,6 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isChatOpen,
   isFullscreen,
   onToggleFullscreen,
+  onOpenAuthModal,
 }) => {
   const [roleOpen, setRoleOpen] = useState(false);
   const roleRef = useRef<HTMLDivElement>(null);
@@ -138,6 +140,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </button>
                   );
                 })}
+
+                {/* 5th Option: Auth & Privacy (Black with White Text) */}
+                {onOpenAuthModal && (
+                  <div className="pt-1.5 mt-1 border-t border-slate-100">
+                    <button
+                      onClick={() => {
+                        onOpenAuthModal();
+                        setRoleOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 active:bg-black text-white text-xs font-semibold transition-all shadow-sm"
+                      title="Sign In & Inspect Role Information Boundaries"
+                    >
+                      <span>Auth & Privacy</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -25,6 +25,12 @@ async def lifespan(app: FastAPI):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         await seed_initial_data()
+        from app.core.db_views import initialize_database_views
+        await initialize_database_views()
+        from app.services.langfuse_prompt_service import langfuse_prompt_service
+        from app.agents.adk_fleet import sync_agent_instructions
+        await langfuse_prompt_service.load_prompts_from_db()
+        sync_agent_instructions()
     except Exception as e:
         print(f"Startup DB init notice: {e}")
     yield

@@ -34,11 +34,16 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
 
   const loadApplications = async () => {
     try {
-      const myApps = await api.getLeaveApplications();
-      setApplications(myApps);
       if (currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') {
-        const allPending = await api.getLeaveApplications('SUBMITTED', true);
+        const [myApps, allPending] = await Promise.all([
+          api.getLeaveApplications(),
+          api.getLeaveApplications('SUBMITTED', true),
+        ]);
+        setApplications(myApps);
         setPendingApprovals(allPending);
+      } else {
+        const myApps = await api.getLeaveApplications();
+        setApplications(myApps);
       }
     } catch (err: any) {
       console.error(err);

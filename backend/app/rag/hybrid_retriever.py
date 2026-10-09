@@ -37,10 +37,13 @@ Pre-natal care expenses up to INR 50,000 are directly reimbursable under the ent
 """
 
 class HybridPolicyRetriever:
-    """Enterprise hybrid search engine combining ChromaDB dense vectors and BM25 keywords."""
+    """Enterprise hybrid search engine combining persistent ChromaDB dense vectors and BM25 keywords."""
 
     def __init__(self):
-        self.chroma_client = chromadb.Client()
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        chroma_path = os.path.join(base_dir, "data", "chroma_db")
+        os.makedirs(chroma_path, exist_ok=True)
+        self.chroma_client = chromadb.PersistentClient(path=chroma_path)
         self.collection = self.chroma_client.get_or_create_collection(name="enterprise_policies")
         self.chunks: List[PolicyChunk] = []
         self.bm25: Optional[BM25Okapi] = None

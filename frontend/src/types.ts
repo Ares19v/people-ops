@@ -9,6 +9,7 @@ export interface User {
   designation: string;
   manager_id?: string;
   is_active: boolean;
+  permissions?: string[];
 }
 
 export interface LeaveBalanceItem {

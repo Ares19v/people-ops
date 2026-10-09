@@ -76,8 +76,10 @@ class Settings(BaseSettings):
     ZOHO_CLIENT_ID: Optional[str] = None
     ZOHO_CLIENT_SECRET: Optional[str] = None
     ZOHO_REFRESH_TOKEN: Optional[str] = None
+    ZOHO_ACCOUNTS_URL: str = "https://accounts.zoho.in/oauth/v2/token"
+    ZOHO_BASE_URL: str = "https://people.zoho.in/people/api"
     ZOHO_ORG_ID: str = "intelera_people_01"
-    ZOHO_MOCK_ENABLED: bool = True
+    ZOHO_MOCK_ENABLED: bool = False
 
     model_config = SettingsConfigDict(
         env_file=(

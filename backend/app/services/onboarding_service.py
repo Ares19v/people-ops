@@ -129,6 +129,36 @@ class OnboardingService:
             except Exception:
                 pass  # Fall back to verified local disk copy
 
+        # Read and extract text for real statutory verification
+        extracted_text = ""
+        try:
+            import pypdf
+            import io
+            reader = pypdf.PdfReader(io.BytesIO(content))
+            for page in reader.pages:
+                t = page.extract_text()
+                if t:
+                    extracted_text += t + "\n"
+        except Exception:
+            try:
+                extracted_text = content.decode("utf-8", errors="ignore")
+            except Exception:
+                extracted_text = ""
+
+        # Query user to obtain official registered name for cross-matching
+        user_stmt = select(User).filter(User.id == target_user_id)
+        user_res = await db.execute(user_stmt)
+        target_user = user_res.scalars().first()
+        full_name = target_user.full_name if target_user else None
+
+        # Execute real Verhoeff / PAN verification algorithm
+        from app.compliance.id_verification import extract_and_verify_id_from_text
+        verification_result = extract_and_verify_id_from_text(
+            doc_text=extracted_text,
+            doc_type_str=doc_type.value,
+            full_name=full_name
+        )
+
         doc = Document(
             user_id=target_user_id,
             doc_type=doc_type,
@@ -137,16 +167,22 @@ class OnboardingService:
             mime_type=file.content_type,
             file_size=float(file_size),
             checksum=checksum,
-            is_verified=False
+            is_verified=verification_result["is_verified"]
         )
         db.add(doc)
 
         audit = AuditLog(
             actor_id=uploader.id,
-            action="DOCUMENT_UPLOADED",
+            action="DOCUMENT_UPLOADED_AND_VERIFIED" if verification_result["is_verified"] else "DOCUMENT_UPLOADED_PENDING_REVIEW",
             resource_type="document",
             resource_id=doc.id,
-            details={"doc_type": doc_type.value, "checksum": checksum}
+            details={
+                "doc_type": doc_type.value,
+                "checksum": checksum,
+                "verification_status": "VERIFIED" if verification_result["is_verified"] else "UNVERIFIED",
+                "verification_details": verification_result["details"],
+                "masked_id": verification_result.get("masked_id")
+            }
         )
         db.add(audit)
         await db.commit()
@@ -188,13 +224,17 @@ class OnboardingService:
         phone_match = re.search(r'(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}\b', extracted_text)
         found_phone = phone_match.group(0) if phone_match else None
 
-        # 3. Real Skills Taxonomy Matching
+        # 3. Real Skills Taxonomy Matching (60+ technical & domain skills)
         SKILLS_TAXONOMY = [
             "Python", "FastAPI", "PostgreSQL", "React", "TypeScript", "JavaScript",
             "Docker", "Kubernetes", "AWS", "GCP", "Azure", "Machine Learning",
             "Deep Learning", "SQL", "Redis", "Node.js", "Django", "Flask", "Java",
-            "C++", "Go", "Rust", "Git", "CI/CD", "Terraform", "Linux", "NLP",
-            "Pandas", "NumPy", "GraphQL", "Tailwind", "HTML", "CSS", "Microservices"
+            "C++", "C#", ".NET", "Go", "Rust", "Git", "CI/CD", "Terraform", "Linux",
+            "NLP", "LLM", "Pandas", "NumPy", "GraphQL", "Tailwind", "HTML", "CSS",
+            "Microservices", "Kafka", "Elasticsearch", "MongoDB", "LangChain",
+            "DevOps", "REST API", "gRPC", "Next.js", "Vue", "Angular", "System Design",
+            "Agile", "Scrum", "Data Engineering", "PyTorch", "TensorFlow", "Snowflake",
+            "Spark", "Hadoop", "Tableau", "PowerBI", "Solidity", "Kotlin", "Swift"
         ]
         matched_skills = []
         for skill in SKILLS_TAXONOMY:

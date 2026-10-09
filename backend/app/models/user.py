@@ -37,8 +37,8 @@ class User(Base):
     designation = Column(String(100), default="Software Engineer")
     manager_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
     manager = relationship("User", remote_side=[id], backref="direct_reports")
@@ -62,8 +62,8 @@ class EmployeeProfile(Base):
     employment_type = Column(String(50), default="Full-Time Permanent")
     onboarding_status = Column(Enum(OnboardingStatus), default=OnboardingStatus.PENDING)
     extracted_resume_data = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="profile")
 
@@ -80,8 +80,8 @@ class Document(Base):
     checksum = Column(String(64), nullable=True)
     is_verified = Column(Boolean, default=False)
     verified_by_id = Column(String(36), ForeignKey("users.id"), nullable=True)
-    verified_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    verified_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="documents", foreign_keys=[user_id])
     verifier = relationship("User", foreign_keys=[verified_by_id])
@@ -96,6 +96,6 @@ class AuditLog(Base):
     resource_id = Column(String(100), nullable=True)
     details = Column(JSON, default=dict)
     ip_address = Column(String(50), nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     actor = relationship("User")

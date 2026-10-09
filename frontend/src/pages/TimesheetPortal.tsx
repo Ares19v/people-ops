@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, UserRole, Project, TimesheetEntry, TimesheetReportSummary } from '../types';
-import { Clock, CheckCircle2, Plus, AlertCircle, FileText, Check, X, ShieldCheck } from 'lucide-react';
+import { Clock, CheckCircle2, Plus, AlertCircle, FileText, Check, X, ShieldCheck, Building2 } from 'lucide-react';
 import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
+import { ZohoPeopleIntegrationHub } from '../components/ZohoPeopleIntegrationHub';
 
 interface TimesheetPortalProps {
   currentUser: User | null;
@@ -15,6 +16,7 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
   currentRole,
   initialOpenLogModal = false,
 }) => {
+  const [subView, setSubView] = useState<'timesheets' | 'zoho'>('timesheets');
   const [projects, setProjects] = useState<Project[]>([]);
   const [report, setReport] = useState<TimesheetReportSummary | null>(null);
   const [showLogModal, setShowLogModal] = useState(initialOpenLogModal);
@@ -29,12 +31,14 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
 
   const loadData = async () => {
     try {
-      const projs = await api.getProjects();
+      const [projs, rep] = await Promise.all([
+        api.getProjects(),
+        api.getTimesheetReport(),
+      ]);
       setProjects(projs);
       if (projs.length > 0 && !selectedProject) {
         setSelectedProject(projs[0].id);
       }
-      const rep = await api.getTimesheetReport();
       setReport(rep);
     } catch (err) {
       console.error(err);
@@ -106,42 +110,79 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSubView((prev) => (prev === 'timesheets' ? 'zoho' : 'timesheets'))}
+              className="p-1 -ml-1 rounded-xl hover:bg-blue-50 active:scale-95 transition-all text-blue-600 focus:outline-none group flex items-center justify-center cursor-pointer"
+              title={subView === 'timesheets' ? "Switch to Zoho People HRMS Hub" : "Back to Timesheets Grid"}
+            >
+              {subView === 'timesheets' ? (
+                <Clock className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+              ) : (
+                <Building2 className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+              )}
+            </button>
             <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-blue-600" />
-              Timesheet Management & Overtime Audit
+              {subView === 'timesheets' ? 'Timesheet Management & Overtime Audit' : 'Zoho People HRMS Live Integration Hub'}
             </h2>
             <FeatureExplainerIcon featureKey="timesheet_grid" />
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Logs project hours, verifies Maharashtra 9h/day & 48h/week statutory limits, and audits overtime.
+            {subView === 'timesheets'
+              ? 'Logs project hours, verifies Maharashtra 9h/day & 48h/week statutory limits, and audits overtime.'
+              : 'Live OAuth 2.0 biometric attendance synchronization, employee hierarchy, and audit ledger.'}
           </p>
         </div>
+
+        {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && submittedEntries.length ? (
+          {subView === 'zoho' && (
             <button
-              onClick={() => handleBatchDecision('APPROVE')}
-              className="btn-pill-outline"
+              onClick={() => setSubView('timesheets')}
+              className="btn-pill-outline text-xs"
             >
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Approve All ({submittedEntries.length})</span>
+              <Clock className="w-3.5 h-3.5 text-blue-600" />
+              <span>Back to Timesheets</span>
             </button>
-          ) : null}
-          <div className="flex items-center">
-            <button
-              onClick={() => setShowLogModal(true)}
-              className="btn-pill-dark"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Log Working Hours</span>
-            </button>
-            <FeatureExplainerIcon featureKey="quarterly_overtime_cap" />
-          </div>
+          )}
+
+          {subView === 'timesheets' && (
+            <>
+              {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && submittedEntries.length ? (
+                <button
+                  onClick={() => handleBatchDecision('APPROVE')}
+                  className="btn-pill-outline"
+                >
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Approve All ({submittedEntries.length})</span>
+                </button>
+              ) : null}
+              <div className="flex items-center">
+                <button
+                  onClick={() => setShowLogModal(true)}
+                  className="btn-pill-dark"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Log Working Hours</span>
+                </button>
+                <FeatureExplainerIcon featureKey="quarterly_overtime_cap" />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      {/* Zoho Integration Hub SubView */}
+      {subView === 'zoho' && (
+        <ZohoPeopleIntegrationHub />
+      )}
+
+      {/* Timesheets Grid SubView */}
+      {subView === 'timesheets' && (
+        <>
+          {/* Metrics Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="card-olixer p-5">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
             <span className="font-display font-semibold text-slate-600">Total Hours</span>
@@ -333,6 +374,8 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
           </table>
         </div>
       </div>
+    </>
+  )}
 
       {/* Log Time Modal */}
       {showLogModal && (

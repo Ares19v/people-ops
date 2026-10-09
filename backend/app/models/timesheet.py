@@ -21,7 +21,7 @@ class Project(Base):
     code = Column(String(50), unique=True, index=True, nullable=False)
     client_name = Column(String(200), nullable=False)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     entries = relationship("TimesheetEntry", back_populates="project")
 
@@ -39,8 +39,8 @@ class TimesheetEntry(Base):
     status = Column(Enum(TimesheetStatus), default=TimesheetStatus.SUBMITTED, nullable=False)
     approver_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     rejection_reason = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="timesheet_entries", foreign_keys=[user_id])
     project = relationship("Project", back_populates="entries")

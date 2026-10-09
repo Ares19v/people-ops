@@ -30,3 +30,6 @@ class AgentChatResponse(BaseModel):
     session_id: str
     latency_ms: float
     token_usage: Dict[str, int] = {}
+    cost_usd: Optional[float] = 0.0
+    waterfall_diagram: Optional[str] = None
+    eval_scores: Optional[Dict[str, float]] = None

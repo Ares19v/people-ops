@@ -37,3 +37,8 @@ uploads/
 tmp/
 .DS_Store
 Thumbs.db
+
+# Runtime data & traces
+backend/data/chroma_db/
+backend/data/token_vault/
+backend/data/traces/

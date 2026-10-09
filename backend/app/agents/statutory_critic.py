@@ -115,24 +115,7 @@ class StatutoryCriticAgent:
     async def critique_with_llm(
         self, text: str, user_query: str = "", jurisdiction: Optional[str] = None
     ) -> StatutoryVerificationResult:
-        """Dual-pass statutory verification: LLM self-reflection when active, grounded by statutory rules."""
-        from app.core.llm_bridge import resolve_llm_provider, generate_summary
-        draft = text
-        if resolve_llm_provider() != "mock":
-            critic_prompt = (
-                f"You are a Statutory Labour Law Critic. Audit this HR response for statutory accuracy:\n\n"
-                f"Query: {user_query}\n"
-                f"Draft: {text}\n\n"
-                f"Statutory invariants: Max 9h daily standard hours (Sec 13), Overtime at 2.0x (Sec 14), "
-                f"Earned Leave accumulation capped at 45 days (Sec 18), Casual Leave 8 days. "
-                f"Output the corrected response if any statutory clauses are inaccurate."
-            )
-            try:
-                reflection = await generate_summary(critic_prompt)
-                if reflection and len(reflection) > 30 and not reflection.startswith("[MOCK"):
-                    draft = reflection
-            except Exception:
-                pass
-        return self.verify_and_correct(draft, user_query=user_query, jurisdiction=jurisdiction)
+        """Dual-pass statutory verification: High-performance statutory rule engine and citation audit."""
+        return self.verify_and_correct(text, user_query=user_query, jurisdiction=jurisdiction)
 
 statutory_critic = StatutoryCriticAgent()

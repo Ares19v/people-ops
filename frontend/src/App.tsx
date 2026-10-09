@@ -13,6 +13,7 @@ import { Shield, Sparkles, Maximize2 } from 'lucide-react';
 import { DemoModeProvider } from './context/DemoModeContext';
 import { FeatureExplainerModal } from './components/FeatureExplainerModal';
 import { DemoModeToggleBar } from './components/DemoModeToggleBar';
+import { AuthLoginModal } from './components/AuthLoginModal';
 
 export const App: React.FC = () => {
   const [currentRole, setCurrentRole] = useState<UserRole>('EMPLOYEE');
@@ -22,6 +23,7 @@ export const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isChatFullScreen, setIsChatFullScreen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [autoOpenApplyModal, setAutoOpenApplyModal] = useState(false);
   const [autoOpenLogModal, setAutoOpenLogModal] = useState(false);
@@ -48,15 +50,18 @@ export const App: React.FC = () => {
     }
   }, [isFullscreen]);
 
-  // Switch role and fetch user data
+  // Switch role and fetch user data concurrently with zero waterfall latency
   const handleRoleSwitch = async (newRole: UserRole) => {
     setCurrentRole(newRole);
     setLoading(true);
     try {
-      await api.mockLogin(newRole);
-      const user = await api.getCurrentUser();
+      const loginRes = await api.mockLogin(newRole);
+      // Fetch user profile and balances in parallel
+      const [user, bals] = await Promise.all([
+        api.getCurrentUser(),
+        api.getLeaveBalances(loginRes.access_token ? undefined : undefined),
+      ]);
       setCurrentUser(user);
-      const bals = await api.getLeaveBalances(user.id);
       setBalances(bals);
     } catch (err) {
       console.error('Role switch failed:', err);
@@ -102,6 +107,7 @@ export const App: React.FC = () => {
             isChatOpen={isChatOpen}
             isFullscreen={isFullscreen}
             onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
           />
 
           {/* Mobile Navigation Pills */}
@@ -213,6 +219,19 @@ export const App: React.FC = () => {
 
       {/* Feature Explainer Modal with 25% screen blur */}
       <FeatureExplainerModal />
+
+      {/* Interactive Authentication & RBAC Boundary Modal */}
+      <AuthLoginModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          setCurrentRole(user.role);
+          setIsAuthModalOpen(false);
+          refreshBalances();
+        }}
+      />
     </DemoModeProvider>
   );
 };

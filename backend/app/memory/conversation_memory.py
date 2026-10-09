@@ -1,11 +1,13 @@
-"""Multi-Turn Conversational Memory & Persistent Entity State Manager.
+"""Multi-Turn Conversational Memory & Persistent Entity State Manager with Rolling Summaries.
 
 Ensures the agent fleet 'remembers' context across sequential turns
 (e.g., active leave dates, previous questions, ongoing multi-step workflows).
-Features persistent snapshot backing, automatic entity extraction, and episodic search.
+Features persistent snapshot backing, automatic entity extraction, episodic search,
+and PostgreSQL/SQLite database checkpointing with rolling summaries.
 """
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 import json
 import os
 import re
@@ -15,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from app.core.security import mask_all_pii
-from app.models.chat_session import ChatSession, ChatTurn
+from app.models.chat_session import ChatSession, ChatTurn, ConversationSummary
 
 
 @dataclass
@@ -42,15 +44,20 @@ class MemoryTurn:
             metadata=data.get("metadata", {})
         )
 
-class ConversationMemoryManager:
-    """Thread-safe persistent session memory manager providing sliding-window history and entity memory."""
 
-    def __init__(self, max_turns_per_session: int = 20, ttl_seconds: int = 86400):
+class ConversationMemoryManager:
+    """Thread-safe persistent session memory manager providing sliding-window history,
+    rolling summaries, and entity memory.
+    """
+
+    def __init__(self, max_turns_per_session: int = 20, ttl_seconds: int = 86400, summary_threshold: int = 6):
         self._history: Dict[str, List[MemoryTurn]] = {}
         self._entities: Dict[str, Dict[str, Any]] = {}  # session_id -> {active_leave_type, days, etc.}
+        self._summaries: Dict[str, str] = {}            # session_id -> latest rolling summary text
         self._last_accessed: Dict[str, float] = {}
         self._max_turns = max_turns_per_session
         self._ttl_seconds = ttl_seconds
+        self._summary_threshold = summary_threshold
         self._lock = threading.Lock()
         self._persistence_file = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -70,6 +77,7 @@ class ConversationMemoryManager:
                             self._history[sid] = [MemoryTurn.from_dict(t) for t in turns]
                             self._last_accessed[sid] = time.time()
                         self._entities = data.get("entities", {})
+                        self._summaries = data.get("summaries", {})
             except Exception as e:
                 print(f"Notice: Failed to load conversation memory from disk: {e}")
 
@@ -83,6 +91,7 @@ class ConversationMemoryManager:
                     for sid, turns in self._history.items()
                 },
                 "entities": self._entities,
+                "summaries": self._summaries,
                 "saved_at": time.time()
             }
             with open(self._persistence_file, "w", encoding="utf-8") as f:
@@ -151,21 +160,45 @@ class ConversationMemoryManager:
             turns = self._history.get(session_id, [])
             return [{"role": t.role, "content": t.content} for t in turns[-limit:]]
 
-    def get_formatted_history(self, session_id: str, limit: int = 6) -> str:
-        """Returns formatted string of conversation history and active entity memory for LLM context injection."""
+    def get_formatted_history(
+        self,
+        session_id: str,
+        limit: int = 6,
+        user_id: Optional[str] = None,
+        user_role: Optional[str] = None,
+    ) -> str:
+        """Returns formatted string of identity context, rolling summary, entity memory, and recent turns."""
         with self._lock:
             turns = self._history.get(session_id, [])
             recent_turns = turns[-limit:] if turns else []
             entities = self._entities.get(session_id, {})
+            summary = self._summaries.get(session_id)
 
-        if not recent_turns and not entities:
+        if not recent_turns and not entities and not summary:
             return "No previous conversation history."
 
         formatted_lines = []
+
+        # 1. Identity & Time Context Header
+        if user_id:
+            now_str = datetime.now(timezone.utc).strftime("%A, %B %d, %Y %I:%M %p UTC")
+            formatted_lines.append("════════════════════════════════════════════════════════════")
+            formatted_lines.append(f"AUTHENTICATED USER: {user_id} ({user_role or 'EMPLOYEE'})")
+            formatted_lines.append(f"CURRENT_TIME: {now_str}")
+            formatted_lines.append("════════════════════════════════════════════════════════════")
+
+        # 2. Rolling Summary if available
+        if summary:
+            formatted_lines.append("── Previous Conversation Rolling Summary ──")
+            formatted_lines.append(summary)
+            formatted_lines.append("───────────────────────────────────────────")
+
+        # 3. Active Entities
         if entities:
             entity_str = ", ".join([f"{k}: {v}" for k, v in entities.items()])
             formatted_lines.append(f"Active Entity Memory Context: [{entity_str}]")
 
+        # 4. Recent turns
         for t in recent_turns:
             prefix = "Employee" if t.role == "user" else "Assistant"
             formatted_lines.append(f"{prefix}: {t.content}")
@@ -205,6 +238,7 @@ class ConversationMemoryManager:
         with self._lock:
             self._history.pop(session_id, None)
             self._entities.pop(session_id, None)
+            self._summaries.pop(session_id, None)
             self._last_accessed.pop(session_id, None)
             self._save_to_disk()
 
@@ -215,7 +249,58 @@ class ConversationMemoryManager:
         for sid in expired:
             self._history.pop(sid, None)
             self._entities.pop(sid, None)
+            self._summaries.pop(sid, None)
             self._last_accessed.pop(sid, None)
+
+    async def generate_rolling_summary(self, session_id: str, db: Optional[AsyncSession] = None) -> Optional[str]:
+        """Generates and persists a rolling summary of older turns in long conversations."""
+        with self._lock:
+            turns = self._history.get(session_id, [])
+            if len(turns) < self._summary_threshold:
+                return None
+            older_turns = turns[:-4]  # Keep last 4 turns fresh in sliding window
+
+        # Concise heuristic summarization preserving core decisions & intents
+        key_topics = []
+        for t in older_turns:
+            content_snippet = t.content.strip().split("\n")[0]
+            if len(content_snippet) > 80:
+                content_snippet = content_snippet[:80] + "..."
+            role_label = "User" if t.role == "user" else "Assistant"
+            key_topics.append(f"{role_label}: {content_snippet}")
+
+        summary_text = (
+            f"Prior conversation covered {len(older_turns)} turns. "
+            f"Key sequence: " + " -> ".join(key_topics[-4:])
+        )
+
+        with self._lock:
+            self._summaries[session_id] = summary_text
+            self._save_to_disk()
+
+        if db:
+            try:
+                stmt = select(ConversationSummary).filter(
+                    ConversationSummary.session_id == session_id
+                ).order_by(ConversationSummary.created_at.desc())
+                res = await db.execute(stmt)
+                db_summary = res.scalars().first()
+                if db_summary:
+                    db_summary.summary_text = summary_text
+                    db_summary.covers_turns_count = len(older_turns)
+                else:
+                    db_summary = ConversationSummary(
+                        session_id=session_id,
+                        summary_text=summary_text,
+                        covers_turns_count=len(older_turns)
+                    )
+                    db.add(db_summary)
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                print(f"Notice: Failed to persist summary to DB: {e}")
+
+        return summary_text
 
     async def persist_turn_db(
         self,
@@ -227,11 +312,11 @@ class ConversationMemoryManager:
         metadata: Optional[Dict[str, Any]] = None,
         title: Optional[str] = None
     ) -> MemoryTurn:
-        """Persists turn to PostgreSQL chat_turns table and synchronizes ChatSession state."""
+        """Persists turn to PostgreSQL/SQLite chat_turns table and synchronizes ChatSession state."""
         # 1. Update in-memory and disk snapshot
         self.add_turn(session_id, role, content, metadata)
 
-        # 2. Checkpoint to PostgreSQL
+        # 2. Checkpoint to database
         try:
             stmt = select(ChatSession).filter(ChatSession.id == session_id)
             res = await db.execute(stmt)
@@ -260,14 +345,21 @@ class ConversationMemoryManager:
             )
             db.add(db_turn)
             await db.commit()
+
+            # Trigger rolling summary when threshold is crossed
+            with self._lock:
+                turns_count = len(self._history.get(session_id, []))
+            if turns_count >= self._summary_threshold:
+                await self.generate_rolling_summary(session_id, db)
+
         except Exception as e:
             await db.rollback()
-            print(f"Notice: PostgreSQL checkpointing non-fatal exception: {e}")
+            print(f"Notice: Database checkpointing non-fatal exception: {e}")
 
         return MemoryTurn(role=role, content=mask_all_pii(content), metadata=metadata or {})
 
     async def load_session_from_db(self, db: AsyncSession, session_id: str) -> bool:
-        """Loads historical turns and entity slots from PostgreSQL if not already in memory."""
+        """Loads historical turns, rolling summary, and entity slots from DB if not already in memory."""
         try:
             stmt = select(ChatSession).filter(ChatSession.id == session_id)
             res = await db.execute(stmt)
@@ -278,6 +370,13 @@ class ConversationMemoryManager:
             turn_stmt = select(ChatTurn).filter(ChatTurn.session_id == session_id).order_by(ChatTurn.created_at.asc())
             turn_res = await db.execute(turn_stmt)
             db_turns = turn_res.scalars().all()
+
+            # Load latest summary if exists
+            summary_stmt = select(ConversationSummary).filter(
+                ConversationSummary.session_id == session_id
+            ).order_by(ConversationSummary.created_at.desc()).limit(1)
+            summary_res = await db.execute(summary_stmt)
+            latest_summary = summary_res.scalar_one_or_none()
 
             with self._lock:
                 self._history[session_id] = [
@@ -291,6 +390,8 @@ class ConversationMemoryManager:
                 ]
                 if chat_sess.active_slots:
                     self._entities[session_id] = chat_sess.active_slots
+                if latest_summary:
+                    self._summaries[session_id] = latest_summary.summary_text
                 self._last_accessed[session_id] = time.time()
                 self._save_to_disk()
             return True
@@ -320,7 +421,7 @@ class ConversationMemoryManager:
                 print(f"Notice: Failed to clear session from DB: {e}")
 
     async def get_user_sessions_db(self, db: AsyncSession, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Returns all past chat sessions for a user from PostgreSQL."""
+        """Returns all past chat sessions for a user from database."""
         try:
             stmt = select(ChatSession).filter(ChatSession.user_id == user_id).order_by(ChatSession.updated_at.desc()).limit(limit)
             res = await db.execute(stmt)
@@ -339,5 +440,5 @@ class ConversationMemoryManager:
             print(f"Notice: Failed to query user sessions from DB: {e}")
             return []
 
-conversation_memory = ConversationMemoryManager()
 
+conversation_memory = ConversationMemoryManager()
