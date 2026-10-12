@@ -14,6 +14,7 @@ class ChatSession(Base):
 
     id = Column(String(64), primary_key=True)  # session_id e.g. sess_xxx
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_email = Column(String(255), nullable=True, index=True)
     title = Column(String(255), default="HR Conversation")
     active_slots = Column(JSON, default=dict)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -50,10 +51,21 @@ class ChatTurn(Base):
 class ConversationSummary(Base):
     __tablename__ = "conversation_summaries"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String(64), primary_key=True)
     session_id = Column(String(64), ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_email = Column(String(255), nullable=True, index=True)
+    session_title = Column(String(255), nullable=True)
     summary_text = Column(Text, nullable=False)
+    key_entities = Column(JSON, default=dict)
+    pending_action = Column(String(255), nullable=True)
+    status = Column(String(50), default="COMPLETED")
     covers_turns_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
 
     session = relationship("ChatSession", back_populates="summaries")
+    user = relationship("User", foreign_keys=[user_id])
+
+
+SessionSummary = ConversationSummary
+

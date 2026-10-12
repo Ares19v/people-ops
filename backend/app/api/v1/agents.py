@@ -11,6 +11,7 @@ from app.services.auth_service import get_current_user, require_role
 from app.agents.orchestrator import orchestrator
 from app.agents.langgraph_orchestrator import enterprise_agent_graph
 from app.compliance.phi_engine import compliance_engine
+from app.observability.langsmith_tracer import resolve_user_email, resolve_clean_session_id
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
 
@@ -166,10 +167,12 @@ async def chat_with_langgraph(
     payload: AgentChatRequest,
     current_user: User = Depends(get_current_user)
 ):
-    session_id = payload.session_id or f"sess_{current_user.id[:8]}"
+    user_email = current_user.email or resolve_user_email(current_user.id)
+    session_id = resolve_clean_session_id(payload.session_id, user_email)
     initial_state = {
         "session_id": session_id,
-        "user_id": current_user.id,
+        "user_id": user_email,
+        "employee_id": current_user.id,
         "user_role": current_user.role.value,
         "raw_input": payload.message,
         "redacted_input": "",
@@ -203,7 +206,8 @@ async def compliance_redact(
     payload: RedactPayload,
     current_user: User = Depends(get_current_user)
 ):
-    session_id = payload.session_id or f"sess_{current_user.id[:8]}"
+    user_email = current_user.email or resolve_user_email(current_user.id)
+    session_id = resolve_clean_session_id(payload.session_id, user_email)
     res = compliance_engine.redact(payload.text, session_id=session_id)
     return {
         "session_id": session_id,
@@ -219,9 +223,11 @@ async def compliance_deredact(
     payload: DeRedactPayload,
     current_user: User = Depends(get_current_user)
 ):
-    restored = compliance_engine.de_redact(payload.text, session_id=payload.session_id, user_role=current_user.role.value)
+    user_email = current_user.email or resolve_user_email(current_user.id)
+    clean_session_id = resolve_clean_session_id(payload.session_id, user_email)
+    restored = compliance_engine.de_redact(payload.text, session_id=clean_session_id, user_role=current_user.role.value)
     return {
-        "session_id": payload.session_id,
+        "session_id": clean_session_id,
         "user_role": current_user.role.value,
         "restored_text": restored
     }
@@ -330,7 +336,22 @@ async def get_session_memory(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Inspects multi-turn conversational turns and active extracted entity states."""
+    """Inspects multi-turn conversational turns and active extracted entity states.
+    Strictly user-scoped to guarantee private employee isolation.
+    """
+    from app.models.chat_session import ChatSession
+    from sqlalchemy import select
+
+    # Verify session ownership
+    sess_stmt = select(ChatSession).filter(ChatSession.id == session_id)
+    sess_res = await db.execute(sess_stmt)
+    chat_sess = sess_res.scalar_one_or_none()
+    if chat_sess and chat_sess.user_id and chat_sess.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access Denied: You cannot view another employee's private chat memory."
+        )
+
     history = await conversation_memory.get_history_async(session_id, db=db, limit=10)
     entities = conversation_memory.get_all_entities(session_id)
     return {
@@ -347,7 +368,19 @@ async def clear_session_memory(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Flushes active multi-turn session memory."""
+    """Flushes active multi-turn session memory with ownership verification."""
+    from app.models.chat_session import ChatSession
+    from sqlalchemy import select
+
+    sess_stmt = select(ChatSession).filter(ChatSession.id == session_id)
+    sess_res = await db.execute(sess_stmt)
+    chat_sess = sess_res.scalar_one_or_none()
+    if chat_sess and chat_sess.user_id and chat_sess.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access Denied: You cannot clear another employee's private chat memory."
+        )
+
     await conversation_memory.clear_session_async(session_id, db=db)
     return {"status": "CLEARED", "session_id": session_id}
 
@@ -356,9 +389,107 @@ async def get_user_chat_sessions(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieves all past checkpointed conversation sessions for the active user from PostgreSQL."""
+    """Retrieves all past checkpointed conversation sessions for the active user from PostgreSQL.
+    Strictly isolated to current_user.id.
+    """
     sessions = await conversation_memory.get_user_sessions_db(db, current_user.id)
     return {"user_id": current_user.id, "sessions_count": len(sessions), "sessions": sessions}
+
+@router.get("/sessions/{session_id}")
+async def get_chat_session_turns(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Fetches complete message turns for a historical session with strict privacy verification."""
+    from app.models.chat_session import ChatSession, ChatTurn
+    from sqlalchemy import select
+
+    sess_stmt = select(ChatSession).filter(ChatSession.id == session_id)
+    sess_res = await db.execute(sess_stmt)
+    chat_sess = sess_res.scalar_one_or_none()
+
+    if not chat_sess:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found.")
+    
+    # Strict privacy guard: Only owner can view turns
+    if chat_sess.user_id and chat_sess.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access Denied: Private employee chat sessions are strictly protected under DPDP regulations."
+        )
+
+    turns_stmt = select(ChatTurn).filter(ChatTurn.session_id == session_id).order_by(ChatTurn.created_at.asc())
+    turns_res = await db.execute(turns_stmt)
+    turns = turns_res.scalars().all()
+
+    return {
+        "session_id": chat_sess.id,
+        "title": chat_sess.title,
+        "user_id": chat_sess.user_id,
+        "created_at": chat_sess.created_at.isoformat() if chat_sess.created_at else None,
+        "turns_count": len(turns),
+        "messages": [
+            {
+                "id": t.id,
+                "role": t.role,
+                "content": t.content,
+                "metadata": t.turn_metadata or {},
+                "created_at": t.created_at.isoformat() if t.created_at else None
+            }
+            for t in turns
+        ]
+    }
+
+@router.delete("/sessions/{session_id}")
+async def delete_chat_session(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Securely deletes a session owned by the authenticated employee."""
+    deleted = await conversation_memory.delete_user_session_db(db, session_id, current_user.id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found or you do not have permission to delete it."
+        )
+    return {"status": "DELETED", "session_id": session_id}
+
+@router.get("/memory/window/active")
+async def get_active_memory_window(
+    session_id: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Returns the current 5-session sliding window memory context for this employee."""
+    summaries = await conversation_memory.get_user_sliding_window_summaries(
+        db=db,
+        user_id=current_user.id,
+        current_session_id=session_id,
+        limit=5
+    )
+    return {
+        "user_id": current_user.id,
+        "window_capacity": 5,
+        "retained_summaries_count": len(summaries),
+        "summaries": summaries
+    }
+
+@router.post("/sessions/{session_id}/summarize")
+async def trigger_session_summary(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Explicitly triggers session summarization to slide it into the rolling window on New Chat."""
+    res = await conversation_memory.generate_and_save_session_summary(
+        db=db,
+        session_id=session_id,
+        user_id=current_user.id,
+        force=True
+    )
+    return {"status": "SUMMARIZED" if res else "SKIPPED", "summary": res}
 
 
 from app.evaluations.grid_evaluator import grid_evaluator

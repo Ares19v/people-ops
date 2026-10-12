@@ -1,8 +1,8 @@
 """
-PeopleOps — Clean PostgreSQL SQL Views & Database Inspector Engine
-===================================================================
-Provides high-performance, human-readable SQL Views and inspection
-endpoints to browse clean relational views and underlying tables.
+PeopleOps — Database Inspector & Query Engine
+=============================================
+Provides clean, direct relational queries for the visual inspector
+without polluting the database schema with redundant SQL views.
 """
 
 from typing import List, Dict, Any, Optional
@@ -10,14 +10,13 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import engine
 
-SQL_VIEWS = {
+INSPECTOR_QUERIES = {
     "v_employees_overview": {
         "title": "Employees Overview",
         "description": "Unified view of active employees, departments, managers, and onboarding status.",
         "icon": "Users",
         "category": "Core HR",
-        "sql": """
-            CREATE OR REPLACE VIEW v_employees_overview AS
+        "query": """
             SELECT 
                 u.id AS employee_id,
                 u.full_name,
@@ -30,11 +29,32 @@ SQL_VIEWS = {
                 p.experience_years,
                 p.onboarding_status,
                 u.is_active,
-                TO_CHAR(u.created_at, 'YYYY-MM-DD HH24:MI') AS joined_date
+                u.created_at AS joined_date
             FROM users u
             LEFT JOIN users m ON u.manager_id = m.id
             LEFT JOIN employee_profiles p ON u.id = p.user_id
-            ORDER BY u.created_at ASC;
+            ORDER BY u.id ASC
+        """
+    },
+    "v_leave_summary_compact": {
+        "title": "Employee Leave Balances (Consolidated)",
+        "description": "One concise row per employee showing current EL, CL, SL, and total available balances.",
+        "icon": "PieChart",
+        "category": "Time & Absence",
+        "query": """
+            SELECT 
+                u.id AS employee_id,
+                u.full_name AS employee_name,
+                u.department,
+                COALESCE(MAX(CASE WHEN lb.leave_type = 'EL' THEN (lb.total_allocated + lb.carry_forwarded - lb.used_days - lb.pending_days) END), 0) AS earned_leave_el,
+                COALESCE(MAX(CASE WHEN lb.leave_type = 'CL' THEN (lb.total_allocated - lb.used_days - lb.pending_days) END), 0) AS casual_leave_cl,
+                COALESCE(MAX(CASE WHEN lb.leave_type = 'SL' THEN (lb.total_allocated - lb.used_days - lb.pending_days) END), 0) AS sick_leave_sl,
+                COALESCE(SUM(lb.total_allocated + lb.carry_forwarded - lb.used_days - lb.pending_days), 0) AS total_available_days,
+                COALESCE(SUM(lb.used_days), 0) AS total_used_days
+            FROM users u
+            LEFT JOIN leave_balances lb ON u.id = lb.user_id
+            GROUP BY u.id, u.full_name, u.department
+            ORDER BY u.id ASC
         """
     },
     "v_leaves_summary": {
@@ -42,34 +62,32 @@ SQL_VIEWS = {
         "description": "Clean ledger of all leave requests, dates, approvers, and statuses.",
         "icon": "Calendar",
         "category": "Time & Absence",
-        "sql": """
-            CREATE OR REPLACE VIEW v_leaves_summary AS
+        "query": """
             SELECT 
                 la.id AS application_id,
                 u.id AS employee_id,
                 u.full_name AS applicant_name,
                 u.department,
                 la.leave_type,
-                TO_CHAR(la.start_date, 'YYYY-MM-DD') AS start_date,
-                TO_CHAR(la.end_date, 'YYYY-MM-DD') AS end_date,
+                la.start_date,
+                la.end_date,
                 la.total_days,
                 la.reason,
                 la.status,
                 COALESCE(mgr.full_name, 'Pending / System') AS approver_name,
-                TO_CHAR(la.applied_at, 'YYYY-MM-DD HH24:MI') AS submitted_at
+                la.applied_at AS submitted_at
             FROM leave_applications la
             JOIN users u ON la.user_id = u.id
             LEFT JOIN users mgr ON la.approver_id = mgr.id
-            ORDER BY la.applied_at DESC;
+            ORDER BY la.applied_at DESC
         """
     },
     "v_leave_balances_overview": {
-        "title": "Leave Balances Ledger",
+        "title": "Leave Balances (Detailed Quotas)",
         "description": "Calculated remaining balances per employee and leave quota type.",
         "icon": "PieChart",
         "category": "Time & Absence",
-        "sql": """
-            CREATE OR REPLACE VIEW v_leave_balances_overview AS
+        "query": """
             SELECT 
                 lb.id AS balance_id,
                 u.id AS employee_id,
@@ -83,7 +101,7 @@ SQL_VIEWS = {
                 (lb.total_allocated + lb.carry_forwarded - lb.used_days - lb.pending_days) AS remaining_balance
             FROM leave_balances lb
             JOIN users u ON lb.user_id = u.id
-            ORDER BY u.full_name, lb.leave_type;
+            ORDER BY u.id, lb.leave_type
         """
     },
     "v_timesheets_active": {
@@ -91,8 +109,7 @@ SQL_VIEWS = {
         "description": "Project hour logging, billable status, and manager approvals.",
         "icon": "Clock",
         "category": "Project Tracking",
-        "sql": """
-            CREATE OR REPLACE VIEW v_timesheets_active AS
+        "query": """
             SELECT 
                 ts.id AS timesheet_id,
                 u.id AS employee_id,
@@ -100,7 +117,7 @@ SQL_VIEWS = {
                 p.name AS project_name,
                 p.code AS project_code,
                 ts.task_name,
-                TO_CHAR(ts.entry_date, 'YYYY-MM-DD') AS entry_date,
+                ts.entry_date,
                 ts.hours,
                 ts.is_billable,
                 ts.status,
@@ -109,7 +126,7 @@ SQL_VIEWS = {
             JOIN users u ON ts.user_id = u.id
             JOIN projects p ON ts.project_id = p.id
             LEFT JOIN users mgr ON ts.approver_id = mgr.id
-            ORDER BY ts.entry_date DESC;
+            ORDER BY ts.entry_date DESC
         """
     },
     "v_chat_sessions_overview": {
@@ -117,20 +134,19 @@ SQL_VIEWS = {
         "description": "Session tracking, turn counts, and user interaction timestamps.",
         "icon": "MessageSquare",
         "category": "AI & Observability",
-        "sql": """
-            CREATE OR REPLACE VIEW v_chat_sessions_overview AS
+        "query": """
             SELECT 
                 cs.id AS session_id,
                 COALESCE(u.full_name, 'Anonymous / Guest') AS user_name,
                 cs.title AS session_title,
                 COUNT(ct.id) AS total_turns,
-                TO_CHAR(cs.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
-                TO_CHAR(cs.updated_at, 'YYYY-MM-DD HH24:MI') AS last_active
+                cs.created_at,
+                cs.updated_at AS last_active
             FROM chat_sessions cs
             LEFT JOIN users u ON cs.user_id = u.id
             LEFT JOIN chat_turns ct ON cs.id = ct.session_id
             GROUP BY cs.id, u.full_name, cs.title, cs.created_at, cs.updated_at
-            ORDER BY cs.updated_at DESC;
+            ORDER BY cs.updated_at DESC
         """
     },
     "v_chat_turns_recent": {
@@ -138,16 +154,15 @@ SQL_VIEWS = {
         "description": "Turn-by-turn dialogue snippets, roles, and latency records.",
         "icon": "Terminal",
         "category": "AI & Observability",
-        "sql": """
-            CREATE OR REPLACE VIEW v_chat_turns_recent AS
+        "query": """
             SELECT 
                 ct.id AS turn_id,
                 ct.session_id,
                 ct.role,
                 ct.content,
-                TO_CHAR(ct.created_at, 'YYYY-MM-DD HH24:MI:SS') AS timestamp
+                ct.created_at AS timestamp
             FROM chat_turns ct
-            ORDER BY ct.created_at DESC;
+            ORDER BY ct.created_at DESC
         """
     },
     "v_zoho_sync_history": {
@@ -155,41 +170,53 @@ SQL_VIEWS = {
         "description": "External sync audit records, payloads, and status codes.",
         "icon": "RefreshCw",
         "category": "External Integrations",
-        "sql": """
-            CREATE OR REPLACE VIEW v_zoho_sync_history AS
+        "query": """
             SELECT 
                 zr.id AS sync_id,
-                zr.user_id,
+                u.full_name AS employee_name,
                 zr.record_type,
                 zr.zoho_record_id,
                 zr.status,
-                TO_CHAR(zr.created_at, 'YYYY-MM-DD HH24:MI') AS synced_at
+                zr.created_at AS synced_at
             FROM zoho_sync_records zr
-            ORDER BY zr.created_at DESC;
+            JOIN users u ON zr.user_id = u.id
+            ORDER BY zr.created_at DESC
         """
     }
 }
 
+# Alias for backwards compatibility
+SQL_VIEWS = INSPECTOR_QUERIES
+
 
 async def initialize_database_views():
-    """Executes DDL to ensure all clean SQL views are up to date on database startup."""
+    """Cleans up any legacy database views to keep the database schema concise."""
+    legacy_views = [
+        "v_employees_overview",
+        "v_leave_summary_compact",
+        "v_leaves_summary",
+        "v_leave_balances_overview",
+        "v_timesheets_active",
+        "v_chat_sessions_overview",
+        "v_chat_turns_recent",
+        "v_zoho_sync_history",
+    ]
     try:
         async with engine.begin() as conn:
-            for view_key, view_meta in SQL_VIEWS.items():
+            for view_key in legacy_views:
                 await conn.execute(text(f"DROP VIEW IF EXISTS {view_key} CASCADE;"))
-                await conn.execute(text(view_meta["sql"]))
-        print("[DB Views] All clean SQL Views successfully initialized.")
-    except Exception as e:
-        print(f"[DB Views] Notice initializing views: {e}")
+    except Exception:
+        pass
 
 
 async def get_available_views_metadata(db: AsyncSession) -> List[Dict[str, Any]]:
-    """Returns all available SQL views and their row counts."""
+    """Returns all available inspector reports and their row counts."""
     results = []
-    for key, meta in SQL_VIEWS.items():
+    for key, meta in INSPECTOR_QUERIES.items():
         count = 0
         try:
-            res = await db.execute(text(f"SELECT COUNT(*) FROM {key};"))
+            count_sql = f"SELECT COUNT(*) FROM ({meta['query']}) AS subq"
+            res = await db.execute(text(count_sql))
             count = res.scalar() or 0
         except Exception:
             await db.rollback()
@@ -206,20 +233,16 @@ async def get_available_views_metadata(db: AsyncSession) -> List[Dict[str, Any]]
 
 
 async def fetch_view_records(db: AsyncSession, view_name: str, search: Optional[str] = None, limit: int = 100) -> Dict[str, Any]:
-    """Fetches formatted records and column headers for a given view."""
-    if view_name not in SQL_VIEWS:
-        raise ValueError(f"View '{view_name}' is not recognized or permitted.")
+    """Fetches formatted records and column headers for a given report query."""
+    if view_name not in INSPECTOR_QUERIES:
+        raise ValueError(f"Report '{view_name}' is not recognized or permitted.")
 
-    where_clause = ""
-    params: Dict[str, Any] = {}
+    meta = INSPECTOR_QUERIES[view_name]
+    base_query = meta["query"]
 
-    if search and search.strip():
-        where_clause = " WHERE CAST(row_to_json(t) AS TEXT) ILIKE :search"
-        params["search"] = f"%{search.strip()}%"
+    full_sql = f"SELECT * FROM ({base_query}) AS t LIMIT {limit}"
 
-    full_sql = f"SELECT * FROM {view_name} AS t {where_clause} LIMIT {limit}"
-
-    res = await db.execute(text(full_sql), params)
+    res = await db.execute(text(full_sql))
     rows = [dict(row._mapping) for row in res.fetchall()]
     # Ensure serializable types
     for r in rows:
@@ -232,7 +255,7 @@ async def fetch_view_records(db: AsyncSession, view_name: str, search: Optional[
 
     return {
         "view_name": view_name,
-        "meta": SQL_VIEWS[view_name],
+        "meta": meta,
         "columns": columns,
         "rows": rows,
         "total_returned": len(rows)

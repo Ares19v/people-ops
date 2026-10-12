@@ -128,7 +128,14 @@ class LeaveService:
             default_hr = hr_res.scalars().first()
             approver_id = default_hr.id if default_hr else None
 
+        # Count existing applications to generate clean sequential id
+        cnt_stmt = select(func.count(LeaveApplication.id)).filter(LeaveApplication.user_id == user.id)
+        cnt_res = await db.execute(cnt_stmt)
+        seq_num = (cnt_res.scalar() or 0) + 1
+        clean_leave_id = f"leave_{user.email.split('@')[0]}_{seq_num}"
+
         application = LeaveApplication(
+            id=clean_leave_id,
             user_id=user.id,
             leave_type=request.leave_type,
             start_date=request.start_date,

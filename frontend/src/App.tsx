@@ -188,6 +188,7 @@ export const App: React.FC = () => {
               setIsChatFullScreen(false);
             }}
             initialPrompt={chatInitialPrompt}
+            currentUser={currentUser}
             onActionExecuted={() => {
               refreshBalances();
             }}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, UserRole, Project, TimesheetEntry, TimesheetReportSummary } from '../types';
-import { Clock, CheckCircle2, Plus, AlertCircle, FileText, Check, X, ShieldCheck, Building2 } from 'lucide-react';
+import { Clock, CheckCircle2, Plus, AlertCircle, FileText, Check, X, ShieldCheck, Building2, Calendar } from 'lucide-react';
 import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
 import { ZohoPeopleIntegrationHub } from '../components/ZohoPeopleIntegrationHub';
+import { EmployeeAvatarChip, StatusBadge, HoursBadge } from '../utils/formatters';
 
 interface TimesheetPortalProps {
   currentUser: User | null;
@@ -276,94 +277,86 @@ export const TimesheetPortal: React.FC<TimesheetPortalProps> = ({
       </div>
 
       {/* Timesheet Entries Table */}
-      <div className="card-olixer p-0 overflow-hidden">
-        <div className="p-4 bg-slate-50/80 border-b border-slate-200/70 flex items-center justify-between">
-          <span className="font-display font-bold text-xs text-slate-900">
+      <div className="card-olixer p-0 overflow-hidden shadow-xs border border-slate-200/80 bg-white">
+        <div className="p-4 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between">
+          <span className="font-display font-bold text-xs text-slate-900 uppercase tracking-wider">
             Recorded Time Entries ({allEntries.length})
           </span>
-          <span className="text-[11px] text-slate-500">Sorted by Date (Recent First)</span>
+          <span className="text-[11px] text-slate-500 font-medium">Sorted by Date (Recent First)</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-white text-slate-600 font-display font-bold border-b border-slate-100">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50/50 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200/80">
               <tr>
-                <th className="p-4">Date</th>
-                <th className="p-4">Project</th>
-                <th className="p-4">Task Description</th>
-                <th className="p-4">Hours</th>
-                <th className="p-4">Billable</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Logged By</th>
+                <th className="py-3.5 px-4 font-bold text-[11px]">Logged By</th>
+                <th className="py-3.5 px-4 font-bold text-[11px]">Date</th>
+                <th className="py-3.5 px-4 font-bold text-[11px]">Project & Task</th>
+                <th className="py-3.5 px-4 font-bold text-[11px]">Hours & Overtime</th>
+                <th className="py-3.5 px-4 font-bold text-[11px]">Approval Status</th>
                 {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && (
-                  <th className="p-4 text-right">Action</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px] text-right">Manager Action</th>
                 )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {allEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={currentRole === 'HR_MANAGER' || currentRole === 'ADMIN' ? 8 : 7} className="p-8 text-center text-slate-400">
-                    No timesheet entries recorded yet. Click "Log Working Hours" to submit.
+                  <td colSpan={currentRole === 'HR_MANAGER' || currentRole === 'ADMIN' ? 6 : 5} className="py-12 px-4 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-400">
+                      <Clock className="w-8 h-8 text-slate-300 mb-2 stroke-[1.5]" />
+                      <p className="font-display font-semibold text-slate-600 text-sm">No timesheet entries recorded</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Click "Log Working Hours" above to submit hours.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 allEntries.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4 font-semibold text-slate-900">{entry.entry_date}</td>
-                    <td className="p-4">
-                      <span className="font-display font-bold text-slate-900">{entry.project_name || 'Client Engagement'}</span>
+                  <tr key={entry.id} className="hover:bg-slate-50/70 transition-colors group">
+                    <td className="py-3.5 px-4">
+                      <EmployeeAvatarChip userIdentifier={entry.user_id} size="sm" />
                     </td>
-                    <td className="p-4 text-slate-600 max-w-sm truncate">{entry.task_name}</td>
-                    <td className="p-4 font-display font-bold text-slate-900">
-                      {entry.hours.toFixed(1)}h
-                      {entry.hours > 9 && (
-                        <span className="ml-2 text-[10px] text-amber-600 font-semibold bg-amber-50 px-1.5 py-0.5 rounded">
-                          +{(entry.hours - 9).toFixed(1)}h OT
+                    <td className="py-3.5 px-4 text-slate-700 font-medium whitespace-nowrap">
+                      {new Date(entry.entry_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-col">
+                        <span className="font-display font-bold text-slate-900 text-xs">
+                          {entry.project_name || 'Client Engagement'}
                         </span>
-                      )}
+                        <span className="text-slate-600 text-[11px] truncate max-w-sm mt-0.5">
+                          {entry.task_name}
+                        </span>
+                      </div>
                     </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${entry.is_billable ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {entry.is_billable ? 'Billable' : 'Internal'}
-                      </span>
+                    <td className="py-3.5 px-4">
+                      <HoursBadge hours={entry.hours} isBillable={entry.is_billable} />
                     </td>
-                    <td className="p-4">
-                      <span
-                        className={
-                          entry.status === 'APPROVED'
-                            ? 'badge-statutory-green'
-                            : entry.status === 'REJECTED'
-                            ? 'badge-statutory-red'
-                            : 'badge-statutory-amber'
-                        }
-                      >
-                        {entry.status === 'APPROVED' && <CheckCircle2 className="w-3 h-3" />}
-                        {entry.status === 'SUBMITTED' && <Clock className="w-3 h-3" />}
-                        {entry.status}
-                      </span>
+                    <td className="py-3.5 px-4">
+                      <StatusBadge status={entry.status} />
                     </td>
-                    <td className="p-4 text-slate-500 font-medium">{entry.employee_name || 'Member'}</td>
                     {(currentRole === 'HR_MANAGER' || currentRole === 'ADMIN') && (
-                      <td className="p-4 text-right">
+                      <td className="py-3.5 px-4 text-right">
                         {entry.status === 'SUBMITTED' ? (
-                          <div className="inline-flex items-center gap-1.5">
+                          <div className="inline-flex items-center gap-1.5 justify-end">
                             <button
                               onClick={() => handleSingleDecision(entry.id, 'APPROVE')}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold transition-all shadow-sm"
+                              className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1"
                               title="Approve this entry"
                             >
+                              <Check className="w-3 h-3" />
                               Approve
                             </button>
                             <button
                               onClick={() => handleSingleDecision(entry.id, 'REJECT')}
-                              className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-semibold transition-all shadow-sm"
+                              className="px-3 py-1 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1"
                               title="Reject this entry"
                             >
+                              <X className="w-3 h-3" />
                               Reject
                             </button>
                           </div>
                         ) : (
-                          <span className="text-slate-400 text-[11px] italic">Decided</span>
+                          <span className="text-slate-400 text-xs font-medium">Decided</span>
                         )}
                       </td>
                     )}

@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 from app.core.database import db_session
 from app.core.logging_config import log_tool_call
+from app.core.id_generator import generate_entity_id
 from app.models.leave import LeaveApplication, LeaveStatus, LeaveType
 
 logger = logging.getLogger(__name__)
@@ -38,14 +39,16 @@ async def apply_leave(
 
         async with db_session() as session:
             lt_enum = getattr(LeaveType, leave_type.upper(), LeaveType.CL)
+            app_id = generate_entity_id("leave", user_id)
             application = LeaveApplication(
+                id=app_id,
                 user_id=user_id,
                 leave_type=lt_enum,
                 start_date=s_date,
                 end_date=e_date,
-                days=days,
+                total_days=days,
                 reason=reason,
-                status=LeaveStatus.PENDING,
+                status=LeaveStatus.SUBMITTED,
             )
             session.add(application)
             await session.commit()

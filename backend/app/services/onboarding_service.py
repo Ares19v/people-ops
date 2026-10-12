@@ -10,6 +10,7 @@ from fastapi import HTTPException, UploadFile, status
 
 from app.core.config import settings
 from app.core.security import mask_all_pii, encrypt_field, decrypt_field
+from app.core.id_generator import generate_entity_id
 from app.models.user import (
     User, EmployeeProfile, Document, AuditLog, UserRole, OnboardingStatus, DocumentType
 )
@@ -52,6 +53,7 @@ class OnboardingService:
 
         if not profile:
             profile = EmployeeProfile(
+                id=generate_entity_id("profile", user.id),
                 user_id=user.id,
                 date_of_birth=data.date_of_birth,
                 address_encrypted=encrypt_field(data.address),
@@ -73,6 +75,7 @@ class OnboardingService:
 
         # Audit
         audit = AuditLog(
+            id=generate_entity_id("audit", creator.id),
             actor_id=creator.id,
             action="ONBOARDING_INITIATED",
             resource_type="user",
@@ -159,7 +162,9 @@ class OnboardingService:
             full_name=full_name
         )
 
+        doc_id = generate_entity_id("document", target_user_id, sub_type=doc_type.value.lower())
         doc = Document(
+            id=doc_id,
             user_id=target_user_id,
             doc_type=doc_type,
             file_path=file_path,
@@ -171,7 +176,9 @@ class OnboardingService:
         )
         db.add(doc)
 
+        audit_id = generate_entity_id("audit", uploader.id)
         audit = AuditLog(
+            id=audit_id,
             actor_id=uploader.id,
             action="DOCUMENT_UPLOADED_AND_VERIFIED" if verification_result["is_verified"] else "DOCUMENT_UPLOADED_PENDING_REVIEW",
             resource_type="document",
@@ -357,6 +364,7 @@ class OnboardingService:
 
         # Audit
         audit = AuditLog(
+            id=generate_entity_id("audit", reviewer.id),
             actor_id=reviewer.id,
             action="ONBOARDING_CONFIRMED_DPDP_CONSENT",
             resource_type="employee_profile",

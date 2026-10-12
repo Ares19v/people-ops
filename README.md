@@ -460,9 +460,12 @@ ZOHO_ORG_ID="600..."
 
 ```
 people-ops/
-├── backend/
-│   ├── app/
-│   │   ├── agents/                     # Multi-Agent Architecture
+├── backend/                            # FastAPI Backend + Multi-Agent Fleet + RAG
+│   ├── alembic/                        # Database Migration Environment
+│   │   ├── versions/                   # Versioned Migration Scripts
+│   │   └── env.py                      # Alembic Runtime Configuration
+│   ├── app/                            # Application Source Code
+│   │   ├── agents/                     # Google ADK Multi-Agent Fleet
 │   │   │   ├── health_agent.py         # Occupational Health & Clinical Triage Agent
 │   │   │   ├── leave_agent.py          # Statutory Leave Ledger Agent
 │   │   │   ├── orchestrator.py         # Google ADK Orchestrator Core
@@ -471,7 +474,7 @@ people-ops/
 │   │   │   ├── root_llm_agent.py       # LLM Root Orchestrator (Google ADK / Gemini)
 │   │   │   ├── statutory_critic.py     # Adversarial Statutory Critic Agent
 │   │   │   └── timesheet_agent.py      # Timesheet & Overtime Auditing Agent
-│   │   ├── api/v1/                     # REST API Routing
+│   │   ├── api/v1/                     # REST API Routing & Streaming Endpoints
 │   │   │   ├── agents.py               # Chat, SSE Streaming, Presets, Memory & Eval APIs
 │   │   │   ├── auth.py                 # JWT Authentication & Mock Persona Switcher
 │   │   │   ├── leaves.py               # Leave Application & Ledger Endpoints
@@ -479,76 +482,117 @@ people-ops/
 │   │   │   ├── policies.py             # Knowledge Graph RAG Search
 │   │   │   ├── prompts.py              # Langfuse Invalidation Webhook
 │   │   │   └── timesheets.py           # Timesheet Logging & CSV Export
-│   │   ├── compliance/                 # Regulatory & Security Engines
+│   │   ├── compliance/                 # Regulatory & Security Compliance Engines
 │   │   │   ├── phi_engine.py           # HIPAA Safe Harbor 18 & DPDP Redaction
 │   │   │   └── statutory_rules.py      # Multi-State Labour Law Rule Engine (MH/KA/DL)
-│   │   ├── core/                       # Core Configuration, Security & DB Engine
-│   │   │   ├── config.py               # Settings with Production Security Validators
-│   │   │   ├── database.py             # SQLAlchemy Async Engine
-│   │   │   └── security.py             # Password Hashing & JWT Tokens
+│   │   ├── core/                       # Security, DB Engine & Settings
+│   │   │   ├── config.py               # Environment Settings (Loads Canonical Root .env)
+│   │   │   ├── database.py             # SQLAlchemy Async Engine (PostgreSQL)
+│   │   │   └── security.py             # Password Hashing & JWT Token Cryptography
 │   │   ├── evaluations/                # Automated Evaluation Framework
 │   │   │   └── grid_evaluator.py       # Langfuse + Google ADK Grid Evaluation Matrix
 │   │   ├── guardrails/                 # NVIDIA NeMo Guardrails Boundary
-│   │   │   ├── nemo_boundary.py        # Input/Output Rails Execution Engine
-│   │   │   └── config/                 # Colang 2.0 Policies & Topical Prompts
-│   │   ├── memory/                     # Conversational Memory Architecture
-│   │   │   └── conversation_memory.py  # Multi-Turn Sliding Context & Entity Slot Extractor
-│   │   ├── models/                     # SQLAlchemy Relational Models (User, Leave, Timesheet)
-│   │   ├── rag/                        # Knowledge Graph & Vector Search
+│   │   │   ├── config/                 # Colang 2.0 Policies & Rail Configuration
+│   │   │   └── nemo_boundary.py        # Guardrail Interceptor & Jailbreak Detection
+│   │   ├── memory/                     # Conversational Memory & Cross-Session Recall
+│   │   │   └── conversation_memory.py  # Multi-Turn Sliding Context, Vector Recall & Summarizer
+│   │   ├── models/                     # SQLAlchemy Relational Models (User, Leave, Timesheet, Session)
+│   │   ├── rag/                        # Graph & Hybrid RAG Architecture
 │   │   │   ├── agentic_rag.py          # Adaptive Multi-Hop Query Engine
-│   │   │   └── knowledge_graph.py      # NetworkX Statutory Knowledge Graph
+│   │   │   ├── entity_extractor.py     # Entity & Relation Extraction Engine
+│   │   │   ├── graph_rag_service.py    # Hybrid Graph + ChromaDB Search Service
+│   │   │   ├── graph_schema.py         # Graph Schema & Node/Edge Definitions
+│   │   │   └── knowledge_graph.py      # NetworkX & Neo4j Statutory Knowledge Graph
 │   │   ├── schemas/                    # Pydantic v2 Contracts & Structured Action Cards
-│   │   └── services/                   # Business Services & External Integrations
-│   │       ├── auth_service.py         # User Authentication & RBAC
-│   │       ├── langfuse_prompt_service.py # Decoupled Prompt Fetching & Invalidation
-│   │       ├── leave_service.py        # Leave Collision & Accrual Engine
-│   │       ├── timesheet_service.py    # Working Hours & Overtime Engine
-│   │       └── zoho_service.py         # Zoho People REST v2 Sync & Circuit Breaker
-│   ├── data/                           # Data Registries & Fixtures
+│   │   ├── services/                   # Business Services & External Integrations
+│   │   │   ├── auth_service.py         # User Authentication & RBAC
+│   │   │   ├── langfuse_prompt_service.py # Decoupled Prompt Management & Invalidation
+│   │   │   ├── leave_service.py        # Leave Collision & Accrual Engine
+│   │   │   ├── timesheet_service.py    # Working Hours & Overtime Engine
+│   │   │   └── zoho_service.py         # Zoho People REST v2 Sync & Circuit Breaker
+│   │   ├── tools/                      # Google ADK Specialized Tool Definitions
+│   │   │   ├── health/                 # Occupational Health Assessment Tools
+│   │   │   ├── leave/                  # Leave Balances, Approvals & Application Tools
+│   │   │   ├── policy/                 # Statutory Legal Policy Lookup Tools
+│   │   │   ├── timesheet/              # Working Hours & Attendance Logging Tools
+│   │   │   ├── zoho/                   # External Zoho People Bridge Tools
+│   │   │   └── hr_tools.py             # Unified Tool Dispatcher
+│   │   └── main.py                     # FastAPI Application Lifecycle & Middleware
+│   ├── data/                           # Data Registries & Persistent Stores
+│   │   ├── chroma_db/                  # ChromaDB Persistent Vector Embeddings
+│   │   ├── token_vault/                # Encrypted DPDP / HIPAA Redaction Token Vault
+│   │   ├── traces/                     # Local Execution Traces & Langfuse Backups
+│   │   ├── company_policy_2026.json    # Corporate Policy Catalog
 │   │   ├── conversation_sessions.json  # Persistent Multi-Turn Session Snapshots
-│   │   ├── prompts_registry.json       # Decoupled Externalized Prompts Registry
-│   │   ├── statutory_policies.json     # Statutory Legal Acts Knowledge Base
+│   │   ├── maharashtra_labour_law.json # State Labour Act Ground Truth
+│   │   ├── prompts_registry.json       # Externalized Prompts Registry
+│   │   ├── seed_data.py                # Initial Database & User Seeding Script
 │   │   └── zoho_mock_fixtures.json     # Offline Zoho People Fallback Fixtures
-│   └── tests/                          # Automated Pytest Suite (43 Tests)
-│       ├── test_api_endpoints.py
-│       ├── test_auth_rbac.py
-│       ├── test_curriculum_features.py
-│       ├── test_deep_end_to_end_memory_and_features.py
-│       ├── test_guardrails_adversarial.py
-│       ├── test_harness_enhancements.py
-│       ├── test_leave_service.py
-│       └── test_timesheet_service.py
-├── frontend/
+│   ├── reports/                        # Benchmark Evaluation Results
+│   │   ├── benchmark_10_results.json
+│   │   └── benchmark_60_results.json
+│   ├── scripts/                        # Maintenance & Utility Scripts
+│   │   ├── generate_architecture_pdf.py# Architecture Documentation Generator
+│   │   ├── generate_folder_structure_pdf.py # Repository Structure PDF Generator
+│   │   ├── populate_langfuse_sessions_and_users.py # Langfuse Analytics Populator
+│   │   ├── push_prompt.py              # Langfuse Remote Prompt Pusher
+│   │   ├── run_golden_dataset_benchmark.py # Golden Dataset Accuracy Benchmark
+│   │   ├── seed_neo4j_graph.py         # Knowledge Graph Seeder
+│   │   ├── sync_db_mirror.py           # Database Synchronization Mirror
+│   │   └── test_full_suite.py          # Unified Test Suite Runner
+│   ├── tests/                          # Automated Pytest Suite
+│   └── uploads/                        # Temporary KYC Document Ingestion Buffer
+├── frontend/                           # React 19 + TypeScript + Vite + Tailwind CSS
+│   ├── public/                         # Static Assets & Icons
 │   ├── src/
-│   │   ├── components/                 # UI Component Library
+│   │   ├── assets/                     # Brand Assets & Hero Graphics
+│   │   ├── components/                 # React UI Component Library
 │   │   │   ├── AgentChatDrawer.tsx     # Conversational AI Assistant Drawer & SSE Client
 │   │   │   ├── AgentFlowCircuit.tsx    # Interactive Routing Circuit & Presets
-│   │   │   ├── Navbar.tsx              # Top Navigation & Instant Role Switcher
-│   │   │   └── ProtectedRoute.tsx      # Client-Side Route Protection
-│   │   ├── pages/                      # Application Portals
-│   │   │   ├── Dashboard.tsx           # Executive Command Center & Active Fleet
-│   │   │   ├── LeavePortal.tsx         # Leave Ledger & Statutory Modals
+│   │   │   ├── Navbar.tsx              # Top Navigation, Session Reset & Role Switcher
+│   │   │   ├── ProtectedRoute.tsx      # Client-Side Route Protection & RBAC
+│   │   │   ├── TokenVaultModal.tsx     # DPDP / HIPAA De-identified Data Inspection
+│   │   │   └── ZohoPeopleIntegrationHub.tsx # Zoho Sync & Circuit Breaker Controls
+│   │   ├── context/                    # React Context Providers (DemoContext)
+│   │   ├── data/                       # Enterprise Feature & Architecture Catalogs
+│   │   ├── pages/                      # Enterprise Portal Views
+│   │   │   ├── Dashboard.tsx           # Executive Command Center & Fleet Telemetry
+│   │   │   ├── LeavePortal.tsx         # Leave Ledger & Statutory Balance Modals
 │   │   │   ├── OnboardingPortal.tsx    # DPDP-Compliant KYC Document Wizard
 │   │   │   ├── PolicyPortal.tsx        # Policy Knowledge Graph Search
-│   │   │   ├── ReportsPortal.tsx       # Timesheet Analytics & CSV Downloader
+│   │   │   ├── ReportsPortal.tsx       # Timesheet Analytics & CSV Export
 │   │   │   └── TimesheetPortal.tsx     # Hours Logging & Overtime Warnings
+│   │   ├── utils/                      # Formatting Utilities (formatters.tsx)
 │   │   ├── api.ts                      # Axios Client with Presets & Streaming
-│   │   ├── index.css                   # Tailwind CSS & UI Design System Styles
-│   │   └── types.ts                    # TypeScript Domain Definitions
-│   └── package.json
-└── docs/
-    └── images/                         # 11 UI Feature Screenshots & Diagrams
-        ├── 01_dashboard.png
-        ├── 02_leave_ledger.png
-        ├── 03_timesheets.png
-        ├── 04_reports.png
-        ├── 05_policy_rag.png
-        ├── 06_chat_drawer.png
-        ├── 07_onboarding.png
-        ├── 08_active_agent_fleet.png
-        ├── 09_kernel_telemetry.png
-        ├── 10_glassmorphic_modal.png
-        └── 11_ai_harness_drawer.png
+│   │   ├── App.css                     # Application Layout Styles
+│   │   ├── App.tsx                     # Root Router & Layout Configuration
+│   │   ├── index.css                   # Tailwind CSS & UI Design System Tokens
+│   │   ├── main.tsx                    # React DOM Mount Entry Point
+│   │   └── types.ts                    # TypeScript Domain & API Definitions
+│   ├── package.json                    # Frontend Dependencies & Scripts
+│   └── vite.config.ts                  # Vite Bundler & Reverse Proxy Configuration
+├── docker/                             # Containerization Configuration
+│   ├── Dockerfile.backend              # Backend Multi-Stage Production Container
+│   └── Dockerfile.frontend             # Frontend Nginx Production Container
+├── docs/                               # Architecture, Guides & Security Specifications
+│   ├── images/                         # 11 UI Feature Screenshots & Diagrams
+│   ├── architecture.md                 # System Architecture & Multi-Agent Specifications
+│   ├── demo_script.md                  # Comprehensive Live Demonstration Script
+│   ├── folder_structure.pdf            # PDF Guide: Clean Codebase & Directory Structure
+│   ├── operations_guide.md             # Operational Runbooks & Deployment Guide
+│   ├── PROJECT_CONTEXT.md              # Project Blueprint & Engineering Context
+│   └── threat_model.md                 # STRIDE / OWASP AI Threat Model
+├── promptfoo/                          # Promptfoo Security & Jailbreak Eval Suite
+│   ├── prompts/                        # System Prompts under Red-Team Evaluation
+│   ├── promptfoo_project.json          # Project Definition
+│   └── promptfooconfig.yaml            # Evaluation Matrix & Assertions
+├── scripts/                            # Operational Scripts
+│   ├── set_authtoken.bat               # Ngrok Token Setup Script
+│   └── start_ngrok.bat                 # Ngrok Tunnel Launcher
+├── .env                                # Canonical Environment Configuration
+├── .env.example                        # Template Environment Variables
+├── docker-compose.yml                  # Multi-Container Compose Configuration
+└── README.md                           # Master Architecture & User Documentation
 ```
 
 ---

@@ -216,22 +216,27 @@ def populate_langfuse():
             total_cost += cost
             total_turns += 1
 
+            from app.observability.langsmith_tracer import resolve_user_email
+            email = resolve_user_email(user_id)
+
             tags = [
                 "production",
                 f"dept:{dept.lower()}",
                 f"role:{role.lower()}",
                 f"agent:{agent.lower()}",
-                f"user:{user_id.lower()}"
+                f"user:{email.lower()}"
             ]
 
-            # 1. Open telemetry session context with user_id and session_id
+            # 1. Open telemetry session context with user email as user_id in Langfuse
             with propagate_attributes(
-                user_id=user_id,
+                user_id=email,
                 session_id=session_id,
                 tags=tags,
                 trace_name=f"Turn {idx}: {title}",
                 metadata={
-                    "user_id": user_id,
+                    "user_id": email,
+                    "user_email": email,
+                    "employee_id": user_id,
                     "user_name": full_name,
                     "department": dept,
                     "role": role,
@@ -247,7 +252,7 @@ def populate_langfuse():
                     name="TOTAL ROUND-TRIP",
                     as_type="chain",
                     input=q,
-                    metadata={"user_id": user_id, "session_id": session_id}
+                    metadata={"user_id": email, "user_email": email, "employee_id": user_id, "session_id": session_id}
                 ) as root_obs:
                     # Input Guardrails
                     with lf.start_as_current_observation(

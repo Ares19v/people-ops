@@ -8,6 +8,7 @@ from sqlalchemy.future import select
 
 from app.core.database import db_session
 from app.core.logging_config import log_tool_call
+from app.core.id_generator import generate_entity_id
 from app.models.timesheet import Project, TimesheetEntry, TimesheetStatus
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,9 @@ async def log_work_hours(
                 session.add(project)
                 await session.flush()
 
+            entry_id = generate_entity_id("timesheet", user_id)
             entry = TimesheetEntry(
+                id=entry_id,
                 user_id=user_id,
                 project_id=project.id,
                 task_name=task_name,

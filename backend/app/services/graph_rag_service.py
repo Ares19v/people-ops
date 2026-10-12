@@ -292,14 +292,47 @@ class GraphRAGService:
             except Exception:
                 pass
 
+        from app.rag.entity_extractor import DOMAIN_NODES, DOMAIN_RELATIONSHIPS
+        local_nodes = []
+        for n in DOMAIN_NODES:
+            local_nodes.append({
+                "id": n.id,
+                "key": n.id,
+                "title": n.name,
+                "label": n.name.split(":")[0] if ":" in n.name else n.name,
+                "category": n.label.value if hasattr(n.label, "value") else str(n.label),
+                "labels": [n.label.value if hasattr(n.label, "value") else str(n.label)],
+                "properties": {
+                    "domain": n.domain,
+                    "statutory_citation": n.statutory_citation,
+                    **n.properties
+                }
+            })
+
+        local_links = []
+        for idx, r in enumerate(DOMAIN_RELATIONSHIPS):
+            local_links.append({
+                "id": f"rel_{idx}_{r.source_id}_{r.target_id}",
+                "source": r.source_id,
+                "target": r.target_id,
+                "source_key": r.source_id,
+                "target_key": r.target_id,
+                "type": r.type.value if hasattr(r.type, "value") else str(r.type),
+                "rule": r.rule_description,
+                "properties": {
+                    "statutory_basis": r.statutory_basis,
+                    **r.properties
+                }
+            })
+
         return {
-            "status": "fallback_local",
-            "engine": "Local Statutory Graph",
-            "database_uri": "in-memory-ontology",
-            "nodes_count": 0,
-            "relationships_count": 0,
-            "nodes": [],
-            "links": []
+            "status": "connected_local",
+            "engine": "Enterprise Ontology & GraphRAG (NetworkX + Invariant Engine)",
+            "database_uri": "in-memory-domain-graph",
+            "nodes_count": len(local_nodes),
+            "relationships_count": len(local_links),
+            "nodes": local_nodes,
+            "links": local_links
         }
 
 graph_rag_service = GraphRAGService()

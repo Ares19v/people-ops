@@ -8,6 +8,8 @@ import {
   TimesheetEntry,
   TimesheetReportSummary,
   AgentChatResponse,
+  UserChatSession,
+  ActiveMemoryWindowResponse,
 } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -150,6 +152,41 @@ export const api = {
   },
   clearChatMemory: async (sessionId: string) => {
     const res = await apiClient.delete(`/agents/memory/${sessionId}`);
+    return res.data;
+  },
+  getUserSessions: async () => {
+    const res = await apiClient.get<{ user_id: string; sessions_count: number; sessions: UserChatSession[] }>('/agents/sessions');
+    return res.data;
+  },
+  getSessionTurns: async (sessionId: string) => {
+    const res = await apiClient.get<{
+      session_id: string;
+      title: string;
+      user_id: string;
+      created_at: string;
+      turns_count: number;
+      messages: Array<{
+        id: string;
+        role: string;
+        content: string;
+        metadata: Record<string, any>;
+        created_at: string;
+      }>;
+    }>(`/agents/sessions/${sessionId}`);
+    return res.data;
+  },
+  deleteSession: async (sessionId: string) => {
+    const res = await apiClient.delete<{ status: string; session_id: string }>(`/agents/sessions/${sessionId}`);
+    return res.data;
+  },
+  getActiveMemoryWindow: async (sessionId?: string) => {
+    const res = await apiClient.get<ActiveMemoryWindowResponse>('/agents/memory/window/active', {
+      params: sessionId ? { session_id: sessionId } : {},
+    });
+    return res.data;
+  },
+  summarizeSession: async (sessionId: string) => {
+    const res = await apiClient.post<{ status: string; summary: any }>(`/agents/sessions/${sessionId}/summarize`);
     return res.data;
   },
 

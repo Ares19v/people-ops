@@ -44,6 +44,98 @@ MODEL_PRICING = {
     "default": {"prompt": 0.10, "completion": 0.40}
 }
 
+# Canonical Mapping for Employee and Synthetic IDs to Corporate Emails
+EMPLOYEE_EMAIL_MAP = {
+    # Devansh Tyagi (Admin / EMP-001)
+    "EMP-001": "devansh.tyagi@intelera.com",
+    "ADMIN": "devansh.tyagi@intelera.com",
+    "DEVANSH": "devansh.tyagi@intelera.com",
+    
+    # Vikram Malhotra (HR Manager / EMP-002)
+    "EMP-002": "vikram.malhotra@intelera.com",
+    "MANAGER": "vikram.malhotra@intelera.com",
+    "HR": "vikram.malhotra@intelera.com",
+    
+    # Priya Patel (HR Associate / EMP-003)
+    "EMP-003": "priya.patel@intelera.com",
+    "ASSOCIATE": "priya.patel@intelera.com",
+    
+    # Aarav Sharma (Senior Software Engineer / EMP-004)
+    "EMP-004": "aarav.sharma@intelera.com",
+    "USR-EMP-004": "aarav.sharma@intelera.com",
+    "EMPLOYEE": "aarav.sharma@intelera.com",
+    "USR-EMP-7701": "aarav.sharma@intelera.com",
+    
+    # Sneha Kulkarni (Operations Associate / EMP-005)
+    "EMP-005": "sneha.kulkarni@intelera.com",
+    "EMPLOYEE2": "sneha.kulkarni@intelera.com",
+    
+    # Benchmarks & Synthetic QA
+    "USR-EVAL-999": "eval.benchmarks@intelera.com",
+    "EVAL-USER": "eval.benchmarks@intelera.com",
+    "USR-TEST-101": "qa.automation@intelera.com",
+}
+
+import re
+
+def resolve_user_email(user_identifier: Optional[str]) -> str:
+    """Universal Email Resolver: Guarantees every user identifier is converted to a corporate email in Langfuse."""
+    if not user_identifier:
+        return "system.orchestrator@intelera.com"
+    
+    raw = str(user_identifier).strip()
+    if "@" in raw:
+        return raw.lower().replace("@intelera.corp", "@intelera.com")
+    
+    norm = raw.upper().replace("_", "-").replace(" ", "-")
+    if raw in EMPLOYEE_EMAIL_MAP:
+        return EMPLOYEE_EMAIL_MAP[raw]
+    if norm in EMPLOYEE_EMAIL_MAP:
+        return EMPLOYEE_EMAIL_MAP[norm]
+    
+    if norm.startswith("USR-"):
+        sub = norm[4:]
+        if sub in EMPLOYEE_EMAIL_MAP:
+            return EMPLOYEE_EMAIL_MAP[sub]
+    
+    clean = re.sub(r'[^a-zA-Z0-9.-]', '', raw).lower()
+    return f"{clean}@intelera.com"
+
+
+from app.core.id_generator import generate_entity_id, get_email_prefix
+
+def resolve_clean_session_id(session_id: Optional[str], user_identifier: Optional[str] = None) -> str:
+    """Standardizes session IDs into clean, intuitive sequential identifiers (e.g. sess_devansh.tyagi_1, sess_priya.patel_1)
+    with zero random numbers, epoch timestamps, or hashes."""
+    email = resolve_user_email(user_identifier) if user_identifier else "system.orchestrator@intelera.com"
+    email_prefix = get_email_prefix(email)
+    
+    if not session_id:
+        return generate_entity_id("session", email_prefix)
+    
+    clean_sid = str(session_id).strip()
+
+    # Preserve explicit test session IDs without rewriting to shared user session
+    if clean_sid.startswith("test_"):
+        return clean_sid
+    
+    # Match pattern: sess_<prefix>_<integer>
+    m = re.match(r"^sess_([a-z0-9.]+)_(\d+)$", clean_sid, re.IGNORECASE)
+    if m:
+        prefix, num = m.group(1), int(m.group(2))
+        # If the number is a small sequence integer (e.g. 1, 2, 3), keep it!
+        if num < 100000:
+            return f"sess_{prefix.lower()}_{num}"
+        # If it was an epoch timestamp (e.g. 1791543931), clean to index 1
+        return f"sess_{prefix.lower()}_1"
+        
+    # If it is a semantic named session like sess_aarav.sharma_timesheet_audit
+    m_sem = re.match(r"^sess_([a-z0-9.]+)_([a-zA-Z_-]+)$", clean_sid)
+    if m_sem:
+        return f"sess_{m_sem.group(1).lower()}_{m_sem.group(2).lower()}"
+        
+    return generate_entity_id("session", email_prefix)
+
 
 def calculate_cost_usd(model_name: str, prompt_tokens: int, completion_tokens: int) -> float:
     """Calculates estimated dollar cost based on model and token counts."""
@@ -129,17 +221,25 @@ class LangSmithTracer:
         metadata: Optional[Dict[str, Any]] = None,
         trace_name: str = "PeopleOps Enterprise Chat"
     ):
-        """Context manager setting OpenTelemetry attributes so Sessions and Users are populated in Langfuse Cloud."""
+        """Context manager setting OpenTelemetry attributes so Sessions and Users are populated with emails in Langfuse Cloud."""
+        resolved_email = resolve_user_email(user_id)
+        clean_sid = resolve_clean_session_id(session_id, resolved_email)
         all_tags = list(tags or [])
-        all_tags.extend(["production", f"dept:{department.lower()}", f"role:{user_role.lower()}"])
+        all_tags.extend(["production", f"dept:{department.lower()}", f"role:{user_role.lower()}", f"user:{resolved_email.lower()}"])
         meta = metadata or {}
-        meta.update({"department": department, "user_role": user_role})
+        meta.update({
+            "department": department,
+            "user_role": user_role,
+            "user_email": resolved_email,
+            "session_id": clean_sid,
+            "employee_id": str(user_id)
+        })
 
         if LANGFUSE_AVAILABLE and self._langfuse:
             try:
                 with propagate_attributes(
-                    user_id=user_id,
-                    session_id=session_id,
+                    user_id=resolved_email,
+                    session_id=clean_sid,
                     tags=all_tags,
                     metadata=meta,
                     trace_name=trace_name
@@ -164,18 +264,25 @@ class LangSmithTracer:
 
         if self._langfuse:
             try:
-                user_id = meta.get("user_id")
+                raw_user = meta.get("user_id") or meta.get("user_email")
+                resolved_email = resolve_user_email(raw_user) if raw_user else None
                 session_id = meta.get("session_id")
-                if user_id and session_id:
+                if session_id:
+                    session_id = resolve_clean_session_id(session_id, resolved_email or raw_user)
+                    meta["session_id"] = session_id
+
+                if resolved_email and session_id:
                     dept = meta.get("department", "engineering")
                     role = meta.get("user_role", "employee")
-                    tags = ["production", f"dept:{dept.lower()}", f"role:{role.lower()}", f"user:{user_id.lower()}"]
+                    tags = ["production", f"dept:{dept.lower()}", f"role:{role.lower()}", f"user:{resolved_email.lower()}"]
+                    meta["user_id"] = resolved_email
+                    meta["user_email"] = resolved_email
                     with propagate_attributes(
-                        user_id=user_id,
+                        user_id=resolved_email,
                         session_id=session_id,
                         tags=tags,
                         metadata=meta,
-                        trace_name=f"PeopleOps Turn [{user_id}]" if name == "TOTAL ROUND-TRIP" else name
+                        trace_name=f"PeopleOps Turn [{resolved_email}]" if name == "TOTAL ROUND-TRIP" else name
                     ):
                         with self._langfuse.start_as_current_observation(
                             name=name,
@@ -217,6 +324,8 @@ class LangSmithTracer:
         """Records an LLM generation observation with token counts and calculates cost in USD."""
         cost_usd = calculate_cost_usd(model, prompt_tokens, completion_tokens)
         meta = metadata or {}
+        if "user_id" in meta:
+            meta["user_id"] = resolve_user_email(meta["user_id"])
         meta["cost_usd"] = cost_usd
         meta["prompt_tokens"] = prompt_tokens
         meta["completion_tokens"] = completion_tokens
@@ -282,6 +391,8 @@ class LangSmithTracer:
         model_name: str = "gemini-2.5-flash"
     ):
         """Records a run trace with session, user, department cost analytics and alert tags."""
+        resolved_email = resolve_user_email(user_id)
+        session_id = resolve_clean_session_id(session_id, resolved_email)
         scrubbed_input = mask_all_pii(raw_input)
         scrubbed_output = mask_all_pii(sanitized_output)
 
@@ -295,7 +406,8 @@ class LangSmithTracer:
             "production",
             f"dept:{department.lower()}",
             f"role:{user_role.lower()}",
-            f"agent:{agent_name.lower()}"
+            f"agent:{agent_name.lower()}",
+            f"user:{resolved_email.lower()}"
         ]
 
         # Check and attach Alert Tags
@@ -306,7 +418,7 @@ class LangSmithTracer:
                 rule_name="Security: Prompt Injection or Jailbreak Attempt",
                 severity="CRITICAL",
                 session_id=session_id,
-                user_id=user_id,
+                user_id=resolved_email,
                 message=f"Prompt injection blocked by NeMo Guardrails: {guardrail_tripped}",
                 details={"raw_query_masked": scrubbed_input[:120]}
             )
@@ -317,7 +429,7 @@ class LangSmithTracer:
                 rule_name="Compliance: PII Exposure / DPDP Breach",
                 severity="CRITICAL",
                 session_id=session_id,
-                user_id=user_id,
+                user_id=resolved_email,
                 message="PII detected and masked by TokenVault scrubber",
                 details={"session_id": session_id}
             )
@@ -328,14 +440,14 @@ class LangSmithTracer:
                 rule_name="Performance: Latency SLA Exceeded (> 10s)",
                 severity="WARNING",
                 session_id=session_id,
-                user_id=user_id,
+                user_id=resolved_email,
                 message=f"Execution took {duration_ms:.1f}ms, exceeding the 10,000ms SLA boundary",
                 details={"latency_ms": duration_ms}
             )
 
         trace_payload = {
             "session_id": session_id,
-            "user_id": user_id,
+            "user_id": resolved_email,
             "department": department,
             "user_role": user_role,
             "agent": agent_name,

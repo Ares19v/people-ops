@@ -1,9 +1,9 @@
 """Multi-Turn Conversational Memory & Persistent Entity State Manager with Rolling Summaries.
 
 Ensures the agent fleet 'remembers' context across sequential turns
-(e.g., active leave dates, previous questions, ongoing multi-step workflows).
+and across distinct conversation sessions via a 5-Session Sliding Window.
 Features persistent snapshot backing, automatic entity extraction, episodic search,
-and PostgreSQL/SQLite database checkpointing with rolling summaries.
+and PostgreSQL database checkpointing with strict per-user privacy isolation.
 """
 
 from dataclasses import dataclass, field
@@ -15,9 +15,9 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func, and_
 from app.core.security import mask_all_pii
-from app.models.chat_session import ChatSession, ChatTurn, ConversationSummary
+from app.models.chat_session import ChatSession, ChatTurn, ConversationSummary, SessionSummary
 
 
 @dataclass
@@ -47,10 +47,10 @@ class MemoryTurn:
 
 class ConversationMemoryManager:
     """Thread-safe persistent session memory manager providing sliding-window history,
-    rolling summaries, and entity memory.
+    rolling summaries, and cross-session memory integration with strict user isolation.
     """
 
-    def __init__(self, max_turns_per_session: int = 20, ttl_seconds: int = 86400, summary_threshold: int = 6):
+    def __init__(self, max_turns_per_session: int = 20, ttl_seconds: int = 86400, summary_threshold: int = 4):
         self._history: Dict[str, List[MemoryTurn]] = {}
         self._entities: Dict[str, Dict[str, Any]] = {}  # session_id -> {active_leave_type, days, etc.}
         self._summaries: Dict[str, str] = {}            # session_id -> latest rolling summary text
@@ -152,6 +152,39 @@ class ConversationMemoryManager:
             entities["active_start_date"] = "Tomorrow"
         elif "next week" in text_lower:
             entities["active_start_date"] = "Next Week"
+        elif "from friday" in text_lower:
+            entities["active_start_date"] = "Friday"
+
+    def get_all_entities(self, session_id: str) -> Dict[str, Any]:
+        """Returns all extracted slots/entities for the active session."""
+        with self._lock:
+            return dict(self._entities.get(session_id, {}))
+
+    def get_entities(self, session_id: str) -> Dict[str, Any]:
+        """Alias for get_all_entities."""
+        return self.get_all_entities(session_id)
+
+    def set_entity(self, session_id: str, key: str, value: Any):
+        """Sets a slot/entity value for the active session."""
+        with self._lock:
+            if session_id not in self._entities:
+                self._entities[session_id] = {}
+            self._entities[session_id][key] = value
+            self._save_to_disk()
+
+    def clear_session(self, session_id: str):
+        """Synchronously flushes session from in-memory cache and disk."""
+        with self._lock:
+            self._history.pop(session_id, None)
+            self._entities.pop(session_id, None)
+            self._summaries.pop(session_id, None)
+            self._last_accessed.pop(session_id, None)
+            self._save_to_disk()
+
+    def get_turns(self, session_id: str) -> List[MemoryTurn]:
+        """Returns all MemoryTurn objects recorded in the active session."""
+        with self._lock:
+            return list(self._history.get(session_id, []))
 
     def get_history(self, session_id: str, limit: int = 6) -> List[Dict[str, str]]:
         """Returns the recent turns formatted as list of {role, content}."""
@@ -160,22 +193,29 @@ class ConversationMemoryManager:
             turns = self._history.get(session_id, [])
             return [{"role": t.role, "content": t.content} for t in turns[-limit:]]
 
+    async def get_history_async(self, session_id: str, db: Optional[AsyncSession] = None, limit: int = 10) -> List[Dict[str, str]]:
+        """Async loader retrieving turns from DB or memory snapshot."""
+        if db:
+            await self.load_session_from_db(db, session_id)
+        return self.get_history(session_id, limit=limit)
+
     def get_formatted_history(
         self,
         session_id: str,
         limit: int = 6,
         user_id: Optional[str] = None,
         user_role: Optional[str] = None,
+        cross_session_summaries: Optional[List[Dict[str, Any]]] = None,
+        recalled_turns: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
-        """Returns formatted string of identity context, rolling summary, entity memory, and recent turns."""
+        """Returns formatted string combining cross-session 5-window memory, identity context,
+        recalled past dialogue turns, and current session recent turns.
+        """
         with self._lock:
             turns = self._history.get(session_id, [])
             recent_turns = turns[-limit:] if turns else []
             entities = self._entities.get(session_id, {})
-            summary = self._summaries.get(session_id)
-
-        if not recent_turns and not entities and not summary:
-            return "No previous conversation history."
+            current_summary = self._summaries.get(session_id)
 
         formatted_lines = []
 
@@ -187,120 +227,378 @@ class ConversationMemoryManager:
             formatted_lines.append(f"CURRENT_TIME: {now_str}")
             formatted_lines.append("════════════════════════════════════════════════════════════")
 
-        # 2. Rolling Summary if available
-        if summary:
-            formatted_lines.append("── Previous Conversation Rolling Summary ──")
-            formatted_lines.append(summary)
-            formatted_lines.append("───────────────────────────────────────────")
+        # 2. CROSS-SESSION ROLLING MEMORY (5-Session Sliding Window)
+        if cross_session_summaries and len(cross_session_summaries) > 0:
+            formatted_lines.append("\n╔══════════════════════════════════════════════════════════╗")
+            formatted_lines.append(f"║ CROSS-CONVERSATION MEMORY ({len(cross_session_summaries)}-Session Sliding Window)        ║")
+            formatted_lines.append("╚══════════════════════════════════════════════════════════╝")
+            formatted_lines.append("The employee previously had the following conversations with you:\n")
+            
+            has_pending = False
+            for idx, s in enumerate(cross_session_summaries, 1):
+                title = s.get("session_title") or f"Session {idx}"
+                summary = s.get("summary_text", "")
+                pending = s.get("pending_action")
+                date_str = s.get("created_at", "")[:10] if s.get("created_at") else "Recent"
+                
+                formatted_lines.append(f"[{idx}. {title} ({date_str})]")
+                formatted_lines.append(f"• Summary: {summary}")
+                if pending and pending != "None" and pending.strip():
+                    formatted_lines.append(f"• PENDING / UNFINISHED ACTION: {pending}")
+                    has_pending = True
+                formatted_lines.append("")
 
-        # 3. Active Entities
+            formatted_lines.append("PROACTIVE MEMORY & CONTINUITY DIRECTIVE:")
+            formatted_lines.append("- You have FULL CONTINUOUS MEMORY of all past interactions above.")
+            if has_pending:
+                formatted_lines.append("- The employee left off with an unfinished request in a recent chat.")
+                formatted_lines.append("  If this is a new session or the user opens with a greeting (e.g. 'hi', 'hey', 'hello', 'what was I doing?'),")
+                formatted_lines.append("  PROACTIVELY and warmly acknowledge where you left off (e.g., 'Welcome back! Last time we were discussing your request for [leave/timesheet]. Shall we continue with that?')")
+            else:
+                formatted_lines.append("- Seamlessly reference past leaves, policies, or timesheet discussions when relevant without re-asking.")
+            formatted_lines.append("────────────────────────────────────────────────────────────\n")
+
+        # 3. RECALLED HISTORICAL EXCERPTS (Deep Episodic Memory Turn Retrieval)
+        if recalled_turns and len(recalled_turns) > 0:
+            formatted_lines.append("\n╔══════════════════════════════════════════════════════════╗")
+            formatted_lines.append("║ EXACT RECALLED HISTORICAL EXCERPTS FROM PAST SESSIONS    ║")
+            formatted_lines.append("╚══════════════════════════════════════════════════════════╝")
+            formatted_lines.append("The employee specifically had the following exchange with you in a past session:\n")
+            for r_idx, r in enumerate(recalled_turns, 1):
+                sess_t = r.get("session_title") or r.get("session_id", "Past Conversation")
+                date_s = r.get("date", "Earlier")
+                u_turn = r.get("user_turn", "")
+                a_turn = r.get("assistant_turn", "")
+                formatted_lines.append(f"[{r_idx}. Conversation '{sess_t}' ({date_s})]")
+                formatted_lines.append(f"• Employee: \"{u_turn}\"")
+                if a_turn:
+                    formatted_lines.append(f"• Assistant: \"{a_turn}\"")
+                formatted_lines.append("")
+
+            formatted_lines.append("CRITICAL MEMORY & RECALL INSTRUCTION:")
+            formatted_lines.append("- The employee is asking about or referencing what they said in that past conversation.")
+            formatted_lines.append("- You HAVE full, immediate recall of what they said above.")
+            formatted_lines.append("- State CLEARLY AND ACCURATELY what the employee previously told you (e.g. 'Yes, in our previous conversation you mentioned that one of your eyes is red and that was the reason you needed time off...').")
+            formatted_lines.append("- NEVER apologize or say you cannot recall or do not have access to previous conversations.")
+            formatted_lines.append("────────────────────────────────────────────────────────────\n")
+
+        # 4. Current Session Rolling Summary if available
+        if current_summary:
+            formatted_lines.append("── Current Session In-Progress Summary ──")
+            formatted_lines.append(current_summary)
+            formatted_lines.append("──────────────────────────────────────────")
+
+        # 5. Active Entities for current session
         if entities:
             entity_str = ", ".join([f"{k}: {v}" for k, v in entities.items()])
-            formatted_lines.append(f"Active Entity Memory Context: [{entity_str}]")
+            formatted_lines.append(f"Active Session Entities: [{entity_str}]")
 
-        # 4. Recent turns
-        for t in recent_turns:
-            prefix = "Employee" if t.role == "user" else "Assistant"
-            formatted_lines.append(f"{prefix}: {t.content}")
+        # 6. Current Session Recent turns
+        if recent_turns:
+            formatted_lines.append("── Current Conversation Turns ──")
+            for t in recent_turns:
+                prefix = "Employee" if t.role == "user" else "Assistant"
+                formatted_lines.append(f"{prefix}: {t.content}")
+        else:
+            formatted_lines.append("(No messages yet in this new session)")
 
         return "\n".join(formatted_lines)
 
-    def search_episodic_memory(self, session_id: str, query: str) -> List[str]:
-        """Searches past turns in the session for keywords to answer cross-turn inquiries."""
-        query_words = set(query.lower().split())
-        results = []
-        with self._lock:
-            turns = self._history.get(session_id, [])
-            for t in turns:
-                content_lower = t.content.lower()
-                matched = [w for w in query_words if len(w) > 3 and w in content_lower]
-                if matched:
-                    results.append(f"[{t.role.upper()}]: {t.content}")
-        return results
+    async def get_user_sliding_window_summaries(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        current_session_id: Optional[str] = None,
+        limit: int = 5
+    ) -> List[Dict[str, Any]]:
+        """Retrieves the latest 5 session summaries for this employee from PostgreSQL.
+        Strictly user-scoped to guarantee zero cross-employee data leakage.
+        """
+        try:
+            from app.observability.langsmith_tracer import resolve_user_email
+            resolved_email = resolve_user_email(user_id)
 
-    def set_entity(self, session_id: str, key: str, value: Any):
-        """Stores a contextual fact (e.g. pending_leave_type='SICK_LEAVE', start_date='2026-10-15')."""
-        with self._lock:
-            if session_id not in self._entities:
-                self._entities[session_id] = {}
-            self._entities[session_id][key] = value
-            self._save_to_disk()
+            query = select(ConversationSummary).filter(
+                (ConversationSummary.user_id == user_id) |
+                (ConversationSummary.user_email == user_id) |
+                (ConversationSummary.user_email == resolved_email)
+            )
+            if current_session_id:
+                query = query.filter(ConversationSummary.session_id != current_session_id)
+            
+            query = query.order_by(ConversationSummary.created_at.desc()).limit(limit)
+            res = await db.execute(query)
+            summaries = res.scalars().all()
 
-    def get_entity(self, session_id: str, key: str) -> Optional[Any]:
-        with self._lock:
-            return self._entities.get(session_id, {}).get(key)
+            # Reverse to chronological order (S_n-4 ... S_n) for the sliding window
+            ordered = list(reversed(summaries))
+            
+            return [
+                {
+                    "id": s.id,
+                    "session_id": s.session_id,
+                    "session_title": s.session_title or "Conversation Session",
+                    "summary_text": s.summary_text,
+                    "pending_action": s.pending_action,
+                    "key_entities": s.key_entities or {},
+                    "status": s.status,
+                    "created_at": s.created_at.isoformat() if s.created_at else None
+                }
+                for s in ordered
+            ]
+        except Exception as e:
+            print(f"Notice: Failed to fetch sliding window summaries for user {user_id}: {e}")
+            return []
 
-    def get_all_entities(self, session_id: str) -> Dict[str, Any]:
-        with self._lock:
-            return self._entities.get(session_id, {}).copy()
+    async def recall_relevant_past_turns(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        current_session_id: str,
+        query: str,
+        recent_turns: Optional[List[Any]] = None,
+        limit: int = 4
+    ) -> List[Dict[str, Any]]:
+        """Deep episodic recall across historical chat turns for this employee.
+        Retrieves matching dialogue turns and their immediate assistant responses.
+        Strictly user-scoped to guarantee zero cross-employee data leakage.
+        """
+        try:
+            # 1. Collect candidate search words from query + recent current turns
+            stop_words = {
+                "what", "did", "say", "about", "my", "the", "a", "an", "is", "in", "past",
+                "conversation", "conversations", "last", "remember", "told", "you", "already",
+                "i", "we", "chat", "earlier", "can", "please", "me", "to", "for", "and",
+                "or", "so", "that", "this", "do", "don't", "need", "start", "something",
+                "new", "with", "proceed", "hello", "hi", "hey", "tell", "was", "were", "are",
+                "there", "have", "had", "just", "like", "know", "then", "which", "some", "our"
+            }
+            combined_text = query.lower()
+            if recent_turns:
+                for rt in recent_turns[-3:]:
+                    content = rt.content if hasattr(rt, "content") else (rt.get("content", "") if isinstance(rt, dict) else str(rt))
+                    combined_text += " " + content.lower()
 
-    def clear_session(self, session_id: str):
-        with self._lock:
-            self._history.pop(session_id, None)
-            self._entities.pop(session_id, None)
-            self._summaries.pop(session_id, None)
-            self._last_accessed.pop(session_id, None)
-            self._save_to_disk()
+            words = re.findall(r"\b[a-zA-Z]{3,}\b", combined_text)
+            tokens = [w for w in words if w not in stop_words]
 
-    def _cleanup_expired_sessions(self):
-        """Internal sweep for sessions exceeding TTL."""
-        now = time.time()
-        expired = [sid for sid, ts in self._last_accessed.items() if now - ts > self._ttl_seconds]
-        for sid in expired:
-            self._history.pop(sid, None)
-            self._entities.pop(sid, None)
-            self._summaries.pop(sid, None)
-            self._last_accessed.pop(sid, None)
+            is_recall_query = any(k in query.lower() for k in [
+                "remember", "past conversation", "previous conversation", "earlier",
+                "told you", "told u", "last time", "last chat", "before", "recall",
+                "mentioned", "said about", "we talked", "we spoke"
+            ])
 
-    async def generate_rolling_summary(self, session_id: str, db: Optional[AsyncSession] = None) -> Optional[str]:
-        """Generates and persists a rolling summary of older turns in long conversations."""
-        with self._lock:
-            turns = self._history.get(session_id, [])
-            if len(turns) < self._summary_threshold:
+            # If no meaningful tokens and not a recall query, skip episodic scan
+            if not tokens and not is_recall_query:
+                return []
+
+            # 2. Query historical turns for this user from OTHER sessions
+            stmt = (
+                select(ChatTurn, ChatSession.title, ChatSession.id)
+                .join(ChatSession, ChatTurn.session_id == ChatSession.id)
+                .filter(
+                    ChatSession.user_id == user_id,
+                    ChatSession.id != current_session_id
+                )
+                .order_by(ChatTurn.created_at.desc())
+                .limit(60)
+            )
+            res = await db.execute(stmt)
+            rows = res.all()
+            if not rows:
+                return []
+
+            # Group turns by session
+            session_turns: Dict[str, List[ChatTurn]] = {}
+            session_titles: Dict[str, str] = {}
+            for turn, title, sess_id in rows:
+                session_turns.setdefault(sess_id, []).append(turn)
+                session_titles[sess_id] = title or "Previous HR Conversation"
+
+            # 3. Score and find relevant turns
+            matches = []
+            for sess_id, s_turns in session_turns.items():
+                s_turns_sorted = sorted(s_turns, key=lambda t: t.created_at if t.created_at else datetime.min)
+                
+                for i, t in enumerate(s_turns_sorted):
+                    if t.role != "user":
+                        continue
+                    turn_text_lower = t.content.lower()
+                    
+                    score = 0
+                    for token in tokens:
+                        if token in turn_text_lower:
+                            score += 3
+                        # Also check stem or plural (e.g. eye -> eyes)
+                        elif token.endswith("s") and token[:-1] in turn_text_lower:
+                            score += 2
+                        elif (token + "s") in turn_text_lower:
+                            score += 2
+                    
+                    # If query is recall-specific or matches candidate tokens
+                    if score > 0 or (is_recall_query and any(w in turn_text_lower for w in ["eye", "sick", "leave", "fever", "doctor", "pain", "medical", "timesheet"])):
+                        assistant_reply = ""
+                        if i + 1 < len(s_turns_sorted) and s_turns_sorted[i+1].role == "assistant":
+                            assistant_reply = s_turns_sorted[i+1].content
+
+                        date_str = t.created_at.strftime("%Y-%m-%d") if t.created_at else "Earlier"
+                        matches.append({
+                            "session_id": sess_id,
+                            "session_title": session_titles.get(sess_id, "Previous Session"),
+                            "user_turn": t.content,
+                            "assistant_turn": assistant_reply,
+                            "date": date_str,
+                            "score": score if score > 0 else 1
+                        })
+
+            matches.sort(key=lambda m: m["score"], reverse=True)
+            return matches[:limit]
+        except Exception as e:
+            print(f"Notice: Failed to recall past turns: {e}")
+            return []
+
+    async def generate_and_save_session_summary(
+        self,
+        db: AsyncSession,
+        session_id: str,
+        user_id: Optional[str] = None,
+        force: bool = False
+    ) -> Optional[Dict[str, Any]]:
+        """Generates a structured session summary capturing intents, medical/personal details,
+        decisions, entities, and any unfinished / pending action. Persists to PostgreSQL.
+        """
+        try:
+            # 1. Fetch turns for this session
+            stmt = select(ChatTurn).filter(ChatTurn.session_id == session_id).order_by(ChatTurn.created_at.asc())
+            res = await db.execute(stmt)
+            turns = res.scalars().all()
+
+            if not turns or (len(turns) < 2 and not force):
                 return None
-            older_turns = turns[:-4]  # Keep last 4 turns fresh in sliding window
 
-        # Concise heuristic summarization preserving core decisions & intents
-        key_topics = []
-        for t in older_turns:
-            content_snippet = t.content.strip().split("\n")[0]
-            if len(content_snippet) > 80:
-                content_snippet = content_snippet[:80] + "..."
-            role_label = "User" if t.role == "user" else "Assistant"
-            key_topics.append(f"{role_label}: {content_snippet}")
+            # Get ChatSession metadata
+            sess_stmt = select(ChatSession).filter(ChatSession.id == session_id)
+            sess_res = await db.execute(sess_stmt)
+            chat_sess = sess_res.scalar_one_or_none()
+            
+            target_user_id = user_id or (chat_sess.user_id if chat_sess else None)
+            session_title = chat_sess.title if chat_sess else "HR Conversation"
 
-        summary_text = (
-            f"Prior conversation covered {len(older_turns)} turns. "
-            f"Key sequence: " + " -> ".join(key_topics[-4:])
-        )
+            # 2. Extract conversation dynamics
+            user_messages = [t.content for t in turns if t.role == "user"]
+            assistant_messages = [t.content for t in turns if t.role == "assistant"]
+            all_text_lower = " ".join([t.content.lower() for t in turns])
 
-        with self._lock:
-            self._summaries[session_id] = summary_text
-            self._save_to_disk()
+            # Detect Domain & Pending Action
+            pending_action: Optional[str] = None
+            entities: Dict[str, Any] = chat_sess.active_slots if chat_sess and chat_sess.active_slots else {}
 
-        if db:
+            # Detect pending action
+            if any(w in all_text_lower for w in ["leave", "vacation", "pto", "cl", "el", "sl", "day off"]):
+                if any(w in all_text_lower for w in ["apply", "take", "request", "need"]) and not any(w in all_text_lower for w in ["successfully applied", "application approved", "decision recorded", "leave submitted"]):
+                    leave_type = entities.get("active_leave_type", "Leave")
+                    duration = entities.get("active_duration_days", "")
+                    duration_str = f" ({duration} days)" if duration else ""
+                    pending_action = f"Unsubmitted {leave_type}{duration_str} request. Awaiting employee confirmation to submit."
+
+            elif any(w in all_text_lower for w in ["timesheet", "hours", "overtime", "project", "billable"]):
+                if any(w in all_text_lower for w in ["log", "record", "enter"]) and not any(w in all_text_lower for w in ["logged successfully", "timesheet entry submitted"]):
+                    pending_action = "Draft timesheet entry was discussed but not finalized."
+
+            # 3. Generate High-Fidelity Summary via LLM
+            summary_text = ""
             try:
-                stmt = select(ConversationSummary).filter(
-                    ConversationSummary.session_id == session_id
-                ).order_by(ConversationSummary.created_at.desc())
-                res = await db.execute(stmt)
-                db_summary = res.scalars().first()
-                if db_summary:
-                    db_summary.summary_text = summary_text
-                    db_summary.covers_turns_count = len(older_turns)
-                else:
-                    db_summary = ConversationSummary(
-                        session_id=session_id,
-                        summary_text=summary_text,
-                        covers_turns_count=len(older_turns)
-                    )
-                    db.add(db_summary)
-                await db.commit()
-            except Exception as e:
-                await db.rollback()
-                print(f"Notice: Failed to persist summary to DB: {e}")
+                from app.core.llm_bridge import generate_summary
+                dialogue_text = "\n".join([f"{t.role.capitalize()}: {t.content}" for t in turns[-8:]])
+                prompt = (
+                    "Summarize this employee HR conversation in 2-3 concise sentences for memory retention across chats.\n"
+                    "Crucial: Explicitly mention any medical reasons, physical conditions, or symptoms reported by the employee (e.g. eye redness, fever, pain, injury), "
+                    "the specific leave or timesheet requested, advice given by the assistant, and whether the request was submitted or left pending.\n\n"
+                    f"{dialogue_text}\n\n"
+                    "Summary:"
+                )
+                llm_sum = await generate_summary(prompt)
+                if llm_sum and not llm_sum.startswith("[MOCK SUMMARY]") and len(llm_sum) > 20:
+                    summary_text = llm_sum.strip()
+            except Exception as sum_exc:
+                print(f"Notice: LLM summary generation fallback: {sum_exc}")
 
-        return summary_text
+            # 4. Fallback intelligent heuristic if LLM unavailable
+            if not summary_text:
+                health_reasons = []
+                for kw in ["red eye", "eye", "eyes", "fever", "headache", "cold", "flu", "cough", "infection", "doctor", "hospital", "sick", "ill", "injury", "pain"]:
+                    if kw in all_text_lower and kw not in health_reasons:
+                        health_reasons.append(kw)
+
+                substantive_msgs = [m for m in user_messages if len(m) > 4 and m.lower().strip() not in ["hi", "hello", "hey", "10", "test", "ok", "okay"]]
+                primary_inquiry = substantive_msgs[0] if substantive_msgs else (user_messages[0] if user_messages else "general HR guidance")
+
+                health_desc = f" (reporting: {', '.join(health_reasons)})" if health_reasons else ""
+                summary_text = f"Employee discussed: \"{primary_inquiry[:120]}\"{health_desc}. Assistant provided guidance."
+                if pending_action:
+                    summary_text += f" Left off with: {pending_action}"
+                else:
+                    summary_text += " Action concluded."
+
+            sess_suffix = session_id[5:] if session_id.startswith("sess_") else session_id
+            summary_id = f"sum_{sess_suffix}"
+
+            # 5. Upsert into PostgreSQL conversation_summaries
+            find_stmt = select(ConversationSummary).filter(ConversationSummary.session_id == session_id)
+            find_res = await db.execute(find_stmt)
+            existing_summary = find_res.scalar_one_or_none()
+
+            status_val = "ACTION_PENDING" if pending_action else "COMPLETED"
+
+            from app.observability.langsmith_tracer import resolve_user_email
+            user_email_val = resolve_user_email(target_user_id) if target_user_id else (chat_sess.user_email if chat_sess else None)
+
+            if existing_summary:
+                existing_summary.summary_text = summary_text
+                existing_summary.session_title = session_title
+                existing_summary.key_entities = entities
+                existing_summary.pending_action = pending_action
+                existing_summary.status = status_val
+                existing_summary.covers_turns_count = len(turns)
+                if user_email_val:
+                    existing_summary.user_email = user_email_val
+                if target_user_id:
+                    existing_summary.user_id = target_user_id
+            else:
+                new_summary = ConversationSummary(
+                    id=summary_id,
+                    session_id=session_id,
+                    user_id=target_user_id,
+                    user_email=user_email_val,
+                    session_title=session_title,
+                    summary_text=summary_text,
+                    key_entities=entities,
+                    pending_action=pending_action,
+                    status=status_val,
+                    covers_turns_count=len(turns)
+                )
+                db.add(new_summary)
+
+            await db.commit()
+
+            with self._lock:
+                self._summaries[session_id] = summary_text
+                self._save_to_disk()
+
+            return {
+                "id": summary_id,
+                "session_id": session_id,
+                "user_id": target_user_id,
+                "user_email": user_email_val,
+                "session_title": session_title,
+                "summary_text": summary_text,
+                "pending_action": pending_action,
+                "status": status_val
+            }
+        except Exception as e:
+            await db.rollback()
+            print(f"Notice: Failed to generate and save session summary: {e}")
+            return None
 
     async def persist_turn_db(
         self,
@@ -312,7 +610,7 @@ class ConversationMemoryManager:
         metadata: Optional[Dict[str, Any]] = None,
         title: Optional[str] = None
     ) -> MemoryTurn:
-        """Persists turn to PostgreSQL/SQLite chat_turns table and synchronizes ChatSession state."""
+        """Persists turn to PostgreSQL chat_turns table and synchronizes ChatSession state."""
         # 1. Update in-memory and disk snapshot
         self.add_turn(session_id, role, content, metadata)
 
@@ -324,20 +622,36 @@ class ConversationMemoryManager:
 
             active_slots = self.get_all_entities(session_id)
 
+            from app.observability.langsmith_tracer import resolve_user_email
+            resolved_email = resolve_user_email(user_id) if user_id else None
+
             if not chat_sess:
+                # Generate clean human-readable title from first user query
+                first_title = title or (content[:60] + "..." if len(content) > 60 else content)
                 chat_sess = ChatSession(
                     id=session_id,
                     user_id=user_id,
-                    title=title or (content[:60] + "..." if len(content) > 60 else content),
+                    user_email=resolved_email,
+                    title=first_title,
                     active_slots=active_slots
                 )
                 db.add(chat_sess)
                 await db.flush()
             else:
                 chat_sess.active_slots = active_slots
+                if user_id and not chat_sess.user_id:
+                    chat_sess.user_id = user_id
+                if resolved_email and not chat_sess.user_email:
+                    chat_sess.user_email = resolved_email
 
+            with self._lock:
+                turns_count = len(self._history.get(session_id, []))
+
+            sess_name = session_id[5:] if session_id.startswith("sess_") else session_id
+            turn_id = f"turn_{sess_name}_{turns_count}"
             scrubbed = mask_all_pii(content)
             db_turn = ChatTurn(
+                id=turn_id,
                 session_id=session_id,
                 role=role,
                 content=scrubbed,
@@ -346,11 +660,9 @@ class ConversationMemoryManager:
             db.add(db_turn)
             await db.commit()
 
-            # Trigger rolling summary when threshold is crossed
-            with self._lock:
-                turns_count = len(self._history.get(session_id, []))
-            if turns_count >= self._summary_threshold:
-                await self.generate_rolling_summary(session_id, db)
+            # Auto-update summary after turn pairs to keep rolling window fresh
+            if turns_count >= 2:
+                await self.generate_and_save_session_summary(db, session_id, user_id=user_id)
 
         except Exception as e:
             await db.rollback()
@@ -399,18 +711,15 @@ class ConversationMemoryManager:
             print(f"Notice: Failed to load session from DB: {e}")
             return False
 
-    async def get_history_async(self, session_id: str, db: Optional[AsyncSession] = None, limit: int = 10) -> List[Dict[str, str]]:
-        """Asynchronously returns history, checking DB first if memory empty."""
-        if db:
-            with self._lock:
-                in_mem = self._history.get(session_id)
-            if not in_mem:
-                await self.load_session_from_db(db, session_id)
-        return self.get_history(session_id, limit=limit)
-
     async def clear_session_async(self, session_id: str, db: Optional[AsyncSession] = None):
         """Flushes session from DB, in-memory, and disk."""
-        self.clear_session(session_id)
+        with self._lock:
+            self._history.pop(session_id, None)
+            self._entities.pop(session_id, None)
+            self._summaries.pop(session_id, None)
+            self._last_accessed.pop(session_id, None)
+            self._save_to_disk()
+
         if db:
             try:
                 stmt = delete(ChatSession).filter(ChatSession.id == session_id)
@@ -420,25 +729,93 @@ class ConversationMemoryManager:
                 await db.rollback()
                 print(f"Notice: Failed to clear session from DB: {e}")
 
-    async def get_user_sessions_db(self, db: AsyncSession, user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Returns all past chat sessions for a user from database."""
+    async def get_user_sessions_db(self, db: AsyncSession, user_id: str, limit: int = 30) -> List[Dict[str, Any]]:
+        """Returns all past chat sessions for a specific user from PostgreSQL.
+        Strictly user-scoped to prevent unauthorized cross-employee viewing.
+        """
         try:
-            stmt = select(ChatSession).filter(ChatSession.user_id == user_id).order_by(ChatSession.updated_at.desc()).limit(limit)
+            from app.observability.langsmith_tracer import resolve_user_email
+            resolved_email = resolve_user_email(user_id)
+
+            stmt = select(ChatSession).filter(
+                (ChatSession.user_id == user_id) |
+                (ChatSession.user_email == user_id) |
+                (ChatSession.user_email == resolved_email)
+            ).order_by(ChatSession.updated_at.desc()).limit(limit)
+            
             res = await db.execute(stmt)
             sessions = res.scalars().all()
-            return [
-                {
+
+            results = []
+            for s in sessions:
+                # Count turns
+                cnt_stmt = select(func.count(ChatTurn.id)).filter(ChatTurn.session_id == s.id)
+                cnt_res = await db.execute(cnt_stmt)
+                turns_count = cnt_res.scalar() or 0
+
+                # Fetch summary status
+                sum_stmt = select(ConversationSummary).filter(
+                    ConversationSummary.session_id == s.id
+                ).order_by(ConversationSummary.created_at.desc()).limit(1)
+                sum_res = await db.execute(sum_stmt)
+                latest_sum = sum_res.scalar_one_or_none()
+
+                results.append({
+                    "id": s.id,
                     "session_id": s.id,
-                    "title": s.title,
+                    "user_id": s.user_id,
+                    "user_email": s.user_email or resolved_email,
+                    "title": s.title or "Conversation Session",
                     "created_at": s.created_at.isoformat() if s.created_at else None,
                     "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+                    "turns_count": turns_count,
+                    "message_count": turns_count,
+                    "pending_action": latest_sum.pending_action if latest_sum else None,
+                    "summary_snippet": (latest_sum.summary_text[:100] + "...") if (latest_sum and len(latest_sum.summary_text) > 100) else (latest_sum.summary_text if latest_sum else None),
                     "active_slots": s.active_slots or {}
-                }
-                for s in sessions
-            ]
+                })
+            return results
         except Exception as e:
             print(f"Notice: Failed to query user sessions from DB: {e}")
             return []
+
+    async def delete_user_session_db(self, db: AsyncSession, session_id: str, user_id: str) -> bool:
+        """Securely deletes a session owned by this specific user."""
+        try:
+            stmt = select(ChatSession).filter(
+                ChatSession.id == session_id,
+                ChatSession.user_id == user_id
+            )
+            res = await db.execute(stmt)
+            chat_sess = res.scalar_one_or_none()
+            if not chat_sess:
+                return False
+
+            await db.delete(chat_sess)
+            await db.commit()
+
+            with self._lock:
+                self._history.pop(session_id, None)
+                self._entities.pop(session_id, None)
+                self._summaries.pop(session_id, None)
+                self._last_accessed.pop(session_id, None)
+                self._save_to_disk()
+
+            return True
+        except Exception as e:
+            await db.rollback()
+            print(f"Notice: Failed to delete user session {session_id}: {e}")
+            return False
+
+    def _cleanup_expired_sessions(self):
+        """Internal sweep for sessions exceeding TTL."""
+        now = time.time()
+        expired = [sid for sid, ts in self._last_accessed.items() if now - ts > self._ttl_seconds]
+        for sid in expired:
+            self._history.pop(sid, None)
+            self._entities.pop(sid, None)
+            self._summaries.pop(sid, None)
+            self._last_accessed.pop(sid, None)
 
 
 conversation_memory = ConversationMemoryManager()

@@ -71,6 +71,7 @@ class SemanticIntentRouter:
     # 4. Health & Occupational Triage markers
     HEALTH_PATTERNS = [
         r"\b(sick|fever|cough|cold|ill|illness|unwell|medical|doctor|physician|practitioner)\b",
+        r"\b(eye|eyes|vision|red eye|infection|pain|headache|stomach|injury|symptom|surgery|clinic)\b",
         r"\b(doctor certificate|medical certificate|medical note|fit to work|sick note)\b",
         r"\b(hospital|hospitalization|admitted|mediclaim|group insurance|health insurance|coverage)\b",
         r"\b(ergonomic|ergonomics|occupational health|injury|workplace safety)\b",
@@ -211,10 +212,13 @@ class SemanticIntentRouter:
         if not selected_tools:
             # If no tools matched, check multi-turn context
             if conversation_context:
-                if any(w in full_context for w in ["leave", "balance", "vacation"]):
+                if any(w in full_context for w in ["eye", "sick", "doctor", "health", "fever", "ill", "infection"]):
+                    selected_tools.append("health_subagent")
+                    confidences["health_subagent"] = 0.75
+                elif any(w in full_context for w in ["leave", "balance", "vacation", "pto"]):
                     selected_tools.append("leave_subagent")
                     confidences["leave_subagent"] = 0.65
-                elif any(w in full_context for w in ["timesheet", "hours"]):
+                elif any(w in full_context for w in ["timesheet", "hours", "overtime"]):
                     selected_tools.append("timesheet_subagent")
                     confidences["timesheet_subagent"] = 0.65
 

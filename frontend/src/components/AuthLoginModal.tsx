@@ -14,7 +14,7 @@ const PRESET_ACCOUNTS = [
   {
     role: 'ADMIN' as UserRole,
     name: 'Devansh Tyagi',
-    email: 'admin@intelera.corp',
+    email: 'devansh.tyagi@intelera.com',
     password: 'password123',
     desc: 'Full Access: System Prompts, All Leaves, Timesheets, Audits, Sync',
     badge: 'bg-purple-100 text-purple-800 border-purple-300'
@@ -22,7 +22,7 @@ const PRESET_ACCOUNTS = [
   {
     role: 'HR_MANAGER' as UserRole,
     name: 'Vikram Malhotra',
-    email: 'manager@intelera.corp',
+    email: 'vikram.malhotra@intelera.com',
     password: 'password123',
     desc: 'Manager Access: Leave Approvals, Department Timesheets & Reports',
     badge: 'bg-blue-100 text-blue-800 border-blue-300'
@@ -30,7 +30,7 @@ const PRESET_ACCOUNTS = [
   {
     role: 'HR_ASSOCIATE' as UserRole,
     name: 'Priya Patel',
-    email: 'associate@intelera.corp',
+    email: 'priya.patel@intelera.com',
     password: 'password123',
     desc: 'Associate Access: Onboarding Wizard, Document Verification, View Leaves',
     badge: 'bg-emerald-100 text-emerald-800 border-emerald-300'
@@ -38,7 +38,7 @@ const PRESET_ACCOUNTS = [
   {
     role: 'EMPLOYEE' as UserRole,
     name: 'Aarav Sharma',
-    email: 'employee@intelera.corp',
+    email: 'aarav.sharma@intelera.com',
     password: 'password123',
     desc: 'Employee Access: View/Apply Own Leaves, Log Timesheets, AI HR Chat',
     badge: 'bg-amber-100 text-amber-800 border-amber-300'
@@ -46,7 +46,7 @@ const PRESET_ACCOUNTS = [
   {
     role: 'EMPLOYEE' as UserRole,
     name: 'Sneha Kulkarni',
-    email: 'other.employee@intelera.corp',
+    email: 'sneha.kulkarni@intelera.com',
     password: 'password123',
     desc: 'Isolated Employee: Tests BOLA data isolation against Aarav Sharma',
     badge: 'bg-slate-100 text-slate-800 border-slate-300'
@@ -224,7 +224,7 @@ export const AuthLoginModal: React.FC<AuthLoginModalProps> = ({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="employee@intelera.corp"
+                  placeholder="devansh.tyagi@intelera.com"
                   required
                   className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

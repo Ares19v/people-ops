@@ -54,7 +54,14 @@ class TimesheetService:
                 detail="Duplicate timesheet entry: A record for this project, task, and date already exists."
             )
 
+        # Count existing entries to generate clean sequential id
+        cnt_stmt = select(func.count(TimesheetEntry.id)).filter(TimesheetEntry.user_id == user.id)
+        cnt_res = await db.execute(cnt_stmt)
+        seq_num = (cnt_res.scalar() or 0) + 1
+        clean_ts_id = f"ts_{user.email.split('@')[0]}_{seq_num}"
+
         entry = TimesheetEntry(
+            id=clean_ts_id,
             user_id=user.id,
             project_id=data.project_id,
             task_name=data.task_name,

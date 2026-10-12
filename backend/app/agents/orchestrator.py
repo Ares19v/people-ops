@@ -40,7 +40,7 @@ from app.services.langfuse_prompt_service import langfuse_prompt_service
 from app.memory.conversation_memory import conversation_memory
 from app.guardrails.guardrails_manager import guardrails_manager
 from app.compliance.phi_engine import compliance_engine
-from app.observability.langsmith_tracer import langsmith_tracer
+from app.observability.langsmith_tracer import langsmith_tracer, resolve_user_email, resolve_clean_session_id
 from app.schemas.agent import AgentChatResponse, CitationItem, StructuredAction
 
 logger = logging.getLogger(__name__)
@@ -202,8 +202,10 @@ class LLMRootOrchestratorAgent:
                 )
 
         start_time = time.perf_counter()
-        session_id = session_id or f"sess_{user.id[:8]}_{int(time.time())}"
         user_dept = getattr(user, "department", "Engineering") or "Engineering"
+        user_email = getattr(user, "email", None) or resolve_user_email(user.id)
+        session_id = resolve_clean_session_id(session_id, user_email)
+        emp_id = user.id
 
         t_ig_ms = 0.0
         t_orch_ms = 0.0
@@ -216,7 +218,7 @@ class LLMRootOrchestratorAgent:
             "TOTAL ROUND-TRIP",
             as_type="chain",
             input=message,
-            metadata={"session_id": session_id, "user_id": user.id, "user_role": user.role.value, "department": user_dept}
+            metadata={"session_id": session_id, "user_id": user_email, "employee_id": emp_id, "user_email": user_email, "user_role": user.role.value, "department": user_dept}
         ) as root_span:
             # 1. INPUT GUARDRAILS
             t0_ig = time.perf_counter()
@@ -224,7 +226,7 @@ class LLMRootOrchestratorAgent:
                 "Input Guardrails",
                 as_type="guardrail",
                 input=message,
-                metadata={"session_id": session_id}
+                metadata={"session_id": session_id, "user_id": user_email, "employee_id": emp_id}
             ) as input_guardrails_span:
                 # 1. PRIVACY BOUNDARY: Redact PII into ephemeral TokenVault BEFORE any LLM sees it
                 redaction = compliance_engine.redact(message, session_id=session_id)
@@ -245,11 +247,11 @@ class LLMRootOrchestratorAgent:
                         output_text=refusal_msg or "Blocked",
                         prompt_tokens=len(message) // 4,
                         completion_tokens=15,
-                        metadata={"department": user_dept, "user_id": user.id}
+                        metadata={"department": user_dept, "user_id": user_email, "employee_id": emp_id}
                     )
                     langsmith_tracer.trace_agent_run(
                         session_id=session_id,
-                        user_id=user.id,
+                        user_id=user_email,
                         user_role=user.role.value,
                         agent_name="ROOT_LLM_ORCHESTRATOR",
                         raw_input=message,
@@ -286,11 +288,34 @@ class LLMRootOrchestratorAgent:
                     )
                 input_guardrails_span.update(output="PASSED: NeMo & PII Tokenization Validated")
 
-            # 3. RECALL CONVERSATION MEMORY (The agents remember!)
+            # 3. RECALL CONVERSATION MEMORY (5-Session Sliding Window Cross-Conversation Recall)
+            cross_session_summaries = []
+            recalled_past_turns = []
             if db:
                 await conversation_memory.load_session_from_db(db, session_id)
+                cross_session_summaries = await conversation_memory.get_user_sliding_window_summaries(
+                    db=db,
+                    user_id=user.id,
+                    current_session_id=session_id,
+                    limit=5
+                )
+                recent_current = conversation_memory.get_turns(session_id)
+                recalled_past_turns = await conversation_memory.recall_relevant_past_turns(
+                    db=db,
+                    user_id=user.id,
+                    current_session_id=session_id,
+                    query=message,
+                    recent_turns=recent_current,
+                    limit=4
+                )
+
             history_context = conversation_memory.get_formatted_history(
-                session_id, limit=4, user_id=user.id, user_role=user.role.value
+                session_id,
+                limit=4,
+                user_id=user.id,
+                user_role=user.role.value,
+                cross_session_summaries=cross_session_summaries,
+                recalled_turns=recalled_past_turns
             )
 
             # 4. FETCH DECOUPLED PROMPT FROM LANGFUSE (Prompts out of codebase)
@@ -340,6 +365,21 @@ class LLMRootOrchestratorAgent:
                                 )
                                 raw_response = adk_res.get("response", "")
                                 if raw_response and not raw_response.startswith("I apologize, but I encountered an issue"):
+                                    # Override hallucinated apologies if exact historical dialogue was recalled
+                                    if ("apologize for not recalling" in raw_response.lower() or "cannot recall" in raw_response.lower()) and (recalled_past_turns or cross_session_summaries):
+                                        from app.core.llm_bridge import generate_summary
+                                        override_prompt = (
+                                            f"{history_context}\n\n"
+                                            f"EMPLOYEE QUERY: {message}\n\n"
+                                            "INSTRUCTION: Answer the employee warmly and accurately confirming what was previously discussed in the past conversation as provided in the recalled historical dialogue above. Do NOT say you cannot recall or apologize."
+                                        )
+                                        try:
+                                            overridden = await generate_summary(override_prompt)
+                                            if overridden and not overridden.startswith("[MOCK SUMMARY]"):
+                                                raw_response = overridden.strip()
+                                        except Exception:
+                                            pass
+
                                     adk_used = True
                                     agent_raw = adk_res.get("agent_name", "hr_root_orchestrator").upper()
                                     if agent_raw.endswith("_AGENT"):
@@ -363,24 +403,48 @@ class LLMRootOrchestratorAgent:
                     metadata={"tool_count": len(tools_to_run)}
                 ) as tool_selection_span:
                     if not adk_used:
-                        t0_texec = time.perf_counter()
-                        tasks = [self._execute_subagent_tool(tool, db, user, redacted_msg) for tool in tools_to_run]
-                        results: List[ToolExecutionResult] = await asyncio.gather(*tasks)
-                        t_texec_ms = (time.perf_counter() - t0_texec) * 1000
+                        is_recall_query = any(k in message.lower() for k in [
+                            "remember", "past conversation", "previous conversation", "earlier",
+                            "told you", "told u", "last time", "last chat", "before", "recall"
+                        ])
+                        direct_recalled = False
+                        if is_recall_query and (recalled_past_turns or cross_session_summaries):
+                            from app.core.llm_bridge import generate_summary
+                            recall_prompt = (
+                                f"{history_context}\n\n"
+                                f"EMPLOYEE QUERY: {message}\n\n"
+                                "INSTRUCTION: You are the PeopleOps HR AI Assistant. The employee is asking to recall past conversations. "
+                                "Reference the exact recalled details above, answer warmly and accurately confirming what was previously discussed. "
+                                "Do NOT apologize or say you cannot recall."
+                            )
+                            try:
+                                synth_res = await generate_summary(recall_prompt)
+                                if synth_res and not synth_res.startswith("[MOCK SUMMARY]"):
+                                    raw_response = synth_res.strip()
+                                    direct_recalled = True
+                                    primary_agent = "HR_ROOT_ORCHESTRATOR"
+                            except Exception:
+                                pass
 
-                        combined_texts = []
-                        for res in results:
-                            combined_texts.append(res.output_text)
-                            all_citations.extend(res.citations)
-                            if res.structured_action and not primary_structured_action:
-                                primary_structured_action = res.structured_action
-                            if res.requires_approval:
-                                needs_hitl = True
+                        if not direct_recalled:
+                            t0_texec = time.perf_counter()
+                            tasks = [self._execute_subagent_tool(tool, db, user, redacted_msg) for tool in tools_to_run]
+                            results: List[ToolExecutionResult] = await asyncio.gather(*tasks)
+                            t_texec_ms = (time.perf_counter() - t0_texec) * 1000
 
-                        raw_response = "\n\n---\n\n".join(combined_texts)
-                        if needs_hitl:
-                            raw_response += "\n\nHuman-In-The-Loop Checkpoint: This action requires manager/medical officer sign-off."
-                        primary_agent = tools_to_run[0].upper() if len(tools_to_run) == 1 else f"CONCURRENT({'+'.join(t.upper() for t in tools_to_run)})"
+                            combined_texts = []
+                            for res in results:
+                                combined_texts.append(res.output_text)
+                                all_citations.extend(res.citations)
+                                if res.structured_action and not primary_structured_action:
+                                    primary_structured_action = res.structured_action
+                                if res.requires_approval:
+                                    needs_hitl = True
+
+                            raw_response = "\n\n---\n\n".join(combined_texts)
+                            if needs_hitl:
+                                raw_response += "\n\nHuman-In-The-Loop Checkpoint: This action requires manager/medical officer sign-off."
+                            primary_agent = tools_to_run[0].upper() if len(tools_to_run) == 1 else f"CONCURRENT({'+'.join(t.upper() for t in tools_to_run)})"
                     else:
                         t0_texec = time.perf_counter()
                         with langsmith_tracer.span(
@@ -447,7 +511,7 @@ class LLMRootOrchestratorAgent:
             output_text=final_output,
             prompt_tokens=p_tokens,
             completion_tokens=c_tokens,
-            metadata={"department": user_dept, "user_id": user.id, "user_role": user.role.value}
+            metadata={"department": user_dept, "user_id": user_email, "employee_id": emp_id, "user_role": user.role.value}
         )
 
         if tools_to_run:
@@ -474,7 +538,7 @@ class LLMRootOrchestratorAgent:
 
         langsmith_tracer.trace_agent_run(
             session_id=session_id,
-            user_id=user.id,
+            user_id=user_email,
             user_role=user.role.value,
             agent_name=agent_label,
             raw_input=message,
@@ -540,7 +604,8 @@ class LLMRootOrchestratorAgent:
         target_agent: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
         """Streams real-time Server-Sent Events (SSE) thought traces, tool runs, and tokens."""
-        session_id = session_id or f"sess_{user.id[:8]}_{int(time.time())}"
+        user_email = getattr(user, "email", None) or resolve_user_email(user.id)
+        session_id = resolve_clean_session_id(session_id, user_email)
 
         # Event 1: Guardrail Check
         yield f"event: status\ndata: {json.dumps({'step': 'guardrail_check', 'message': 'Evaluating NeMo boundary...'})}\n\n"

@@ -98,86 +98,18 @@
       {
         "role": "user",
         "content": "What is the statutory policy for overtime under Section 14, and please sync my Zoho attendance records?",
-        "timestamp": 1791480924.146038,
-        "metadata": {}
-      },
-      {
-        "role": "assistant",
-        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 9 hours/day, 48 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at one and a half times the ordinary wage rate (twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017))\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at one and a half times the ordinary wage rate (twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017)).\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
-        "timestamp": 1791480924.209293,
-        "metadata": {
-          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 5342.12,
-          "tokens_used": 357,
-          "guardrail_status": "PASSED",
-          "citations": [
-            "Zoho People REST API v2",
-            "Enterprise Working Hours & Timesheet Policy 2026, Section 2.1",
-            "Maharashtra Act LXI of 2017, Section 13",
-            "Maharashtra Act LXI of 2017, Section 15"
-          ]
-        }
-      },
-      {
-        "role": "user",
-        "content": "What is the statutory policy for overtime under Section 14, and please sync my Zoho attendance records?",
-        "timestamp": 1791500822.6419585,
-        "metadata": {}
-      },
-      {
-        "role": "assistant",
-        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 9 hours/day, 48 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at one and a half times the ordinary wage rate (twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017))\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at one and a half times the ordinary wage rate (twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017)).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.\n\nStatutory invariants: Max 9h daily standard hours (Sec 13), Overtime at twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017) (Sec 14), Earned Leave accumulation capped at 45 days (Sec 18), Casual Leave 8 days.",
-        "timestamp": 1791500822.6709602,
-        "metadata": {
-          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 4682.42,
-          "tokens_used": 441,
-          "guardrail_status": "PASSED",
-          "citations": [
-            "Zoho People REST API v2",
-            "Enterprise Working Hours & Timesheet Policy 2026, Section 2.1",
-            "Maharashtra Act LXI of 2017, Section 13",
-            "Maharashtra Act LXI of 2017, Section 15"
-          ]
-        }
-      },
-      {
-        "role": "user",
-        "content": "What is the statutory policy for overtime under Section 14, and please sync my Zoho attendance records?",
-        "timestamp": 1791500856.3986363,
-        "metadata": {}
-      },
-      {
-        "role": "assistant",
-        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 9 hours/day, 48 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at one and a half times the ordinary wage rate (twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017))\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at one and a half times the ordinary wage rate (twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017)).\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
-        "timestamp": 1791500856.4280267,
-        "metadata": {
-          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 4986.92,
-          "tokens_used": 357,
-          "guardrail_status": "PASSED",
-          "citations": [
-            "Zoho People REST API v2",
-            "Enterprise Working Hours & Timesheet Policy 2026, Section 2.1",
-            "Maharashtra Act LXI of 2017, Section 13",
-            "Maharashtra Act LXI of 2017, Section 15"
-          ]
-        }
-      },
-      {
-        "role": "user",
-        "content": "What is the statutory policy for overtime under Section 14, and please sync my Zoho attendance records?",
-        "timestamp": 1791500889.7375658,
+        "timestamp": 1791686747.447787,
         "metadata": {}
       },
       {
         "role": "assistant",
         "content": "Zoho People System Sync:\nHi Aarav, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nUnder the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
-        "timestamp": 1791500889.7964694,
+        "timestamp": 1791686747.5191,
         "metadata": {
           "agent_name": "CONCURRENT(ZOHO_SUBAGENT+TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 1542.57,
-          "tokens_used": 335,
+          "latency_ms": 1109.48,
+          "tokens_used": 334,
+          "cost_usd": 9.5e-05,
           "guardrail_status": "PASSED",
           "citations": [
             "Zoho People REST API v2",
@@ -190,17 +122,18 @@
       {
         "role": "user",
         "content": "What is the statutory policy for overtime under Section 14, and please sync my Zoho attendance records?",
-        "timestamp": 1791501494.2925181,
+        "timestamp": 1791686858.303433,
         "metadata": {}
       },
       {
         "role": "assistant",
         "content": "Zoho People System Sync:\nHi Aarav, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nUnder the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
-        "timestamp": 1791501494.365345,
+        "timestamp": 1791686859.887786,
         "metadata": {
           "agent_name": "CONCURRENT(ZOHO_SUBAGENT+TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 3547.72,
-          "tokens_used": 335,
+          "latency_ms": 1147.07,
+          "tokens_used": 334,
+          "cost_usd": 9.5e-05,
           "guardrail_status": "PASSED",
           "citations": [
             "Zoho People REST API v2",
@@ -213,16 +146,64 @@
       {
         "role": "user",
         "content": "What is the statutory policy for overtime under Section 14, and please sync my Zoho attendance records?",
-        "timestamp": 1791535124.2994187,
+        "timestamp": 1791706821.966982,
         "metadata": {}
       },
       {
         "role": "assistant",
         "content": "Zoho People System Sync:\nHi Aarav, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nUnder the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
-        "timestamp": 1791535124.4070644,
+        "timestamp": 1791706823.4691682,
         "metadata": {
           "agent_name": "CONCURRENT(ZOHO_SUBAGENT+TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 711.71,
+          "latency_ms": 1854.47,
+          "tokens_used": 334,
+          "cost_usd": 9.5e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Zoho People REST API v2",
+            "Enterprise Working Hours & Timesheet Policy 2026, Section 2.1",
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "What is the statutory policy for overtime under Section 14, and please sync my Zoho attendance records?",
+        "timestamp": 1791713682.8360374,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Zoho People System Sync:\nHi Aarav, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nUnder the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791713682.8743763,
+        "metadata": {
+          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 913.94,
+          "tokens_used": 334,
+          "cost_usd": 9.5e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Zoho People REST API v2",
+            "Enterprise Working Hours & Timesheet Policy 2026, Section 2.1",
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "What is the statutory policy for overtime under Section 14, and please sync my Zoho attendance records?",
+        "timestamp": 1791713818.1067932,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Zoho People System Sync:\nHi Aarav, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nUnder the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791713818.1642098,
+        "metadata": {
+          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 850.91,
           "tokens_used": 334,
           "cost_usd": 9.5e-05,
           "guardrail_status": "PASSED",
@@ -239,17 +220,18 @@
       {
         "role": "user",
         "content": "What is the maximum daily working hours limit under Maharashtra Act 2017?",
-        "timestamp": 1791480926.953712,
+        "timestamp": 1791686752.237924,
         "metadata": {}
       },
       {
         "role": "assistant",
         "content": "Here is your timesheet summary for this week, Aarav:\n\n\u2022 Total Hours: 0.0 hrs\n\u2022 Billable Hours: 0.0 hrs (0%)\n\u2022 Non-Billable Hours: 0.0 hrs\n\u2022 Logged Entries: 0\n\nYou can view and export detailed records via the Timesheet Reports tab.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
-        "timestamp": 1791480927.008515,
+        "timestamp": 1791686752.30449,
         "metadata": {
           "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 1249.8,
+          "latency_ms": 626.04,
           "tokens_used": 202,
+          "cost_usd": 5.7e-05,
           "guardrail_status": "PASSED",
           "citations": [
             "Maharashtra Act LXI of 2017, Section 13",
@@ -261,17 +243,18 @@
       {
         "role": "user",
         "content": "What is the maximum daily working hours limit under Maharashtra Act 2017?",
-        "timestamp": 1791500827.6275768,
+        "timestamp": 1791686864.545065,
         "metadata": {}
       },
       {
         "role": "assistant",
         "content": "Here is your timesheet summary for this week, Aarav:\n\n\u2022 Total Hours: 0.0 hrs\n\u2022 Billable Hours: 0.0 hrs (0%)\n\u2022 Non-Billable Hours: 0.0 hrs\n\u2022 Logged Entries: 0\n\nYou can view and export detailed records via the Timesheet Reports tab.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
-        "timestamp": 1791500827.6565957,
+        "timestamp": 1791686865.993368,
         "metadata": {
           "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 3461.83,
+          "latency_ms": 622.33,
           "tokens_used": 202,
+          "cost_usd": 5.7e-05,
           "guardrail_status": "PASSED",
           "citations": [
             "Maharashtra Act LXI of 2017, Section 13",
@@ -283,17 +266,18 @@
       {
         "role": "user",
         "content": "What is the maximum daily working hours limit under Maharashtra Act 2017?",
-        "timestamp": 1791501495.5036209,
+        "timestamp": 1791706827.0010655,
         "metadata": {}
       },
       {
         "role": "assistant",
         "content": "Here is your timesheet summary for this week, Aarav:\n\n\u2022 Total Hours: 0.0 hrs\n\u2022 Billable Hours: 0.0 hrs (0%)\n\u2022 Non-Billable Hours: 0.0 hrs\n\u2022 Logged Entries: 0\n\nYou can view and export detailed records via the Timesheet Reports tab.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
-        "timestamp": 1791501495.5538967,
+        "timestamp": 1791706828.4436948,
         "metadata": {
           "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 573.75,
+          "latency_ms": 645.1,
           "tokens_used": 202,
+          "cost_usd": 5.7e-05,
           "guardrail_status": "PASSED",
           "citations": [
             "Maharashtra Act LXI of 2017, Section 13",
@@ -305,16 +289,39 @@
       {
         "role": "user",
         "content": "What is the maximum daily working hours limit under Maharashtra Act 2017?",
-        "timestamp": 1791535126.7546563,
+        "timestamp": 1791713684.1077638,
         "metadata": {}
       },
       {
         "role": "assistant",
         "content": "Here is your timesheet summary for this week, Aarav:\n\n\u2022 Total Hours: 0.0 hrs\n\u2022 Billable Hours: 0.0 hrs (0%)\n\u2022 Non-Billable Hours: 0.0 hrs\n\u2022 Logged Entries: 0\n\nYou can view and export detailed records via the Timesheet Reports tab.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
-        "timestamp": 1791535126.8766627,
+        "timestamp": 1791713684.1530075,
         "metadata": {
           "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
-          "latency_ms": 700.2,
+          "latency_ms": 215.97,
+          "tokens_used": 202,
+          "cost_usd": 5.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15",
+            "Enterprise Working Hours & Timesheet Policy 2026, Section 2.1"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "What is the maximum daily working hours limit under Maharashtra Act 2017?",
+        "timestamp": 1791713822.0564318,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Here is your timesheet summary for this week, Aarav:\n\n\u2022 Total Hours: 0.0 hrs\n\u2022 Billable Hours: 0.0 hrs (0%)\n\u2022 Non-Billable Hours: 0.0 hrs\n\u2022 Logged Entries: 0\n\nYou can view and export detailed records via the Timesheet Reports tab.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791713822.1135228,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 245.81,
           "tokens_used": 202,
           "cost_usd": 5.7e-05,
           "guardrail_status": "PASSED",
@@ -20957,20 +20964,6 @@
         }
       }
     ],
-    "test_persistence_reboot_sim": [
-      {
-        "role": "user",
-        "content": "I need 2 days leave for medical checkup.",
-        "timestamp": 1791535122.6441798,
-        "metadata": {}
-      },
-      {
-        "role": "assistant",
-        "content": "Medical leave noted. Please provide doctor slip.",
-        "timestamp": 1791535122.6934037,
-        "metadata": {}
-      }
-    ],
     "eval_sess_EVAL-01-STATUTORY-LEAVE_1791535129": [
       {
         "role": "user",
@@ -21436,6 +21429,1233 @@
           "guardrail_status": "PASSED",
           "citations": []
         }
+      }
+    ],
+    "sess_wml3e7zv": [
+      {
+        "role": "user",
+        "content": "Sync my attendance and leave records with Zoho People API",
+        "timestamp": 1791540631.9302876,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Zoho People System Sync:\nHi Aarav, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nHi Aarav, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 19.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 7.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 12.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791540632.408924,
+        "metadata": {
+          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 1457.37,
+          "tokens_used": 231,
+          "cost_usd": 6.6e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Zoho People REST API v2"
+          ]
+        }
+      }
+    ],
+    "sess_EMP-003_1791543829": [
+      {
+        "role": "user",
+        "content": "What is our annual leave policy for Maharashtra employees?",
+        "timestamp": 1791543836.6368701,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Hi Priya, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 18.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 8.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 10.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\n---\n\nThe annual leave policy for employees in Maharashtra is governed by the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017, specifically under Section 18.\n\nAnnual Leave with Pay (Earned Leave)\n1. Accrual: Employees are entitled to 18 days of earned leave for every calendar year, provided they have worked for at least 240 days in the establishment during that year.\n   \u2022 Reference: Maharashtra Act LXI of 2017, Section 18(1).\n\n2. Calculation: The leave is calculated at the rate of one day for every twenty days of work performed in the previous calendar year.\n\n3. Accumulation Cap: Employees can accumulate earned leave up to a maximum of 45 days.\n   \u2022 Reference: Maharashtra Act LXI of 2017, Section 18(1)(a).\n\n4. Leave Application Notice Period: Employees must apply for leave in writing at least fifteen days prior to the leave start date. If the leave exceeds four days, the notice period extends to thirty days.\n   \u2022 Reference: Maharashtra Act LXI of 2017, Section 18(3).\n\nCasual Leave\nAdditionally, employees are entitled to 8 days of casual leave per calendar year, which is unencashable.\n\u2022 Reference: Maharashtra Act LXI of 2017, Section 18(1)(b).\n\nDisclaimer\nThis summary is provided for informational purposes only and does not constitute legal advice. For specific legal interpretations or advice regarding compliance with the Maharashtra Shops and Establishments Act, please consult a qualified legal professional.\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791543838.1669974,
+        "metadata": {
+          "agent_name": "CONCURRENT(LEAVE_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 7586.85,
+          "tokens_used": 536,
+          "cost_usd": 0.000158,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 18(3)",
+            "Enterprise Leave Policy 2026, Section 4.4",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      }
+    ],
+    "sess_EMP-003_1791543839": [
+      {
+        "role": "user",
+        "content": "What is our annual leave policy for Maharashtra employees?",
+        "timestamp": 1791543844.9097073,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Hi Priya, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 18.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 8.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 10.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\n---\n\nThe annual leave policy for employees in Maharashtra, as per the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017, is governed by Section 18. Here are the key provisions:\n\n1. Earned Leave Accrual:\n   \u2022 According to Section 18(1), every worker who has worked for a period of not less than two hundred and forty days in an establishment during a calendar year is entitled to leave with wages at the rate of one day for every twenty days of work performed during the previous calendar year.\n   \u2022 The baseline minimum for earned leave accrual is 18 days per year, with a maximum accumulation cap of 45 days.\n\n2. Casual Leave:\n   \u2022 As per Section 18(1)(b), employees are entitled to 8 days of casual leave annually. This leave is unencashable.\n\n3. Leave Application Notice Period:\n   \u2022 Under Section 18(3), a worker who wishes to avail of leave with wages must apply in writing to the employer not less than fifteen days before the date on which the leave is to begin. If the leave is for more than four days, the notice period extends to thirty days.\n\n4. Maternity Leave:\n   \u2022 In accordance with Maternity Section 5, female employees are entitled to 26 weeks of fully paid maternity leave.\n\n5. Sick Leave:\n   \u2022 For sick leave exceeding 2 consecutive days, a verified clinical certificate is required.\n\nDisclaimer:\nThis summary is provided for informational purposes only and does not constitute legal advice. For specific legal inquiries or concerns, please consult a qualified legal professional or HR specialist.\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791543845.3437097,
+        "metadata": {
+          "agent_name": "CONCURRENT(LEAVE_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 5827.49,
+          "tokens_used": 557,
+          "cost_usd": 0.000164,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 18(3)",
+            "Enterprise Leave Policy 2026, Section 4.4",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      }
+    ],
+    "sess_priya.patel_1791543922": [
+      {
+        "role": "user",
+        "content": "What is our annual leave policy for Maharashtra employees?",
+        "timestamp": 1791543928.0055325,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Hi Priya, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 18.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 8.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 10.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\n---\n\nThe annual leave policy for employees in Maharashtra, as per the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017, is as follows:\n\n1. Earned Leave (EL):\n   \u2022 According to Section 18(1) of the Maharashtra Shops and Establishments Act, every worker who has worked for a period of not less than 240 days in an establishment during a calendar year is entitled to leave with wages at the rate of one day for every twenty days of work performed in the previous calendar year. This translates to a minimum of 12 days of Earned Leave annually.\n   \u2022 However, Intelera Technologies provides a higher benefit of 18 days of Earned Leave per year, which is in excess of the statutory minimum.\n\n2. Casual Leave:\n   \u2022 The company aligns with the statutory requirement of 8 days of Casual Leave per year, with a non-carryover policy.\n\n3. Leave Application Notice Period:\n   \u2022 As per Section 18(3), a worker must apply in writing for leave not less than fifteen days before the intended leave date. If the leave is for more than four days, the notice period extends to thirty days.\n\n4. Leave Without Pay (LWP):\n   \u2022 The company has a discretionary policy for Leave Without Pay (LWP), which is uncapped but subject to management approval. There is no statutory entitlement for unearned absentia under the Maharashtra Act.\n\nThis policy ensures compliance with the statutory requirements while providing additional benefits to employees. \n\nDisclaimer: This summary is for informational purposes only and should not be construed as legal advice. For specific legal inquiries or concerns, please consult a qualified legal professional.\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791543928.4152255,
+        "metadata": {
+          "agent_name": "CONCURRENT(LEAVE_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 5041.3,
+          "tokens_used": 583,
+          "cost_usd": 0.000172,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 18(3)",
+            "Enterprise Leave Policy 2026, Section 4.4",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      }
+    ],
+    "sess_devansh.tyagi_1791543931": [
+      {
+        "role": "user",
+        "content": "Show me my team timesheet compliance and overtime stats.",
+        "timestamp": 1791543939.631876,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nTo assess your team's timesheet compliance and overtime statistics, we need to ensure that the data aligns with the statutory provisions outlined in the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017. Here\u2019s how to evaluate compliance based on the relevant sections:\n\n1. Working Hours Compliance:\n   \u2022 Standard Working Hours: According to Section 13 of the Maharashtra Shops and Establishments Act, no adult worker shall work more than 9 hours in a day and 48 hours in a week.\n   \u2022 Your Policy: The Enterprise Working Hours & Timesheet Policy states a standard of 8 hours per day and 40 hours per week, which is compliant with the statutory ceiling.\n\n2. Overtime Calculation:\n   \u2022 Statutory Overtime Rate: As per Section 13, any work beyond 9 hours in a day or 48 hours in a week must be compensated at 2.0 times the ordinary rate of wages.\n   \u2022 Compliance Check: Review your team's timesheets to identify any instances of overtime worked. Ensure that any hours logged beyond the statutory limits are compensated at the appropriate overtime rate.\n\n3. Rest Intervals:\n   \u2022 Rest Intervals Requirement: Section 15 mandates that the spread-over of daily working hours shall not exceed 10.5 hours, and in special cases, it may extend to 12 hours with appropriate rest intervals.\n   \u2022 Compliance Check: Ensure that your team\u2019s timesheets reflect compliance with these spread-over limits and that adequate rest intervals are provided.\n\n4. Leave Accrual:\n   \u2022 Earned Leave: According to Section 18, employees are entitled to earned leave based on their length of service. Ensure that your records reflect any earned leave accrued.\n   \u2022 Casual Leave: Employees are entitled to 8 days of casual leave per year. Verify that this is being tracked appropriately.\n\nSummary of Compliance Stats:\n\u2022 Total Hours Worked: [Insert total hours worked by the team]\n\u2022 Overtime Hours: [Insert total overtime hours worked]\n\u2022 Overtime Compensation: [Insert total overtime compensation calculated]\n\u2022 Leave Accrual: [Insert details of earned leave and casual leave taken]\n\nDisclaimer:\nThis assessment is based on the statutory provisions of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017. It is essential to maintain accurate records and ensure compliance with all applicable laws. For any discrepancies or further clarifications, please consult with a legal expert or HR compliance specialist.\n\nIf you need specific numbers or further analysis, please provide the relevant timesheet data.\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791543940.04472,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 7895.76,
+          "tokens_used": 824,
+          "cost_usd": 0.000244,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Enterprise Working Hours & Timesheet Policy 2026, Section 2.1",
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15"
+          ]
+        }
+      }
+    ],
+    "sess_devansh.tyagi_1": [
+      {
+        "role": "user",
+        "content": "What are my casual leave rules and carry forward policy?",
+        "timestamp": 1791540945.403897,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Hi Devansh, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 18.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 8.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 10.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\n---\n\nAccording to the Enterprise Leave Policy 2026, Section 4.2, the rules for Casual Leave (CL) are as follows:\n\n1. Annual Quota: Employees are entitled to 8 days of casual leave each calendar year.\n2. Accrual: Casual leave is credited as a lump sum on January 1st of each year, or it is pro-rated based on the employee's joining date.\n3. Carry Forward: Casual leave is non-cumulative. Any unused casual leave will lapse at the end of the calendar year (December 31st) and cannot be carried forward or encashed under any circumstances.\n\nThis policy directly implements the statutory provision outlined in the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017, specifically Section 18(2), which states:\n\n\"Every worker shall be entitled to eight days of casual leave with wages in every calendar year. Casual leave shall lapse at the end of the calendar year and cannot be carried forward or encashed.\"\n\nDisclaimer: This information is provided for compliance purposes and should be reviewed in conjunction with the relevant statutory provisions. For any specific legal advice or interpretation, please consult a legal professional.\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791540946.030077,
+        "metadata": {
+          "agent_name": "CONCURRENT(LEAVE_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 6807.44,
+          "tokens_used": 461,
+          "cost_usd": 0.000135,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Enterprise Leave Policy 2026, Section 4.2",
+            "Maharashtra Act LXI of 2017, Section 18(2)",
+            "Enterprise Leave Policy 2026, Section 4.1"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "What are the maximum overtime hours allowed under Maharashtra law?",
+        "timestamp": 1791544499.6427996,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nUnder the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017, the maximum overtime hours allowed are governed by Section 14. Specifically:\n\n1. Daily Limit: An employee cannot work more than 9 hours in a day. Any work beyond this is considered overtime.\n2. Weekly Limit: An employee cannot work more than 48 hours in a week. Any work beyond this is also considered overtime.\n\nFor overtime work, the employee is entitled to be paid at a rate of 2.0 times their ordinary wage rate (Section 14(1)). \n\nAdditionally, Section 14(2) states that no employee is permitted to work beyond 11 hours in any single day, which includes both regular and overtime hours.\n\nReferences:\n\u2022 Section 14(1) and Section 14(2), Maharashtra Shops and Establishments Act, 2017.\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791544499.9443994,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 4456.21,
+          "tokens_used": 383,
+          "cost_usd": 0.000111,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15",
+            "Enterprise Leave Policy 2026, Section 4.1"
+          ]
+        }
+      }
+    ],
+    "sess_priya.patel_1": [
+      {
+        "role": "user",
+        "content": "What are the employee onboarding and compliance verification procedures?",
+        "timestamp": 1791543425.880672,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "The employee onboarding and compliance verification procedures at Intelera Technologies are detailed in the HR Handbook under the section titled \"General Terms.\" \n\nFor specific guidelines related to onboarding, it generally involves the following steps:\n\n1. Pre-Onboarding: Collection of necessary documentation (identity proof, educational certificates, etc.).\n2. Orientation Session: Introduction to company policies, culture, and compliance regulations.\n3. Compliance Checks: Verification of background checks and any necessary clearances as per regulatory norms.\n4. Training & Development: Initial training sessions on company systems and procedures.\n\nFor precise details and updates, please refer to the HR Handbook or consult with HR personnel. \n\nDisclaimer: This information is guided by internal policy documents and should be verified in conjunction with applicable labor laws.",
+        "timestamp": 1791543426.649555,
+        "metadata": {
+          "agent_name": "POLICY_SUBAGENT",
+          "latency_ms": 6375.65,
+          "tokens_used": 239,
+          "cost_usd": 6.8e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "How many casual leaves do I have left?",
+        "timestamp": 1791544508.1338565,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "You have 8 casual leaves (CL) available. If you have any more questions or need assistance with leave requests, feel free to ask!\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791544508.525595,
+        "metadata": {
+          "agent_name": "LEAVE_SUBAGENT",
+          "latency_ms": 4587.18,
+          "tokens_used": 90,
+          "cost_usd": 2.5e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "sess_aarav.sharma_3": [
+      {
+        "role": "user",
+        "content": "What is the daily maximum work hour limit and overtime pay under Maharashtra law?",
+        "timestamp": 1791538511.767127,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nUnder the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017, the following provisions apply regarding daily maximum work hour limits and overtime pay:\n\n1. Daily Maximum Work Hour Limit:\n   \u2022 No adult worker shall be required or allowed to work for more than nine hours in any day. (Citation: Section 13, Maharashtra Act LXI of 2017)\n\n2. Overtime Pay:\n   \u2022 Any work exceeding nine hours in a day or forty-eight hours in a week is compensated at a rate of twice the ordinary rate of wages. (Citation: Section 14(1), Maharashtra Act LXI of 2017)\n\nAdditionally, it is important to note that the daily spread-over of working hours shall not exceed ten and a half hours in any day, with a provision for extension up to twelve hours in case of urgent work or seasonal pressure, provided appropriate rest intervals are given. (Citation: Section 15, Maharashtra Act LXI of 2017)\n\nDisclaimer:\nThis information is provided for general guidance and should not be construed as legal advice. For specific legal inquiries or concerns, please consult a qualified legal professional.\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791538512.277865,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 5040.91,
+          "tokens_used": 466,
+          "cost_usd": 0.000135,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      }
+    ],
+    "sess_aarav.sharma_6": [
+      {
+        "role": "user",
+        "content": "hi",
+        "timestamp": 1791577346.753551,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Hello! How can I assist you today? If you have any questions related to leave, timesheets, health, or company policies, feel free to ask.",
+        "timestamp": 1791577347.41871,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 4133.86,
+          "tokens_used": 34,
+          "cost_usd": 1e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "i wanna take a causal leave for 2 days",
+        "timestamp": 1791577368.976353,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Please provide the start date for your casual leave so I can check your leave balance and eligibility.\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791577370.078674,
+        "metadata": {
+          "agent_name": "LEAVE_SUBAGENT",
+          "latency_ms": 2983.0,
+          "tokens_used": 84,
+          "cost_usd": 2.3e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "december 12 to december 15th",
+        "timestamp": 1791577399.276008,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "It looks like you are eligible for casual leave from December 12 to December 15, 2026, and you have sufficient leave balance as well.\n\nHowever, there was an issue while trying to submit your leave application due to a duplicate entry. I recommend contacting HR directly to resolve this issue. \n\nIf you need assistance with anything else, feel free to ask!\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791577400.345809,
+        "metadata": {
+          "agent_name": "LEAVE_SUBAGENT",
+          "latency_ms": 6614.67,
+          "tokens_used": 145,
+          "cost_usd": 4.2e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "get rid of the duplicate one",
+        "timestamp": 1791577429.092523,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "It seems that the issue with your duplicate leave application needs to be escalated to HR. Please hold on while I assist you in resolving this matter. \n\nI'll reach out to the appropriate agent to handle the duplicate entry and get back to you shortly. Thank you for your patience!",
+        "timestamp": 1791577430.189973,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 5428.07,
+          "tokens_used": 77,
+          "cost_usd": 2.2e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "one of my eyes is red thats the reson",
+        "timestamp": 1791577487.8947587,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "For a red eye, it's important to consult a registered medical professional to determine the cause and appropriate treatment. If you need advice on medical certificate requirements for absences, or guidance about leave due to this issue, please let me know!\n\nClinical & HIPAA Note: This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship.",
+        "timestamp": 1791577488.8624005,
+        "metadata": {
+          "agent_name": "HEALTH_SUBAGENT",
+          "latency_ms": 2257.13,
+          "tokens_used": 124,
+          "cost_usd": 3.5e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "sess_aarav.sharma_7": [
+      {
+        "role": "user",
+        "content": "I don't need to proceed with that previous request. Let's start something new.",
+        "timestamp": 1791577511.712303,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! Last time we were discussing your leave request, but I understand you're ready to start something new. How can I assist you today?",
+        "timestamp": 1791577512.200285,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1758.21,
+          "tokens_used": 55,
+          "cost_usd": 1.2e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "remember what i said about my eye",
+        "timestamp": 1791577538.500679,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I understand you mentioned something regarding your eye. Can you please provide more details or specify how you would like me to assist you with that?",
+        "timestamp": 1791577539.603183,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1639.17,
+          "tokens_used": 45,
+          "cost_usd": 1.2e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "i already told u in a past conversation",
+        "timestamp": 1791577559.3868783,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I apologize for not recalling the specifics of our previous conversation about your eye. To assist you better, please let me know whether you need information related to a medical concern, leave for health reasons, or assistance with another matter. Your guidance will help me provide the right support.",
+        "timestamp": 1791577560.2398787,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 2069.54,
+          "tokens_used": 84,
+          "cost_usd": 2.3e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "sess_aarav.sharma_1": [
+      {
+        "role": "user",
+        "content": "remember what i said about my eye",
+        "timestamp": 1791579427.6546042,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! Yes, in our previous conversation, you mentioned that one of your eyes is red, and that was the reason you were considering taking casual leave. How would you like to proceed? Would you like assistance with your leave request or any other matter related to your eye condition?",
+        "timestamp": 1791579428.0564685,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 2091.45,
+          "tokens_used": 80,
+          "cost_usd": 2.2e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "sess_aarav.sharma_2": [
+      {
+        "role": "user",
+        "content": "i already told u in a past conversation",
+        "timestamp": 1791579433.1705453,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! Yes, in our previous conversation, you mentioned that one of your eyes is red and that was the reason you were considering taking casual leave. Would you like assistance in proceeding with your leave request? If so, please let me know how many days you would like to take off and the specific dates.",
+        "timestamp": 1791579433.7145398,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1795.11,
+          "tokens_used": 87,
+          "cost_usd": 2.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "sess_sneha.kulkarni_1": [
+      {
+        "role": "user",
+        "content": "How are statutory overtime hours calculated under Maharashtra regulations?",
+        "timestamp": 1791528147.487419,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under Section 15 of Maharashtra Shops Act, work beyond 9 hours daily is computed as statutory overtime at 2x rate.",
+        "timestamp": 1791528147.487419,
+        "metadata": {}
+      },
+      {
+        "role": "user",
+        "content": "remember what i said about my eye",
+        "timestamp": 1791579439.1815038,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "In our previous conversations, you haven't mentioned anything about your eye. If there is anything specific regarding your eye that you would like to discuss or if it relates to a need for leave or health concerns, please provide more details, and I'll be happy to assist you further.",
+        "timestamp": 1791579441.092564,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1628.73,
+          "tokens_used": 79,
+          "cost_usd": 2.2e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "sess_eval.benchmarks_1": [
+      {
+        "role": "user",
+        "content": "What are the statutory leave provisions under Section 18 of Maharashtra Act?",
+        "timestamp": 1791686758.89091,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "According to Section 18 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017, an employee is entitled to Earned Leave (EL) accrual as follows:\n\n1. Every employee who has worked for a period of 240 days or more during a calendar year is entitled to 15 days of Earned Leave for each calendar year.\n2. This leave can be carried forward to the following years and can be accumulated up to a maximum of 45 days.\n\nIt\u2019s important to refer to the specific provisions of the Act for detailed guidelines, and adherence to company policies in alignment with these statutory guidelines is crucial.\n\nStatutory Note: This response reflects the provisions under the Maharashtra Shops and Establishments Act, 2017. It serves as informative guidance and should not be taken as formal legal advice.",
+        "timestamp": 1791686758.959687,
+        "metadata": {
+          "agent_name": "POLICY_SUBAGENT",
+          "latency_ms": 3210.86,
+          "tokens_used": 227,
+          "cost_usd": 6.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "What are the statutory leave provisions under Section 18 of Maharashtra Act?",
+        "timestamp": 1791686872.219064,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! Last time, we were discussing the statutory leave provisions under Section 18 of the Maharashtra Shops and Establishments Act, 2017. You had inquired about the specifics, and I provided an overview of your entitlement to Earned Leave.\n\nTo summarize:\n\n1. Employees are entitled to 15 days of Earned Leave for every 240 days worked within a calendar year.\n2. This earned leave can be carried forward to subsequent years, with a maximum accumulation limit of 45 days.\n\nIf you have any further questions or if you would like to submit a leave request based on your balances, please let me know!",
+        "timestamp": 1791686873.677599,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 3226.02,
+          "tokens_used": 170,
+          "cost_usd": 4.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "What are the statutory leave provisions under Section 18 of Maharashtra Act?",
+        "timestamp": 1791706833.7380562,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! Last time we talked about the statutory leave provisions under Section 18 of the Maharashtra Shops and Establishments Act, 2017. \n\nTo summarize:\n\n1. Employees are entitled to 15 days of Earned Leave (EL) for every 240 days worked in a calendar year.\n2. This earned leave can be carried forward to the following years, with a maximum accumulation limit of 45 days.\n\nIf you have any more questions or if you'd like assistance with submitting a leave request, please let me know!",
+        "timestamp": 1791706835.048677,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1621.89,
+          "tokens_used": 141,
+          "cost_usd": 3.8e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "What are the statutory leave provisions under Section 18 of Maharashtra Act?",
+        "timestamp": 1791713687.5457344,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! In our previous discussions, we've covered the statutory leave provisions under Section 18 of the Maharashtra Shops and Establishments Act, 2017. To summarize:\n\n1. Employees are entitled to 15 days of Earned Leave (EL) for every 240 days worked within a calendar year.\n2. Earned Leave can be carried forward to subsequent years, with a maximum total of 45 days at any given time.\n\nIf you have any further questions about leave provisions or if you're considering submitting a leave request, please feel free to ask!",
+        "timestamp": 1791713687.5809474,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1625.63,
+          "tokens_used": 151,
+          "cost_usd": 4.1e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "What are the statutory leave provisions under Section 18 of Maharashtra Act?",
+        "timestamp": 1791713827.2418482,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! We've previously discussed the statutory leave provisions under Section 18 of the Maharashtra Shops and Establishments Act, 2017. Here\u2019s a quick recap:\n\n\u2022 Employees are entitled to 15 days of Earned Leave (EL) for every 240 days worked within a calendar year.\n\u2022 This Earned Leave can be carried forward to subsequent years, with a maximum accumulation limit of 45 days at any time.\n\nIf you have more questions about leave provisions or would like to proceed with submitting a leave request, please let me know!",
+        "timestamp": 1791713827.4125457,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1383.48,
+          "tokens_used": 150,
+          "cost_usd": 4.1e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "sess_eval.benchmarks_2": [
+      {
+        "role": "user",
+        "content": "What is the statutory overtime rate if I work 11 hours on a project?",
+        "timestamp": 1791686762.361472,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791686762.405837,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 701.76,
+          "tokens_used": 259,
+          "cost_usd": 7.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "What is the statutory overtime rate if I work 11 hours on a project?",
+        "timestamp": 1791686878.160105,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791686879.630377,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 613.48,
+          "tokens_used": 259,
+          "cost_usd": 7.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "What is the statutory overtime rate if I work 11 hours on a project?",
+        "timestamp": 1791706838.723213,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791706840.034931,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 616.32,
+          "tokens_used": 259,
+          "cost_usd": 7.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "What is the statutory overtime rate if I work 11 hours on a project?",
+        "timestamp": 1791713688.6144843,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791713688.6502726,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 215.84,
+          "tokens_used": 259,
+          "cost_usd": 7.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "What is the statutory overtime rate if I work 11 hours on a project?",
+        "timestamp": 1791713831.0653098,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n\u2022 Standard Hours: 8 hours/day, 40 hours/week\n\u2022 Overtime Rate: Work exceeding 9 hours/day or 48 hours/week is compensable at twice the ordinary wage rate (2.0x)\n\u2022 Daily Overtime Cap: Total working hours including overtime cannot exceed 11 hours per day per Section 14\n\u2022 Quarterly Overtime Limit: Capped at 125 hours per quarter under statutory mandates.\n\n---\n\nIn compliance with Section 13 & 15 of the Maharashtra Shops and Establishments Act, 2017:\n\u2022 Standard Hours: Maximum 9 hours/day and 48 hours/week.\n\u2022 Company Standard: 8 hours/day and 40 hours/week.\n\u2022 Overtime Rate: Work beyond standard limits is compensable at twice the ordinary wage rate (2.0x).\n\nStatutory Note: Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791713831.1182501,
+        "metadata": {
+          "agent_name": "CONCURRENT(TIMESHEET_SUBAGENT+POLICY_RAG_SUBAGENT)",
+          "latency_ms": 215.19,
+          "tokens_used": 259,
+          "cost_usd": 7.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Maharashtra Act LXI of 2017, Section 13",
+            "Maharashtra Act LXI of 2017, Section 15",
+            "Maharashtra Act LXI of 2017, Section 18(1)"
+          ]
+        }
+      }
+    ],
+    "sess_eval.benchmarks_3": [
+      {
+        "role": "user",
+        "content": "Employee: John Doe requesting 4 days of sick leave with fever.",
+        "timestamp": 1791686765.635038,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I'm sorry to hear that you're feeling unwell, Evaluation! Please take care of yourself.\n\nHere are the key sick leave guidelines to keep in mind:\n\u2022 Full-time personnel are entitled to 12 days of paid Sick Leave (SL) per year.\n\u2022 Medical Note Protocol: Absence exceeding 2 consecutive days mandates submission of a signed medical certificate from a registered physician.\n\u2022 Confidentiality: Health records are secured under HIPAA and DPDP standards with zero unredacted PII exposure.\n\nRest up and get well soon! Would you like me to help log your absence for today?\n\n---\n\nI've drafted your leave application for Sick Leave (SL) from Oct 12, 2026 to Oct 15, 2026 (4.0 day(s)).\n\n\u2022 Current Available Balance: 12.0 days\n\u2022 Approver: Your designated Reporting Manager\n\nWould you like me to confirm and submit this application?\n\nHuman-In-The-Loop Checkpoint: This action requires manager/medical officer sign-off.\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.\n\nClinical & HIPAA Note: This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship.",
+        "timestamp": 1791686765.698677,
+        "metadata": {
+          "agent_name": "CONCURRENT(HEALTH_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 644.73,
+          "tokens_used": 341,
+          "cost_usd": 9.9e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Health_Policy_2026",
+            "Maharashtra Act LXI of 2017, Section 18(2)"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "Employee: John Doe requesting 4 days of sick leave with fever.",
+        "timestamp": 1791686882.654364,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I'm sorry to hear that you're feeling unwell, Evaluation! Please take care of yourself.\n\nHere are the key sick leave guidelines to keep in mind:\n\u2022 Full-time personnel are entitled to 12 days of paid Sick Leave (SL) per year.\n\u2022 Medical Note Protocol: Absence exceeding 2 consecutive days mandates submission of a signed medical certificate from a registered physician.\n\u2022 Confidentiality: Health records are secured under HIPAA and DPDP standards with zero unredacted PII exposure.\n\nRest up and get well soon! Would you like me to help log your absence for today?\n\n---\n\nI've drafted your leave application for Sick Leave (SL) from Oct 12, 2026 to Oct 15, 2026 (4.0 day(s)).\n\n\u2022 Current Available Balance: 12.0 days\n\u2022 Approver: Your designated Reporting Manager\n\nWould you like me to confirm and submit this application?\n\nHuman-In-The-Loop Checkpoint: This action requires manager/medical officer sign-off.\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.\n\nClinical & HIPAA Note: This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship.",
+        "timestamp": 1791686884.057322,
+        "metadata": {
+          "agent_name": "CONCURRENT(HEALTH_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 657.87,
+          "tokens_used": 341,
+          "cost_usd": 9.9e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Health_Policy_2026",
+            "Maharashtra Act LXI of 2017, Section 18(2)"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "Employee: John Doe requesting 4 days of sick leave with fever.",
+        "timestamp": 1791706843.1861904,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I'm sorry to hear that you're feeling unwell, Evaluation! Please take care of yourself.\n\nHere are the key sick leave guidelines to keep in mind:\n\u2022 Full-time personnel are entitled to 12 days of paid Sick Leave (SL) per year.\n\u2022 Medical Note Protocol: Absence exceeding 2 consecutive days mandates submission of a signed medical certificate from a registered physician.\n\u2022 Confidentiality: Health records are secured under HIPAA and DPDP standards with zero unredacted PII exposure.\n\nRest up and get well soon! Would you like me to help log your absence for today?\n\n---\n\nI've drafted your leave application for Sick Leave (SL) from Oct 12, 2026 to Oct 15, 2026 (4.0 day(s)).\n\n\u2022 Current Available Balance: 12.0 days\n\u2022 Approver: Your designated Reporting Manager\n\nWould you like me to confirm and submit this application?\n\nHuman-In-The-Loop Checkpoint: This action requires manager/medical officer sign-off.\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.\n\nClinical & HIPAA Note: This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship.",
+        "timestamp": 1791706844.5931296,
+        "metadata": {
+          "agent_name": "CONCURRENT(HEALTH_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 636.89,
+          "tokens_used": 341,
+          "cost_usd": 9.9e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Health_Policy_2026",
+            "Maharashtra Act LXI of 2017, Section 18(2)"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "Employee: John Doe requesting 4 days of sick leave with fever.",
+        "timestamp": 1791713689.943268,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I'm sorry to hear that you're feeling unwell, Evaluation! Please take care of yourself.\n\nHere are the key sick leave guidelines to keep in mind:\n\u2022 Full-time personnel are entitled to 12 days of paid Sick Leave (SL) per year.\n\u2022 Medical Note Protocol: Absence exceeding 2 consecutive days mandates submission of a signed medical certificate from a registered physician.\n\u2022 Confidentiality: Health records are secured under HIPAA and DPDP standards with zero unredacted PII exposure.\n\nRest up and get well soon! Would you like me to help log your absence for today?\n\n---\n\nI've drafted your leave application for Sick Leave (SL) from Oct 12, 2026 to Oct 15, 2026 (4.0 day(s)).\n\n\u2022 Current Available Balance: 12.0 days\n\u2022 Approver: Your designated Reporting Manager\n\nWould you like me to confirm and submit this application?\n\nHuman-In-The-Loop Checkpoint: This action requires manager/medical officer sign-off.\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.\n\nClinical & HIPAA Note: This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship.",
+        "timestamp": 1791713689.9797094,
+        "metadata": {
+          "agent_name": "CONCURRENT(HEALTH_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 237.67,
+          "tokens_used": 341,
+          "cost_usd": 9.9e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Health_Policy_2026",
+            "Maharashtra Act LXI of 2017, Section 18(2)"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "Employee: John Doe requesting 4 days of sick leave with fever.",
+        "timestamp": 1791713834.4316678,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I'm sorry to hear that you're feeling unwell, Evaluation! Please take care of yourself.\n\nHere are the key sick leave guidelines to keep in mind:\n\u2022 Full-time personnel are entitled to 12 days of paid Sick Leave (SL) per year.\n\u2022 Medical Note Protocol: Absence exceeding 2 consecutive days mandates submission of a signed medical certificate from a registered physician.\n\u2022 Confidentiality: Health records are secured under HIPAA and DPDP standards with zero unredacted PII exposure.\n\nRest up and get well soon! Would you like me to help log your absence for today?\n\n---\n\nI've drafted your leave application for Sick Leave (SL) from Oct 12, 2026 to Oct 15, 2026 (4.0 day(s)).\n\n\u2022 Current Available Balance: 12.0 days\n\u2022 Approver: Your designated Reporting Manager\n\nWould you like me to confirm and submit this application?\n\nHuman-In-The-Loop Checkpoint: This action requires manager/medical officer sign-off.\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.\n\nClinical & HIPAA Note: This response provides administrative health guidance and clinical decision support. It does not replace professional medical diagnosis or establish a doctor-patient relationship.",
+        "timestamp": 1791713834.4882371,
+        "metadata": {
+          "agent_name": "CONCURRENT(HEALTH_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 242.01,
+          "tokens_used": 341,
+          "cost_usd": 9.9e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Health_Policy_2026",
+            "Maharashtra Act LXI of 2017, Section 18(2)"
+          ]
+        }
+      }
+    ],
+    "sess_eval.benchmarks_4": [
+      {
+        "role": "user",
+        "content": "Sync my attendance and leave records with Zoho People API.",
+        "timestamp": 1791686768.871767,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Zoho People System Sync:\nHi Evaluation, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nHi Evaluation, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 19.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 7.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 12.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791686768.924074,
+        "metadata": {
+          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 95.84,
+          "tokens_used": 234,
+          "cost_usd": 6.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Zoho People REST API v2"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "Sync my attendance and leave records with Zoho People API.",
+        "timestamp": 1791686888.065225,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Zoho People System Sync:\nHi Evaluation, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nHi Evaluation, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 19.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 7.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 12.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791686889.520322,
+        "metadata": {
+          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 98.66,
+          "tokens_used": 234,
+          "cost_usd": 6.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Zoho People REST API v2"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "Sync my attendance and leave records with Zoho People API.",
+        "timestamp": 1791706849.113306,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Zoho People System Sync:\nHi Evaluation, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nHi Evaluation, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 19.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 7.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 12.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791706850.8087487,
+        "metadata": {
+          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 105.79,
+          "tokens_used": 234,
+          "cost_usd": 6.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Zoho People REST API v2"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "Sync my attendance and leave records with Zoho People API.",
+        "timestamp": 1791713691.1067045,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Zoho People System Sync:\nHi Evaluation, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nHi Evaluation, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 19.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 7.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 12.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791713691.1414144,
+        "metadata": {
+          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 73.98,
+          "tokens_used": 234,
+          "cost_usd": 6.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Zoho People REST API v2"
+          ]
+        }
+      },
+      {
+        "role": "user",
+        "content": "Sync my attendance and leave records with Zoho People API.",
+        "timestamp": 1791713837.4675,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Zoho People System Sync:\nHi Evaluation, here is your live synchronized record report:\n\nFound 2 synchronized leave records in Zoho REST API v2:\n\n\u2022 Earned Leave (3.0 days): 2026-11-02 to 2026-11-04 [Approved]\n\u2022 Casual Leave (1.0 days): 2026-11-18 to 2026-11-18 [Pending]\n\n---\n\nHi Evaluation, here are your verified leave balances:\n\n\u2022 Earned Leave (EL): 19.0 days (Accrues monthly; max accumulation 45 days)\n\u2022 Casual Leave (CL): 7.0 days (8 days statutory; non-cumulative)\n\u2022 Sick Leave (SL): 12.0 days (Cumulative up to 20 days)\n\u2022 Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\nWould you like me to help you prepare a leave application or book upcoming time off?\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791713837.5181115,
+        "metadata": {
+          "agent_name": "CONCURRENT(ZOHO_SUBAGENT+LEAVE_SUBAGENT)",
+          "latency_ms": 65.79,
+          "tokens_used": 234,
+          "cost_usd": 6.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": [
+            "Zoho People REST API v2"
+          ]
+        }
+      }
+    ],
+    "sess_eval.benchmarks_5": [
+      {
+        "role": "user",
+        "content": "Can my employer pay 1.5x for overtime if I work 10 hours?",
+        "timestamp": 1791686774.844976,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017, any work exceeding 9 hours per day triggers statutory overtime compensation at a rate of twice the ordinary wage (2.0x). Therefore, if you work 10 hours, your employer is legally obligated to pay you at the 2.0x rate for the overtime hours, and they cannot legally pay you twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017).\n\nStatutory Reference: \n\u2022 Section 14: Overtime pay must be at 2.0x the ordinary wage for hours worked beyond the standard workday of 9 hours.\n\nStatutory Note: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice.",
+        "timestamp": 1791686774.886829,
+        "metadata": {
+          "agent_name": "POLICY_SUBAGENT",
+          "latency_ms": 3746.16,
+          "tokens_used": 223,
+          "cost_usd": 6.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Can my employer pay 1.5x for overtime if I work 10 hours?",
+        "timestamp": 1791686894.075736,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017, employers are required to pay overtime at a rate of twice the ordinary wage (2.0x) for any work exceeding 9 hours in a day. Therefore, if you work 10 hours, your employer must legally pay you at the 2.0x rate for the overtime hours. They cannot legally pay twice the ordinary rate of wages (2.0x) (pursuant to Section 14 of the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017) under these statutory provisions.\n\nIf you have any further questions or need assistance related to this or something else, feel free to ask!",
+        "timestamp": 1791686895.432414,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1686.91,
+          "tokens_used": 170,
+          "cost_usd": 4.8e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Can my employer pay 1.5x for overtime if I work 10 hours?",
+        "timestamp": 1791706854.7781887,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments Act, 2017, employers are legally required to pay overtime at a rate of twice the ordinary wage (2.0x) for any work exceeding 9 hours in a day. So, if you work 10 hours, your employer must pay you at the 2.0x rate for the overtime hours. They cannot legally pay you at 1.5 times the ordinary rate for overtime work.\n\nIf you have any more questions or need further assistance, feel free to ask!",
+        "timestamp": 1791706856.3956928,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1451.28,
+          "tokens_used": 123,
+          "cost_usd": 3.4e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Can my employer pay 1.5x for overtime if I work 10 hours?",
+        "timestamp": 1791713694.2849982,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "In your previous inquiries, you asked about the overtime pay for working 10 hours, and I clarified that, according to the Maharashtra Shops and Establishments Act, 2017, employers are required to pay overtime at a rate of twice the ordinary wage (2.0x) for any work exceeding 9 hours in a day. Therefore, your employer cannot legally pay you at a rate of 1.5 times the ordinary wage for overtime worked; they must pay the 2.0x rate for any overtime hours.\n\nIf you have any more questions or need further assistance, feel free to ask!",
+        "timestamp": 1791713694.32015,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1938.62,
+          "tokens_used": 147,
+          "cost_usd": 4.1e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Can my employer pay 1.5x for overtime if I work 10 hours?",
+        "timestamp": 1791713867.5404882,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "In our previous discussions, you asked about the overtime pay for working 10 hours. I clarified that, according to the Maharashtra Shops and Establishments Act, 2017, your employer is required to pay overtime at a rate of twice the ordinary wage (2.0x) for any work exceeding 9 hours in a day. Therefore, your employer cannot legally pay you at a rate of 1.5 times the ordinary wage for overtime worked; they must pay the 2.0x rate for any overtime hours.\n\nIf you have more questions or need further assistance, feel free to ask!",
+        "timestamp": 1791713867.9913936,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 26814.67,
+          "tokens_used": 146,
+          "cost_usd": 4.1e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "sess_aarav.patel_1": [
+      {
+        "role": "user",
+        "content": "I want to apply for 3 days Casual Leave from next Monday.",
+        "timestamp": 1791706650.3043134,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! Last time we were discussing your request for Casual Leave. \n\nYou mentioned wanting to apply for 3 days of Casual Leave starting from next Monday. Shall I go ahead and submit that request for you?",
+        "timestamp": 1791706650.3713956,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 2638.66,
+          "tokens_used": 66,
+          "cost_usd": 1.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "test_e2e_continuity_34068": [
+      {
+        "role": "user",
+        "content": "I want to apply for 3 days Casual Leave from next Monday.",
+        "timestamp": 1791686997.334753,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! Last time we were discussing your request for Casual Leave. You mentioned wanting to apply for 3 days of Casual Leave starting from next Monday. Shall I go ahead and submit that request for you?",
+        "timestamp": 1791686997.367758,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 1965.89,
+          "tokens_used": 66,
+          "cost_usd": 1.7e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Actually, can I make that Earned Leave instead?",
+        "timestamp": 1791687006.429314,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "It appears that there was an issue while trying to submit your request for Earned Leave. The system encountered an error related to the submission process.\n\nHowever, I can confirm that you are eligible for 3 days of Earned Leave from October 12 to October 14, 2026, as you have sufficient balance of 18 days available.\n\nWould you like me to attempt the submission again, or would you prefer to handle it yourself? Let me know how you would like to proceed!\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791687007.699213,
+        "metadata": {
+          "agent_name": "LEAVE_SUBAGENT",
+          "latency_ms": 5862.96,
+          "tokens_used": 174,
+          "cost_usd": 5e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Will this leave carry forward to next year if I don't use it?",
+        "timestamp": 1791706813.7351005,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017, specifically, Earned Leave (Section 18) generally allows for the accumulation of leave. \n\nIf you do not use your Earned Leave within the stipulated time period defined by your employment contract or company policy, it often can be carried forward to the next year. However, there might be specific limits on the number of days that can be carried forward, and this can vary by company policy.\n\nIt would be advisable to refer to your company's HR policy or employee handbook for detailed regulations regarding the carry forward of Earned Leave, including any limits or requirements for usage.\n\nIf you have further specific questions regarding your leave policy, please let me know!",
+        "timestamp": 1791706815.0017567,
+        "metadata": {
+          "agent_name": "POLICY_SUBAGENT",
+          "latency_ms": 3378.8,
+          "tokens_used": 212,
+          "cost_usd": 6e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "test_e2e_continuity_4436": [
+      {
+        "role": "user",
+        "content": "I want to apply for 3 days Casual Leave from next Monday.",
+        "timestamp": 1791713667.6222842,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Welcome back! In our last conversation, you mentioned wanting to apply for 3 days of Casual Leave starting from next Monday. I can confirm that you are eligible for this leave. \n\nWould you like me to submit that request for you now?",
+        "timestamp": 1791713667.9073415,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 3164.66,
+          "tokens_used": 72,
+          "cost_usd": 1.8e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Actually, can I make that Earned Leave instead?",
+        "timestamp": 1791713672.354727,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "You would like to switch your request from Casual Leave to Earned Leave starting next Monday. I can confirm that you are eligible for 3 days of Earned Leave from October 12 to October 14, 2026, and you have sufficient balance available.\n\nShall I go ahead and submit that request for Earned Leave now?",
+        "timestamp": 1791713672.3853047,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 2158.96,
+          "tokens_used": 86,
+          "cost_usd": 2.3e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Will this leave carry forward to next year if I don't use it?",
+        "timestamp": 1791713678.942774,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Regarding your question about carrying forward your Earned Leave, under the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017:\n\n\u2022 Earned Leave generally allows for accumulation.\n\u2022 If you do not use your Earned Leave within the stipulated time set by your employment contract or company policy, it can often be carried forward to the next year.\n\u2022 There may be specific limits on the number of days that can be carried forward, which can vary by company policy.\n\nIt is advisable to check your company's HR policy or employee handbook for detailed regulations regarding the carry forward of Earned Leave, including any specific limits or requirements for its usage.\n\nIf you have any further questions or if you'd like to proceed with your leave request, please let me know!",
+        "timestamp": 1791713678.976607,
+        "metadata": {
+          "agent_name": "HR_ROOT_ORCHESTRATOR",
+          "latency_ms": 5400.26,
+          "tokens_used": 220,
+          "cost_usd": 6.3e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "test_pg_checkpoint_4436": [
+      {
+        "role": "user",
+        "content": "I am applying for 3 days Casual Leave next week.",
+        "timestamp": 1791713680.632304,
+        "metadata": {
+          "source": "pytest"
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Casual leave request prepared for 3 days.",
+        "timestamp": 1791713680.6672819,
+        "metadata": {
+          "source": "pytest"
+        }
+      }
+    ],
+    "test_e2e_continuity_16024": [
+      {
+        "role": "user",
+        "content": "I want to apply for 3 days Casual Leave from next Monday.",
+        "timestamp": 1791693991.544611,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I am currently unable to submit your Casual Leave application due to a repeated technical issue within the system. Since this is affecting the application process, I recommend contacting your HR department directly or using an alternative method to submit your leave request.\n\nIf there's anything else you would like assistance with, please let me know!\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791693991.68406,
+        "metadata": {
+          "agent_name": "LEAVE_SUBAGENT",
+          "latency_ms": 19912.76,
+          "tokens_used": 151,
+          "cost_usd": 4.2e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Actually, can I make that Earned Leave instead?",
+        "timestamp": 1791694004.259663,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "I am currently encountering the same technical issue when attempting to submit an Earned Leave application as I faced with the Casual Leave application. While you are eligible to take 3 days of Earned Leave from October 12 to October 14, 2026, the system is not processing the requests correctly at this time.\n\nPlease consider reaching out directly to your HR department for assistance in submitting this leave application. If there's anything else I can help you with, feel free to ask!\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791694005.460574,
+        "metadata": {
+          "agent_name": "LEAVE_SUBAGENT",
+          "latency_ms": 9330.34,
+          "tokens_used": 182,
+          "cost_usd": 5.2e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      },
+      {
+        "role": "user",
+        "content": "Will this leave carry forward to next year if I don't use it?",
+        "timestamp": 1791713811.9873488,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Under the Maharashtra Shops and Establishments (Regulation of Employment and Conditions of Service) Act, 2017:\n\n1. Earned Leave (Section 18): According to Section 18 of the Act, an employee is entitled to earn leave at the rate of one day for every 20 days worked in a year. \n\n2. Carry Forward of Earned Leave: The accrued Earned Leave can typically be carried forward to the next year if it is not availed within the calendar year. However, the specific policy about the maximum limit of carry-forwarded days or any lapse might depend on your company's HR policy and internal regulations.\n\nIt is advisable to check Intelera Technologies' specific HR policies about leave carry forward, or you may want to discuss this directly with your HR department for accurate information related to your situation.\n\nStatutory Note: This response reflects company policy and the Maharashtra Shops and Establishments Act, 2017. It is provided for informational guidance and does not constitute formal legal advice.",
+        "timestamp": 1791713813.3512316,
+        "metadata": {
+          "agent_name": "POLICY_SUBAGENT",
+          "latency_ms": 3130.98,
+          "tokens_used": 265,
+          "cost_usd": 7.6e-05,
+          "guardrail_status": "PASSED",
+          "citations": []
+        }
+      }
+    ],
+    "test_persistence_reboot_sim": [
+      {
+        "role": "user",
+        "content": "I need 2 days leave for medical checkup.",
+        "timestamp": 1791713815.75855,
+        "metadata": {}
+      },
+      {
+        "role": "assistant",
+        "content": "Medical leave noted. Please provide doctor slip.",
+        "timestamp": 1791713815.7931404,
+        "metadata": {}
       }
     ]
   },
@@ -22912,10 +24132,6 @@
       "active_duration_days": 3,
       "active_start_date": "Next Monday"
     },
-    "test_persistence_reboot_sim": {
-      "active_duration_days": 2,
-      "doctor_slip_required": true
-    },
     "eval_sess_EVAL-01-STATUTORY-LEAVE_1791535129": {},
     "eval_sess_EVAL-02-OVERTIME-CAP_1791535135": {},
     "eval_sess_EVAL-03-HEALTH-CERTIFICATE_1791535136": {
@@ -22950,6 +24166,61 @@
     "eval_sess_EVAL-05-STATUTORY-CRITIC_1791535300": {},
     "sess_live_verify_2026": {
       "active_leave_type": "Casual Leave (CL)"
+    },
+    "sess_wml3e7zv": {},
+    "sess_EMP-003_1791543829": {},
+    "sess_EMP-003_1791543839": {},
+    "sess_priya.patel_1791543922": {},
+    "sess_devansh.tyagi_1791543931": {},
+    "sess_devansh.tyagi_1": {
+      "active_leave_type": "Casual Leave (CL)"
+    },
+    "sess_priya.patel_1": {
+      "active_leave_type": "Casual Leave (CL)"
+    },
+    "sess_aarav.sharma_6": {
+      "active_duration_days": 2
+    },
+    "sess_aarav.sharma_7": {},
+    "sess_aarav.sharma_1": {},
+    "sess_aarav.sharma_2": {},
+    "sess_sneha.kulkarni_1": {},
+    "sess_eval.benchmarks_1": {},
+    "sess_eval.benchmarks_2": {},
+    "sess_eval.benchmarks_3": {
+      "active_leave_type": "Sick Leave (SL)",
+      "active_duration_days": 4
+    },
+    "sess_eval.benchmarks_4": {},
+    "sess_eval.benchmarks_5": {},
+    "sess_aarav.patel_1": {
+      "active_leave_type": "Casual Leave (CL)",
+      "active_duration_days": 3,
+      "active_start_date": "Next Monday"
+    },
+    "test_e2e_continuity_34068": {
+      "active_leave_type": "Earned Leave (EL)",
+      "active_duration_days": 3,
+      "active_start_date": "Next Monday"
+    },
+    "test_e2e_continuity_4436": {
+      "active_leave_type": "Earned Leave (EL)",
+      "active_duration_days": 3,
+      "active_start_date": "Next Monday"
+    },
+    "test_pg_checkpoint_4436": {
+      "active_leave_type": "Casual Leave (CL)",
+      "active_duration_days": 3,
+      "active_start_date": "Next Week"
+    },
+    "test_e2e_continuity_16024": {
+      "active_leave_type": "Earned Leave (EL)",
+      "active_duration_days": 3,
+      "active_start_date": "Next Monday"
+    },
+    "test_persistence_reboot_sim": {
+      "active_duration_days": 2,
+      "doctor_slip_required": true
     }
   },
   "summaries": {
@@ -22959,8 +24230,8 @@
     "sess-zoho-test": "Prior conversation covered 16 turns. Key sequence: User: Sync my attendance and leave records with Zoho People API -> Assistant: The HR response contains several elements that need to be audited for statutory ... -> User: Sync my attendance and leave records with Zoho People API -> Assistant: Zoho People System Sync:",
     "sess-stream-test": "Prior conversation covered 16 turns. Key sequence: User: What is the statutory overtime rate under Section 14? -> Assistant: The HR response contains several inaccuracies regarding the statutory provisions... -> User: What is the statutory overtime rate under Section 14? -> Assistant: The HR response you provided contains several inaccuracies regarding the statuto...",
     "test_e2e_continuity_46948": "Prior conversation covered 2 turns. Key sequence: User: I want to apply for 3 days Casual Leave from next Monday. -> Assistant: The HR response contains a few inaccuracies regarding the statutory provisions r...",
-    "sess_compound_parallel": "Prior conversation covered 8 turns. Key sequence: User: What is the statutory policy for overtime under Section 14, and please sync my Z... -> Assistant: Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and C... -> User: What is the statutory policy for overtime under Section 14, and please sync my Z... -> Assistant: Zoho People System Sync:",
-    "sess_sse_test": "Prior conversation covered 4 turns. Key sequence: User: What is the maximum daily working hours limit under Maharashtra Act 2017? -> Assistant: Here is your timesheet summary for this week, Aarav: -> User: What is the maximum daily working hours limit under Maharashtra Act 2017? -> Assistant: Here is your timesheet summary for this week, Aarav:",
+    "sess_compound_parallel": "The employee, Aarav, inquired about the statutory overtime policy under Section 14 and requested synchronization of his Zoho attendance records. The assistant provided details on his leave records, noting that he has 3 days of approved earned leave and 1 day of pending casual leave. Additionally, the assistant outlined the overtime regulations under the Maharashtra Shops and Establishments Act, confirming that work exceeding 9 hours per day is compensated at twice the ordinary wage rate, while also emphasizing that the information is for guidance and not formal legal advice.",
+    "sess_sse_test": "The employee, Aarav, inquired about the maximum daily working hours under the Maharashtra Act 2017. The assistant provided a summary of Aarav's timesheet, indicating 0 hours logged, and clarified that the maximum working hours are 9 hours per day and 48 hours per week, with the company standard being 8 hours per day and 40 hours per week. No medical reasons, physical conditions, or symptoms were reported, and no leave or timesheet requests were submitted or pending.",
     "test_e2e_continuity_41800": "Prior conversation covered 2 turns. Key sequence: User: I want to apply for 3 days Casual Leave from next Monday. -> Assistant: The HR response provided does not contain any statutory inaccuracies regarding t...",
     "test_e2e_continuity_6108": "Prior conversation covered 2 turns. Key sequence: User: I want to apply for 3 days Casual Leave from next Monday. -> Assistant: The HR response provided does not accurately address the statutory provisions re...",
     "test_e2e_continuity_11084": "Prior conversation covered 2 turns. Key sequence: User: I want to apply for 3 days Casual Leave from next Monday. -> Assistant: The HR response contains some inaccuracies regarding the handling of Casual Leav...",
@@ -22979,7 +24250,32 @@
     "test_suite_1791529058": "Prior conversation covered 14 turns. Key sequence: User: Sync my 8 hours attendance for 2026-10-08 with Zoho People HRMS. -> Assistant: For context:[zoho_agent] called tool `sync_zoho_attendance` with parameters: {'u... -> User: What is the policy for reporting harassment and how does the Internal Complaints... -> Assistant: Under the Internal Complaints Committee (ICC) policy in accordance with the Maha...",
     "test_suite_1791533903": "Prior conversation covered 8 turns. Key sequence: User: Under Maharashtra Shops and Establishments Act, how are daily working hours and ... -> Assistant: Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and C... -> User: Please log 8 hours for today on project PROJ-BNK-01 for Core Banking API integra... -> Assistant: I have successfully logged 8 hours for today on project PROJ-BNK-01 for the task...",
     "test_e2e_continuity_43096": "Prior conversation covered 2 turns. Key sequence: User: I want to apply for 3 days Casual Leave from next Monday. -> Assistant: Your application for 3 days of Casual Leave from November 6 to November 8 has be...",
-    "sess-memory-flow": "Prior conversation covered 4 turns. Key sequence: User: Employee: Vikram Sethi feeling unwell with fever, need sick leave. -> Assistant: I'm sorry to hear that you're feeling unwell, Vikram! Please take care of yourse... -> User: Do I need to submit a doctor certificate for this absence? -> Assistant: Yes, you need to submit a doctor certificate for your absence since it exceeds t..."
+    "sess-memory-flow": "Prior conversation covered 4 turns. Key sequence: User: Employee: Vikram Sethi feeling unwell with fever, need sick leave. -> Assistant: I'm sorry to hear that you're feeling unwell, Vikram! Please take care of yourse... -> User: Do I need to submit a doctor certificate for this absence? -> Assistant: Yes, you need to submit a doctor certificate for your absence since it exceeds t...",
+    "sess_aarav.sharma_6": "The employee requested a 2-day casual leave from December 12 to December 15 due to a red eye condition. Although they are eligible for leave, their application could not be submitted due to a duplicate entry, which needs to be resolved by contacting HR. The assistant advised the employee to consult a medical professional regarding their eye condition and offered further assistance if needed.",
+    "sess_vikram.malhotra_1": "Vikram inquired about casual leave rules and carry forward policies, receiving information that he has 8 days of non-cumulative Casual Leave (CL) each year, which lapses at year-end. The assistant confirmed that he has 18 days of Earned Leave (EL) and 10 days of Sick Leave (SL), and offered to help with a leave application or booking time off. No specific leave request was submitted or pending during this conversation.",
+    "sess_aarav.sharma_7": "The employee referenced a previous conversation about an eye condition but did not provide specific details in this chat. They indicated a desire to start a new topic instead of proceeding with a prior leave request. The assistant acknowledged the eye issue but did not receive a formal leave request or any pending action regarding it.",
+    "sess_sneha.kulkarni_1": "The employee inquired about statutory overtime calculations under Maharashtra regulations, which the assistant clarified as 2x the rate for work beyond 9 hours daily. The employee mentioned a concern regarding their eye but did not provide specific details, prompting the assistant to request more information to assist further. No leave request or timesheet submission was made during this conversation.",
+    "sess_aarav.sharma_3": "The employee inquired about the daily maximum work hour limit and overtime pay under Maharashtra law. The assistant clarified that the maximum is 9 hours per day with overtime pay at twice the ordinary wage for hours exceeding this limit, and that total working hours, including overtime, cannot exceed 11 hours per day. No medical conditions or leave requests were mentioned in this conversation.",
+    "sess_aarav.sharma_4": "Aarav has two synchronized leave records in the Zoho People API: an approved Earned Leave from November 2-4, 2026, and a pending Casual Leave for November 18, 2026. The assistant provided verified leave balances, including 19 days of Earned Leave, 7 days of Casual Leave, and 12 days of Sick Leave. No medical reasons or physical conditions were reported, and the assistant offered to help prepare a leave application or book time off.",
+    "sess_devansh.tyagi_1": "In the conversation, the employee inquired about casual leave rules and maximum overtime hours allowed under Maharashtra law. The assistant provided details on leave balances, stating that casual leave is non-cumulative and lapses at year-end, while overtime is capped at 11 hours per day and 125 hours per quarter, with compensation at twice the ordinary wage for hours exceeding statutory limits. No medical reasons or specific leave requests were mentioned, and the conversation did not indicate any pending requests.",
+    "sess_aarav.sharma_5": "Aarav inquired about casual leave rules and carry forward policy, receiving information that he has 7.0 days of Casual Leave (CL) which is non-cumulative and lapses at the end of the calendar year. The assistant confirmed that the policy aligns with the Maharashtra Shops and Establishments Act, 2017, and offered to help prepare a leave application or book time off, but no specific leave request was submitted or pending. No medical reasons, physical conditions, or symptoms were reported during this conversation.",
+    "sess_sneha.kulkarni_2": "The employee, Sneha, inquired about casual leave rules and carry forward policies. She has 8.0 days of Casual Leave (CL), which is non-cumulative and lapses at the end of the calendar year, as per the Enterprise Leave Policy 2026 and Maharashtra Shops and Establishments Act. No medical reasons or specific leave requests were mentioned, and the conversation ended without a leave application being submitted or pending.",
+    "sess_devansh.tyagi_2": "The employee inquired about their status and role, but the assistant advised them to contact HR directly for that information. No medical reasons, leave requests, or timesheet submissions were mentioned in this conversation.",
+    "sess_priya.patel_2": "In the conversation, the employee, Priya, inquired about the annual leave policy for Maharashtra employees and received information about her leave balances, including 18 days of Earned Leave, 8 days of Casual Leave, and 10 days of Sick Leave. The assistant explained the accrual, accumulation, and notice period requirements for leave applications as per the Maharashtra Shops and Establishments Act, 2017. No specific leave request was submitted or pending, and there were no medical reasons or physical conditions reported by the employee.",
+    "sess_priya.patel_3": "In the HR conversation, the employee inquired about the annual leave policy for Maharashtra, receiving details on leave balances: 18 days of Earned Leave, 8 days of Casual Leave, and 10 days of Sick Leave. The assistant explained the legal framework, including the requirement for a clinical certificate for sick leave exceeding two days. No specific leave request was submitted or pending during this discussion.",
+    "sess_priya.patel_4": "In the HR conversation, the employee, Priya, inquired about the annual leave policy for Maharashtra employees and received details about her leave balances, including 18 days of Earned Leave, 8 days of Casual Leave, and 10 days of Sick Leave. The assistant explained the statutory requirements and company policies regarding leave applications, including notice periods for different types of leave. No medical reasons, physical conditions, or symptoms were reported by the employee, and the conversation did not include a specific leave request or submission.",
+    "sess_devansh.tyagi_3": "The employee requested information on team timesheet compliance and overtime statistics, which the assistant provided based on the Maharashtra Shops and Establishments Act, 2017. The conversation included details on standard working hours, overtime compensation, rest intervals, and leave accrual, emphasizing the need for compliance with statutory provisions. No medical reasons, physical conditions, or specific leave requests were mentioned, and the request for specific timesheet data was left pending.",
+    "sess_priya.patel_1": "The employee inquired about onboarding procedures and casual leave balance. The assistant confirmed that the employee has 8 casual leaves available and provided an overview of the onboarding process, which includes pre-onboarding documentation, orientation, compliance checks, and training. No medical reasons or leave requests were mentioned in this conversation.",
+    "sess_aarav.sharma_1": "The employee reported experiencing redness in one eye and was considering taking casual leave due to this condition. The assistant acknowledged the issue and offered assistance with the leave request. The request status remains pending as the employee has not yet confirmed how to proceed.",
+    "sess_aarav.sharma_2": "The employee reported experiencing redness in one eye and is considering taking casual leave due to this condition. The assistant offered to help with the leave request and asked for the number of days and specific dates needed. The request remains pending as the employee has not yet provided the details for the leave.",
+    "sess_eval.benchmarks_1": "The employee inquired about the statutory leave provisions under Section 18 of the Maharashtra Shops and Establishments Act, 2017. The assistant provided information that employees are entitled to 15 days of Earned Leave for every 240 days worked, with a maximum accumulation of 45 days. No medical reasons, physical conditions, or specific leave requests were mentioned, and the request to submit a leave was left pending.",
+    "sess_eval.benchmarks_2": "The employee inquired about the statutory overtime rate for working 11 hours on a project. The assistant explained that under the Maharashtra Shops and Establishments Act, work exceeding 9 hours per day is compensated at twice the ordinary wage rate, with a daily cap of 11 hours and a quarterly limit of 125 hours for overtime. No medical reasons, physical conditions, or symptoms were reported, and the conversation did not involve any leave or timesheet requests.",
+    "sess_eval.benchmarks_3": "John Doe requested 4 days of sick leave due to a fever, from October 12 to October 15, 2026. The assistant provided information on sick leave guidelines, including the need for a medical certificate for absences over two days, and drafted the leave application, which is pending submission pending manager approval. The employee has a current balance of 12 sick leave days available.",
+    "sess_eval.benchmarks_4": "The employee, Evaluation, has two synchronized leave records in Zoho: 3 days of Earned Leave (approved) from November 2-4, 2026, and 1 day of Casual Leave (pending) on November 18, 2026. The assistant provided verified leave balances, including 19 days of Earned Leave, 7 days of Casual Leave, and 12 days of Sick Leave. No medical reasons or physical conditions were reported, and the assistant offered to help with a leave application or booking time off.",
+    "sess_eval.benchmarks_5": "The employee inquired about overtime pay for working 10 hours, specifically asking if the employer could pay 1.5 times the regular rate. The assistant clarified that, under the Maharashtra Shops and Establishments Act, 2017, the employer must pay 2.0 times the ordinary wage for any hours worked beyond 9 hours in a day. No medical reasons or leave requests were mentioned, and the conversation concluded without any pending requests.",
+    "sess_aarav.patel_1": "The employee requested to apply for 3 days of Casual Leave starting next Monday. The assistant confirmed the request and offered to submit it. There were no medical reasons or physical conditions mentioned in this conversation.",
+    "test_e2e_continuity_34068": "The employee requested to apply for 3 days of Earned Leave from October 12 to October 14, 2026, after initially considering Casual Leave. The assistant confirmed eligibility but encountered a submission error, leaving the request pending. Additionally, the assistant provided information on the carry-forward policy for Earned Leave under the Maharashtra Shops and Establishments Act, advising the employee to check their company's HR policy for specific details.",
+    "test_e2e_continuity_16024": "The employee requested to apply for 3 days of Casual Leave starting next Monday but faced a technical issue preventing the submission. They then inquired about switching to Earned Leave, which also could not be processed due to the same issue. The assistant advised the employee to contact HR directly for assistance and provided information on the carry-forward policy for Earned Leave, noting that it typically can be carried over to the next year, subject to company policy."
   },
-  "saved_at": 1791536418.5850854
+  "saved_at": 1791713869.6853611
 }

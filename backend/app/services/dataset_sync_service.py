@@ -120,7 +120,7 @@ class LangfuseDatasetSyncService:
         # Synthetic user for benchmark (Aarav Sharma)
         test_user = User(
             id="EMP-004",
-            email="aarav.sharma@intelera.corp",
+            email="aarav.sharma@intelera.com",
             full_name="Aarav Sharma",
             role=UserRole.EMPLOYEE,
             is_active=True

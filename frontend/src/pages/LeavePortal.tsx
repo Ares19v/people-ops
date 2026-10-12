@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { User, UserRole, LeaveBalanceSummary, LeaveApplication } from '../types';
-import { Calendar, CheckCircle2, Clock, XCircle, AlertCircle, Plus, ShieldCheck, X } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, XCircle, AlertCircle, Plus, ShieldCheck, X, UserCheck } from 'lucide-react';
 import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
+import { EmployeeAvatarChip, LeaveTypeBadge, StatusBadge, DateRangeBadge } from '../utils/formatters';
 
 interface LeavePortalProps {
   currentUser: User | null;
@@ -189,53 +190,54 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
       </div>
 
       {/* Applications Table */}
-      <div className="card-olixer p-0 overflow-hidden">
+      <div className="card-olixer p-0 overflow-hidden shadow-xs border border-slate-200/80 bg-white">
         {activeTab === 'my_leaves' ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50/80 text-slate-600 font-display font-bold border-b border-slate-200/70">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50/90 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200/80">
                 <tr>
-                  <th className="p-4">Type</th>
-                  <th className="p-4">Dates</th>
-                  <th className="p-4">Days</th>
-                  <th className="p-4">Reason</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Applied At</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px]">Leave Type</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px]">Duration & Dates</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px]">Reason</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px]">Status</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px] text-right">Applied On</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {applications.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400">
-                      No leave applications found. Click "Apply for Leave" above.
+                    <td colSpan={5} className="py-12 px-4 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <Calendar className="w-8 h-8 text-slate-300 mb-2 stroke-[1.5]" />
+                        <p className="font-display font-semibold text-slate-600 text-sm">No leave applications found</p>
+                        <p className="text-xs text-slate-400 mt-0.5">Click "Apply for Leave" above to submit a new request.</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-4 font-display font-bold text-slate-900">{app.leave_type}</td>
-                      <td className="p-4 font-medium">
-                        {app.start_date} &rarr; {app.end_date}
+                    <tr key={app.id} className="hover:bg-slate-50/70 transition-colors group">
+                      <td className="py-3.5 px-4">
+                        <LeaveTypeBadge type={app.leave_type} />
                       </td>
-                      <td className="p-4 font-bold">{app.total_days}</td>
-                      <td className="p-4 text-slate-600 max-w-xs truncate">{app.reason}</td>
-                      <td className="p-4">
-                        <span
-                          className={
-                            app.status === 'APPROVED'
-                              ? 'badge-statutory-green'
-                              : app.status === 'REJECTED'
-                              ? 'badge-statutory-red'
-                              : 'badge-statutory-amber'
-                          }
-                        >
-                          {app.status === 'APPROVED' && <CheckCircle2 className="w-3 h-3" />}
-                          {app.status === 'REJECTED' && <XCircle className="w-3 h-3" />}
-                          {app.status === 'SUBMITTED' && <Clock className="w-3 h-3" />}
-                          {app.status}
-                        </span>
+                      <td className="py-3.5 px-4">
+                        <DateRangeBadge
+                          startDate={app.start_date}
+                          endDate={app.end_date}
+                          totalDays={app.total_days}
+                        />
                       </td>
-                      <td className="p-4 text-slate-400">{new Date(app.applied_at).toLocaleDateString()}</td>
+                      <td className="py-3.5 px-4">
+                        <div className="text-xs text-slate-700 font-medium max-w-sm">
+                          {app.reason}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <StatusBadge status={app.status} />
+                      </td>
+                      <td className="py-3.5 px-4 text-right text-slate-500 font-medium text-xs">
+                        {new Date(app.applied_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -244,45 +246,61 @@ export const LeavePortal: React.FC<LeavePortalProps> = ({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50/80 text-slate-600 font-display font-bold border-b border-slate-200/70">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50/90 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-200/80">
                 <tr>
-                  <th className="p-4">Applicant</th>
-                  <th className="p-4">Type</th>
-                  <th className="p-4">Dates</th>
-                  <th className="p-4">Days</th>
-                  <th className="p-4">Reason</th>
-                  <th className="p-4 text-right">Manager Decision</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px]">Employee Applicant</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px]">Leave Type</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px]">Duration & Dates</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px]">Reason</th>
+                  <th className="py-3.5 px-4 font-bold text-[11px] text-right">Manager Decision</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {pendingApprovals.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400">
-                      All pending applications have been decided. Inbox is clear!
+                    <td colSpan={5} className="py-12 px-4 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-400 mb-2 stroke-[1.5]" />
+                        <p className="font-display font-semibold text-slate-700 text-sm">Inbox is completely clear</p>
+                        <p className="text-xs text-slate-400 mt-0.5">All pending leave applications have been reviewed.</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
                   pendingApprovals.map((app) => (
-                    <tr key={app.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-4 font-display font-semibold text-slate-900">{app.user_id}</td>
-                      <td className="p-4 font-bold">{app.leave_type}</td>
-                      <td className="p-4 font-medium">
-                        {app.start_date} &rarr; {app.end_date}
+                    <tr key={app.id} className="hover:bg-slate-50/70 transition-colors group">
+                      <td className="py-3.5 px-4">
+                        <EmployeeAvatarChip userIdentifier={app.user_id} />
                       </td>
-                      <td className="p-4 font-bold">{app.total_days}</td>
-                      <td className="p-4 text-slate-600 max-w-xs truncate">{app.reason}</td>
-                      <td className="p-4 text-right space-x-2">
+                      <td className="py-3.5 px-4">
+                        <LeaveTypeBadge type={app.leave_type} />
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <DateRangeBadge
+                          startDate={app.start_date}
+                          endDate={app.end_date}
+                          totalDays={app.total_days}
+                        />
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="text-xs text-slate-700 font-medium max-w-xs">
+                          {app.reason}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right space-x-2">
                         <button
                           onClick={() => handleDecision(app.id, 'APPROVE')}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
                         >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
                           Approve
                         </button>
                         <button
                           onClick={() => handleDecision(app.id, 'REJECT')}
-                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                          className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
                         >
+                          <XCircle className="w-3.5 h-3.5" />
                           Reject
                         </button>
                       </td>

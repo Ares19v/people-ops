@@ -42,3 +42,5 @@ Thumbs.db
 backend/data/chroma_db/
 backend/data/token_vault/
 backend/data/traces/
+graphify-out/
+chat context/

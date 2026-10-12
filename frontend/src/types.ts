@@ -104,3 +104,31 @@ export interface AgentChatResponse {
   latency_ms: number;
   token_usage: Record<string, number>;
 }
+
+export interface UserChatSession {
+  id: string;
+  title: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+}
+
+export interface SessionSummaryItem {
+  id: string;
+  summary_id?: string;
+  session_id: string;
+  session_title: string;
+  summary_text: string;
+  key_entities: Record<string, any>;
+  pending_action: string | null;
+  status: string;
+  created_at: string;
+}
+
+export interface ActiveMemoryWindowResponse {
+  user_id: string;
+  window_capacity: number;
+  retained_summaries_count: number;
+  summaries: SessionSummaryItem[];
+}

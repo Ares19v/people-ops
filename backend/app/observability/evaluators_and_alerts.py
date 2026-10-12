@@ -130,6 +130,15 @@ ALERT_RULES = [
         "action": "Flag trace for Human-In-The-Loop HR Legal Review",
         "notification_channels": ["Langfuse Alerts", "HR Review Queue"],
         "enabled": True
+    },
+    {
+        "id": "alert_rule_session_context_bloat",
+        "name": "Efficiency: Single-Session Context Bloat & High Token Usage",
+        "severity": "WARNING",
+        "condition": "total_tokens > 15000 OR turns_count > 20",
+        "action": "Trigger automatic session summarization, suggest '+ New Chat' reset, log high-cost trace in Langfuse",
+        "notification_channels": ["Langfuse Alerts", "Admin Observability"],
+        "enabled": True
     }
 ]
 
@@ -221,9 +230,9 @@ class EvaluatorsAndAlertsManager:
         """Returns registered users with spend and usage metrics for the Langfuse Users tab."""
         return [
             {
-                "user_id": "EMP-001",
+                "user_id": "devansh.tyagi@intelera.com",
                 "full_name": "Devansh Tyagi",
-                "email": "admin@intelera.corp",
+                "email": "devansh.tyagi@intelera.com",
                 "department": "Executive / IT",
                 "role": "ADMIN",
                 "total_sessions": 14,
@@ -234,9 +243,9 @@ class EvaluatorsAndAlertsManager:
                 "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             },
             {
-                "user_id": "EMP-002",
-                "full_name": "Priya Patel",
-                "email": "hr@intelera.corp",
+                "user_id": "vikram.malhotra@intelera.com",
+                "full_name": "Vikram Malhotra",
+                "email": "vikram.malhotra@intelera.com",
                 "department": "Human Resources",
                 "role": "HR_MANAGER",
                 "total_sessions": 22,
@@ -247,11 +256,11 @@ class EvaluatorsAndAlertsManager:
                 "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             },
             {
-                "user_id": "EMP-003",
-                "full_name": "Vikram Singh",
-                "email": "manager@intelera.corp",
-                "department": "Engineering",
-                "role": "MANAGER",
+                "user_id": "priya.patel@intelera.com",
+                "full_name": "Priya Patel",
+                "email": "priya.patel@intelera.com",
+                "department": "HR Operations",
+                "role": "HR_ASSOCIATE",
                 "total_sessions": 18,
                 "total_queries": 74,
                 "total_tokens": 155400,
@@ -260,9 +269,9 @@ class EvaluatorsAndAlertsManager:
                 "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             },
             {
-                "user_id": "EMP-004",
+                "user_id": "aarav.sharma@intelera.com",
                 "full_name": "Aarav Sharma",
-                "email": "employee@intelera.corp",
+                "email": "aarav.sharma@intelera.com",
                 "department": "Engineering",
                 "role": "EMPLOYEE",
                 "total_sessions": 35,
@@ -273,9 +282,9 @@ class EvaluatorsAndAlertsManager:
                 "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             },
             {
-                "user_id": "EMP-005",
-                "full_name": "Ananya Desai",
-                "email": "employee2@intelera.corp",
+                "user_id": "sneha.kulkarni@intelera.com",
+                "full_name": "Sneha Kulkarni",
+                "email": "sneha.kulkarni@intelera.com",
                 "department": "Operations",
                 "role": "EMPLOYEE",
                 "total_sessions": 12,
@@ -291,23 +300,53 @@ class EvaluatorsAndAlertsManager:
         """Returns multi-turn conversation sessions for the Langfuse Sessions tab."""
         return [
             {
-                "session_id": "sess_emp004_leave_planning",
-                "user_id": "EMP-004",
-                "user_name": "Aarav Sharma",
-                "department": "Engineering",
-                "title": "Annual Leave Quota & Application",
+                "session_id": "sess_devansh.tyagi_statutory_audit",
+                "user_id": "devansh.tyagi@intelera.com",
+                "user_name": "Devansh Tyagi",
+                "department": "Executive Leadership",
+                "title": "Maharashtra Act 2017 Compliance & Overtime Auditing",
+                "turns_count": 5,
+                "total_duration_sec": 4.8,
+                "total_tokens": 1560,
+                "total_cost_usd": 0.00045,
+                "agents_involved": ["POLICY_SUBAGENT", "STATUTORY_CRITIC"],
+                "avg_groundedness": 1.0,
+                "avg_safety": 1.0,
+                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            },
+            {
+                "session_id": "sess_vikram.malhotra_policy_review",
+                "user_id": "vikram.malhotra@intelera.com",
+                "user_name": "Vikram Malhotra",
+                "department": "Human Resources",
+                "title": "Earned Leave Encashment Rules & Statutory Limits",
                 "turns_count": 4,
-                "total_duration_sec": 4.2,
-                "total_tokens": 1240,
-                "total_cost_usd": 0.00037,
+                "total_duration_sec": 3.9,
+                "total_tokens": 1180,
+                "total_cost_usd": 0.00035,
                 "agents_involved": ["LEAVE_SUBAGENT", "POLICY_SUBAGENT"],
                 "avg_groundedness": 1.0,
                 "avg_safety": 1.0,
                 "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             },
             {
-                "session_id": "sess_emp004_timesheet_audit",
-                "user_id": "EMP-004",
+                "session_id": "sess_priya.patel_onboarding_check",
+                "user_id": "priya.patel@intelera.com",
+                "user_name": "Priya Patel",
+                "department": "Human Resources",
+                "title": "DPDP 2023 Consent & Onboarding Verification",
+                "turns_count": 3,
+                "total_duration_sec": 2.9,
+                "total_tokens": 920,
+                "total_cost_usd": 0.00028,
+                "agents_involved": ["POLICY_SUBAGENT"],
+                "avg_groundedness": 1.0,
+                "avg_safety": 1.0,
+                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+            },
+            {
+                "session_id": "sess_aarav.sharma_timesheet_audit",
+                "user_id": "aarav.sharma@intelera.com",
                 "user_name": "Aarav Sharma",
                 "department": "Engineering",
                 "title": "Project Hours Logging & Overtime 2.0x Calculation",
@@ -321,16 +360,16 @@ class EvaluatorsAndAlertsManager:
                 "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             },
             {
-                "session_id": "sess_emp004_zoho_attendance_sync",
-                "user_id": "EMP-004",
-                "user_name": "Aarav Sharma",
-                "department": "Engineering",
-                "title": "Zoho People Live Attendance Synchronization",
+                "session_id": "sess_sneha.kulkarni_leave_planning",
+                "user_id": "sneha.kulkarni@intelera.com",
+                "user_name": "Sneha Kulkarni",
+                "department": "Operations",
+                "title": "Casual Leave Quota & Application",
                 "turns_count": 2,
-                "total_duration_sec": 2.1,
-                "total_tokens": 620,
-                "total_cost_usd": 0.00018,
-                "agents_involved": ["ZOHO_SUBAGENT"],
+                "total_duration_sec": 2.2,
+                "total_tokens": 640,
+                "total_cost_usd": 0.00019,
+                "agents_involved": ["LEAVE_SUBAGENT"],
                 "avg_groundedness": 1.0,
                 "avg_safety": 1.0,
                 "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
