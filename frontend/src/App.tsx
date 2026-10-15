@@ -51,11 +51,11 @@ export const App: React.FC = () => {
   }, [isFullscreen]);
 
   // Switch role and fetch user data concurrently with zero waterfall latency
-  const handleRoleSwitch = async (newRole: UserRole) => {
+  const handleRoleSwitch = async (newRole: UserRole, email?: string) => {
     setCurrentRole(newRole);
     setLoading(true);
     try {
-      const loginRes = await api.mockLogin(newRole);
+      const loginRes = await api.mockLogin(newRole, email);
       // Fetch user profile and balances in parallel
       const [user, bals] = await Promise.all([
         api.getCurrentUser(),
@@ -171,7 +171,7 @@ export const App: React.FC = () => {
                 {activeTab === 'reports' && (
                   <ReportsPortal currentUser={currentUser} currentRole={currentRole} />
                 )}
-                {activeTab === 'policy' && <PolicySearchPortal />}
+                {activeTab === 'policy' && <PolicySearchPortal currentRole={currentRole} />}
                 {activeTab === 'onboarding' && (
                   <OnboardingWizard currentUser={currentUser} currentRole={currentRole} />
                 )}

@@ -6,7 +6,7 @@ without polluting the database schema with redundant SQL views.
 """
 
 from typing import List, Dict, Any, Optional
-from sqlalchemy import text
+from sqlalchemy import text, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import engine
 
@@ -121,12 +121,34 @@ INSPECTOR_QUERIES = {
                 ts.hours,
                 ts.is_billable,
                 ts.status,
-                COALESCE(mgr.full_name, 'Auto / Pending') AS approver_name
+                COALESCE(mgr.full_name, 'Auto / Pending') AS approver_name,
+                ts.created_at AS logged_at
             FROM timesheet_entries ts
             JOIN users u ON ts.user_id = u.id
-            JOIN projects p ON ts.project_id = p.id
+            JOIN employee_projects p ON ts.project_id = p.id
             LEFT JOIN users mgr ON ts.approver_id = mgr.id
-            ORDER BY ts.entry_date DESC
+            ORDER BY ts.created_at DESC, ts.entry_date DESC
+        """
+    },
+    "v_employee_documents": {
+        "title": "Uploaded Documents & PDFs",
+        "description": "Employee onboarding PDFs, Aadhaar, PAN, and Resume verification records (latest to oldest).",
+        "icon": "TableIcon",
+        "category": "Core HR",
+        "query": """
+            SELECT 
+                d.id AS document_id,
+                u.id AS employee_id,
+                u.full_name AS employee_name,
+                d.doc_type,
+                d.original_filename,
+                d.mime_type,
+                d.file_size,
+                d.is_verified,
+                d.created_at AS uploaded_at
+            FROM employee_documents d
+            JOIN users u ON d.user_id = u.id
+            ORDER BY d.created_at DESC
         """
     },
     "v_chat_sessions_overview": {
@@ -146,7 +168,7 @@ INSPECTOR_QUERIES = {
             LEFT JOIN users u ON cs.user_id = u.id
             LEFT JOIN chat_turns ct ON cs.id = ct.session_id
             GROUP BY cs.id, u.full_name, cs.title, cs.created_at, cs.updated_at
-            ORDER BY cs.updated_at DESC
+            ORDER BY cs.updated_at DESC, cs.created_at DESC
         """
     },
     "v_chat_turns_recent": {
@@ -165,6 +187,44 @@ INSPECTOR_QUERIES = {
             ORDER BY ct.created_at DESC
         """
     },
+    "v_conversation_summaries": {
+        "title": "Rolling Session Summaries (Memory Window)",
+        "description": "Cross-session memory summaries (sliding window of 5) stored in PostgreSQL for reinjection.",
+        "icon": "MessageSquare",
+        "category": "AI & Observability",
+        "query": """
+            SELECT 
+                s.id AS summary_id,
+                COALESCE(s.user_email, u.email, s.user_id) AS user_email,
+                s.session_id,
+                s.session_title,
+                s.summary_text,
+                s.pending_action,
+                s.covers_turns_count,
+                s.created_at
+            FROM conversation_summaries s
+            LEFT JOIN users u ON s.user_id = u.id
+            ORDER BY s.created_at DESC
+        """
+    },
+    "v_security_audit_trail": {
+        "title": "Security & DPDP Audit Trail",
+        "description": "Immutable ledger of leave, timesheet, and onboarding actions (latest to oldest).",
+        "icon": "Terminal",
+        "category": "Core HR",
+        "query": """
+            SELECT 
+                st.id AS audit_id,
+                COALESCE(u.full_name, st.actor_id, 'System') AS actor_name,
+                st.action,
+                st.resource_type,
+                st.resource_id,
+                st.created_at AS timestamp
+            FROM security_trail st
+            LEFT JOIN users u ON st.actor_id = u.id
+            ORDER BY st.created_at DESC
+        """
+    },
     "v_zoho_sync_history": {
         "title": "Zoho HRMS Sync Ledger",
         "description": "External sync audit records, payloads, and status codes.",
@@ -181,6 +241,24 @@ INSPECTOR_QUERIES = {
             FROM zoho_sync_records zr
             JOIN users u ON zr.user_id = u.id
             ORDER BY zr.created_at DESC
+        """
+    },
+    "v_agent_prompts": {
+        "title": "Agent Prompts & Langfuse Sync",
+        "description": "Multi-tier prompt ledger synced across PostgreSQL, Langfuse Cloud, and ADK Fleet.",
+        "icon": "Terminal",
+        "category": "AI & Observability",
+        "query": """
+            SELECT 
+                p.prompt_key,
+                p.agent_name,
+                p.version,
+                p.label,
+                p.is_active,
+                p.updated_at,
+                SUBSTRING(p.template, 1, 250) AS template_preview
+            FROM agent_prompts p
+            ORDER BY p.updated_at DESC
         """
     }
 }
@@ -239,6 +317,55 @@ async def fetch_view_records(db: AsyncSession, view_name: str, search: Optional[
 
     meta = INSPECTOR_QUERIES[view_name]
     base_query = meta["query"]
+
+    # When inspecting prompts, auto-detect any changes made in TablePlus / DB and sync to Langfuse
+    if view_name == "v_agent_prompts":
+        try:
+            from app.services.langfuse_prompt_service import langfuse_prompt_service, ManagedPrompt
+            from app.models.prompt import AgentPrompt
+            from app.agents.adk_fleet import sync_agent_instructions
+            import time
+
+            stmt = select(AgentPrompt)
+            p_res = await db.execute(stmt)
+            p_records = p_res.scalars().all()
+            changed = []
+            with langfuse_prompt_service._lock:
+                for r in p_records:
+                    cached = langfuse_prompt_service._cache.get(r.prompt_key)
+                    if not cached or cached.template != r.template:
+                        langfuse_prompt_service._cache[r.prompt_key] = ManagedPrompt(
+                            name=r.prompt_key,
+                            version=str(r.version),
+                            template=r.template,
+                            label=r.label,
+                            source="database",
+                            fetched_at=time.time(),
+                        )
+                        changed.append(r)
+            if changed:
+                sync_agent_instructions()
+                if langfuse_prompt_service._langfuse_client:
+                    for ch_r in changed:
+                        try:
+                            lf_p = langfuse_prompt_service._langfuse_client.create_prompt(
+                                name=ch_r.prompt_key,
+                                prompt=ch_r.template,
+                                labels=["live", "production"],
+                                type="text",
+                                tags=["peopleops", "adk-agents"]
+                            )
+                            new_v = getattr(lf_p, "version", None)
+                            if new_v:
+                                ch_r.version = new_v
+                                with langfuse_prompt_service._lock:
+                                    if ch_r.prompt_key in langfuse_prompt_service._cache:
+                                        langfuse_prompt_service._cache[ch_r.prompt_key].version = str(new_v)
+                        except Exception as e:
+                            print(f"Notice: Auto-pushing view prompt change to Langfuse: {e}")
+                    await db.commit()
+        except Exception as e:
+            print(f"Notice: v_agent_prompts auto-sync check: {e}")
 
     full_sql = f"SELECT * FROM ({base_query}) AS t LIMIT {limit}"
 

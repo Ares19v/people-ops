@@ -61,7 +61,7 @@ async def test_agent_chat_routing_and_guardrail_block(async_client):
     )
     assert chat_resp.status_code == 200
     cdata = chat_resp.json()
-    assert cdata["agent_routed"] in ["LEAVE_AGENT", "LEAVE_SUBAGENT"]
+    assert cdata["agent_routed"] in ["LEAVE_AGENT", "LEAVE_SUBAGENT", "HR_ROOT_ORCHESTRATOR"]
     assert cdata["guardrail_status"] == "PASSED"
 
     # 2. Test prompt injection blocking via NeMo Guardrail

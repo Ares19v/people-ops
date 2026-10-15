@@ -162,7 +162,8 @@ class OnboardingService:
             full_name=full_name
         )
 
-        doc_id = generate_entity_id("document", target_user_id, sub_type=doc_type.value.lower())
+        base_doc_id = generate_entity_id("document", target_user_id, sub_type=doc_type.value.lower())
+        doc_id = f"{base_doc_id}_{uuid.uuid4().hex[:6]}"
         doc = Document(
             id=doc_id,
             user_id=target_user_id,
@@ -176,7 +177,8 @@ class OnboardingService:
         )
         db.add(doc)
 
-        audit_id = generate_entity_id("audit", uploader.id)
+        base_audit_id = generate_entity_id("audit", uploader.id)
+        audit_id = f"{base_audit_id}_{uuid.uuid4().hex[:6]}"
         audit = AuditLog(
             id=audit_id,
             actor_id=uploader.id,

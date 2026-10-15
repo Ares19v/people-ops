@@ -21,7 +21,13 @@ from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
 from app.core.config import settings
-from app.core.llm_bridge import get_llm_model
+from app.core.llm_bridge import (
+    GROQ_FALLBACK_MODELS,
+    get_active_groq_model,
+    get_llm_model,
+    resolve_llm_provider,
+    switch_groq_fallback_model,
+)
 from app.core.logging_config import AgentLogger
 from app.tools.hr_tools import (
     apply_leave,
@@ -46,14 +52,31 @@ from app.agents.zoho_agent import zoho_adk_agent as zoho_agent
 from app.agents.orchestrator import hr_root_orchestrator
 
 
+def refresh_adk_fleet_models(model_override: Optional[str] = None):
+    """Updates the LLM model instance on all ADK agents in the fleet."""
+    new_model = get_llm_model(model_override=model_override)
+    for agent_obj in (
+        hr_root_orchestrator,
+        leave_agent,
+        timesheet_agent,
+        health_agent,
+        policy_agent,
+        zoho_agent,
+    ):
+        try:
+            agent_obj.model = new_model
+        except Exception as exc:
+            logger.warning("Failed to update model on agent %s: %s", getattr(agent_obj, "name", "?"), exc)
+
+
 def sync_agent_instructions():
-    """Dynamically syncs all agent instructions from Langfuse at runtime."""
-    leave_agent.instruction = langfuse_prompt_service.get_prompt("leave-subagent")
-    timesheet_agent.instruction = langfuse_prompt_service.get_prompt("timesheet-subagent")
-    health_agent.instruction = langfuse_prompt_service.get_prompt("health-subagent")
-    policy_agent.instruction = langfuse_prompt_service.get_prompt("policy-rag-subagent")
-    zoho_agent.instruction = langfuse_prompt_service.get_prompt("zoho-subagent")
-    hr_root_orchestrator.instruction = langfuse_prompt_service.get_prompt("peopleops-root-orchestrator")
+    """Dynamically syncs all agent instructions from Langfuse at runtime strictly using the 'live' label."""
+    leave_agent.instruction = langfuse_prompt_service.get_prompt("leave-subagent", label="live")
+    timesheet_agent.instruction = langfuse_prompt_service.get_prompt("timesheet-subagent", label="live")
+    health_agent.instruction = langfuse_prompt_service.get_prompt("health-subagent", label="live")
+    policy_agent.instruction = langfuse_prompt_service.get_prompt("policy-rag-subagent", label="live")
+    zoho_agent.instruction = langfuse_prompt_service.get_prompt("zoho-subagent", label="live")
+    hr_root_orchestrator.instruction = langfuse_prompt_service.get_prompt("peopleops-root-orchestrator", label="live")
 
 
 # ── Runner Factory & Execution ────────────────────────────────────────────────
@@ -61,6 +84,7 @@ def sync_agent_instructions():
 def create_hr_runner(session_service: Optional[InMemorySessionService] = None) -> Runner:
     """Create and return an ADK Runner wired to the root HR orchestrator."""
     sync_agent_instructions()
+    refresh_adk_fleet_models()
     svc = session_service or InMemorySessionService()
     return Runner(
         agent=hr_root_orchestrator,
@@ -86,9 +110,10 @@ async def run_hr_query(
     session_id: str,
     message: str,
     context_injection: str = "",
+    user_name: Optional[str] = None,
 ) -> dict:
     """
-    Execute a turn through the Google ADK Agent Fleet.
+    Execute a turn through the Google ADK Agent Fleet with automatic model failover.
 
     Returns:
         {
@@ -102,66 +127,99 @@ async def run_hr_query(
     start = time.monotonic()
     alog.agent_start(session_id=session_id, user_id=user_id, message=message)
 
-    # Ensure session exists in ADK SessionService
-    existing = runner.session_service.get_session(
-        app_name=runner.app_name,
-        user_id=user_id,
-        session_id=session_id,
-    )
-    if existing is None:
-        runner.session_service.create_session(
-            app_name=runner.app_name,
-            user_id=user_id,
-            session_id=session_id,
-            state={
-                "organization_name": settings.ORGANIZATION_NAME,
-                "user_id": user_id,
-            }
-        )
+    EMPLOYEE_NAME_MAP = {
+        "EMP-001": "Devansh Tyagi",
+        "EMP-002": "Vikram Malhotra",
+        "EMP-003": "Priya Patel",
+        "EMP-004": "Rahul Sharma",
+        "EMP-005": "Sneha Kulkarni",
+    }
+    resolved_name = user_name
+    if not resolved_name and user_id:
+        resolved_name = EMPLOYEE_NAME_MAP.get(user_id.upper().strip())
+    first_name = resolved_name.split()[0] if resolved_name and " " in resolved_name else (resolved_name or "there")
+    user_header = f"[Active Employee: {resolved_name} (ID: {user_id}) - Address as {first_name}, NEVER call by ID code]" if resolved_name else f"[Active Employee ID: {user_id}]"
 
-    full_message = f"[Active Employee ID: {user_id}]\n\n{message}"
+    full_message = f"{user_header}\n\n{message}"
     if context_injection:
-        full_message = f"[Active Employee ID: {user_id}]\n\n{context_injection}\n\nUSER MESSAGE: {message}"
+        full_message = f"{user_header}\n\n{context_injection}\n\nUSER MESSAGE: {message}"
 
     content = Content(role="user", parts=[Part(text=full_message)])
 
     final_response = ""
     final_agent = "hr_root_orchestrator"
-    prev_author = None
     delegation_path = ["hr_root_orchestrator"]
 
-    try:
-        async for event in runner.run_async(
+    max_attempts = len(GROQ_FALLBACK_MODELS) if resolve_llm_provider() == "groq" else 1
+
+    for attempt in range(max_attempts):
+        # Use a clean per-attempt session id if retrying after a rate limit
+        active_session_id = session_id if attempt == 0 else f"{session_id}_retry_{attempt}"
+        existing = runner.session_service.get_session(
+            app_name=runner.app_name,
             user_id=user_id,
-            session_id=session_id,
-            new_message=content,
-        ):
-            author = getattr(event, "author", None) or "hr_root_orchestrator"
-
-            if author != prev_author and prev_author is not None:
-                alog.agent_delegated(from_agent=prev_author, to_agent=author)
-                if author not in delegation_path:
-                    delegation_path.append(author)
-            prev_author = author
-
-            event_type = type(event).__name__
-            detail = ""
-            if hasattr(event, "content") and event.content and event.content.parts:
-                detail = (event.content.parts[0].text or "")[:100]
-            alog.agent_event(event_type=event_type, author=author, details=detail)
-
-            if event.is_final_response():
-                if event.content and event.content.parts:
-                    final_response = event.content.parts[0].text or ""
-                final_agent = author
-
-    except Exception as exc:
-        alog.agent_error(error=exc, session_id=session_id)
-        logger.error("ADK Agent execution encountered error", exc_info=True)
-        final_response = (
-            "I apologize, but I encountered an issue processing your request through the HR fleet. "
-            "Please try again or contact HR support."
+            session_id=active_session_id,
         )
+        if existing is None:
+            runner.session_service.create_session(
+                app_name=runner.app_name,
+                user_id=user_id,
+                session_id=active_session_id,
+                state={
+                    "organization_name": settings.ORGANIZATION_NAME,
+                    "user_id": user_id,
+                }
+            )
+
+        prev_author = None
+        delegation_path = ["hr_root_orchestrator"]
+        final_response = ""
+        final_agent = "hr_root_orchestrator"
+
+        try:
+            async for event in runner.run_async(
+                user_id=user_id,
+                session_id=active_session_id,
+                new_message=content,
+            ):
+                author = getattr(event, "author", None) or "hr_root_orchestrator"
+
+                if author != prev_author and prev_author is not None:
+                    alog.agent_delegated(from_agent=prev_author, to_agent=author)
+                    if author not in delegation_path:
+                        delegation_path.append(author)
+                prev_author = author
+
+                event_type = type(event).__name__
+                detail = ""
+                if hasattr(event, "content") and event.content and event.content.parts:
+                    detail = (event.content.parts[0].text or "")[:100]
+                alog.agent_event(event_type=event_type, author=author, details=detail)
+
+                if event.is_final_response():
+                    if event.content and event.content.parts:
+                        final_response = event.content.parts[0].text or ""
+                    final_agent = author
+
+            if final_response:
+                break
+
+        except Exception as exc:
+            alog.agent_error(error=exc, session_id=active_session_id)
+            if resolve_llm_provider() == "groq" and attempt + 1 < max_attempts:
+                failed_model = get_active_groq_model()
+                next_model = switch_groq_fallback_model(failed_model)
+                refresh_adk_fleet_models(next_model)
+                logger.warning(
+                    "ADK Fleet encountered error on '%s' (%s); retrying with fallback model '%s' (attempt %d/%d)",
+                    failed_model, exc, next_model, attempt + 2, max_attempts
+                )
+                continue
+            logger.error("ADK Agent execution encountered error", exc_info=True)
+            final_response = (
+                "I apologize, but I encountered an issue processing your request through the HR fleet. "
+                "Please try again or contact HR support."
+            )
 
     latency_ms = int((time.monotonic() - start) * 1000)
     alog.agent_done(

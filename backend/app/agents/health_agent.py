@@ -20,7 +20,7 @@ health_adk_agent = Agent(
         "Specialist Occupational Health & Medical Triage Agent. Responsible for health guidelines, "
         "medical certificate requirements for prolonged absences, and health leave triage."
     ),
-    instruction=langfuse_prompt_service.get_prompt("health-subagent"),
+    instruction=langfuse_prompt_service.get_prompt("health-subagent", label="live"),
     tools=[
         get_occupational_health_guidelines,
         get_leave_balances,
@@ -33,7 +33,7 @@ class HealthAgent:
 
     @property
     def system_prompt(self) -> str:
-        return langfuse_prompt_service.get_prompt("health-subagent", label="production")
+        return langfuse_prompt_service.get_prompt("health-subagent", label="live")
 
     @property
     def SYSTEM_PROMPT(self) -> str:

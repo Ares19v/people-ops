@@ -23,6 +23,7 @@ else:
     engine_kwargs["connect_args"] = {
         "server_settings": {"jit": "off"},
         "command_timeout": 15.0,
+        "statement_cache_size": 0,
     }
 
 engine = create_async_engine(db_url, **engine_kwargs)

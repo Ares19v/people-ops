@@ -39,6 +39,14 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
   const [activeTab, setActiveTab] = useState<'projects' | 'entries'>('projects');
   const [isExporting, setIsExporting] = useState(false);
 
+  const isAdmin = currentRole === 'ADMIN';
+
+  useEffect(() => {
+    if (!isAdmin && isDbMode) {
+      setIsDbMode(false);
+    }
+  }, [isAdmin, isDbMode]);
+
   const loadData = async () => {
     try {
       const projs = await api.getProjects();
@@ -84,20 +92,24 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
         <div>
           <div className="flex items-center">
             <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-              <button
-                onClick={() => setIsDbMode(!isDbMode)}
-                className="group relative p-1 -m-1 rounded-xl transition-all duration-200 hover:bg-slate-100 active:scale-95 cursor-pointer focus:outline-none"
-                title={isDbMode ? "Click icon to return to Reports View" : "Click icon to switch to Database Mode"}
-              >
-                {isDbMode ? (
-                  <Database className="w-5 h-5 text-slate-800 transition-transform duration-200 group-hover:scale-110" />
-                ) : (
-                  <FileSpreadsheet className="w-5 h-5 text-slate-700 transition-transform duration-200 group-hover:scale-110" />
-                )}
-                <span className="sr-only">Toggle Database Mode</span>
-              </button>
-              <span>{isDbMode ? "Database Mode & SQL Inspector" : "Timesheet Reports & CSV Export"}</span>
-              {isDbMode && (
+              {isAdmin ? (
+                <button
+                  onClick={() => setIsDbMode(!isDbMode)}
+                  className="group relative p-1 -m-1 rounded-xl transition-all duration-200 hover:bg-slate-100 active:scale-95 cursor-pointer focus:outline-none"
+                  title={isDbMode ? "Click icon to return to Reports View" : "Click icon to switch to Database Mode"}
+                >
+                  {isDbMode ? (
+                    <Database className="w-5 h-5 text-slate-800 transition-transform duration-200 group-hover:scale-110" />
+                  ) : (
+                    <FileSpreadsheet className="w-5 h-5 text-slate-700 transition-transform duration-200 group-hover:scale-110" />
+                  )}
+                  <span className="sr-only">Toggle Database Mode</span>
+                </button>
+              ) : (
+                <FileSpreadsheet className="w-5 h-5 text-slate-700" />
+              )}
+              <span>{isAdmin && isDbMode ? "Database Mode & SQL Inspector" : "Timesheet Reports & CSV Export"}</span>
+              {isAdmin && isDbMode && (
                 <span className="px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-bold">
                   SQL Active
                 </span>
@@ -106,12 +118,12 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
             <FeatureExplainerIcon featureKey="reports_summary_kpis" />
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            {isDbMode
+            {isAdmin && isDbMode
               ? "Clean relational PostgreSQL SQL views, joined tables, and conversation turns."
               : "Aggregate project hours, audit billable utilization, and generate official payroll exports."}
           </p>
         </div>
-        {!isDbMode && (
+        {(!isAdmin || !isDbMode) && (
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownloadCSV}
@@ -126,7 +138,7 @@ export const ReportsPortal: React.FC<ReportsPortalProps> = ({ currentUser, curre
         )}
       </div>
 
-      {isDbMode ? (
+      {isAdmin && isDbMode ? (
         <DatabaseInspector />
       ) : (
         <>

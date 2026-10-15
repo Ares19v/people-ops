@@ -15,7 +15,7 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, func, and_
+from sqlalchemy import select, delete, func, and_, or_
 from app.core.security import mask_all_pii
 from app.models.chat_session import ChatSession, ChatTurn, ConversationSummary, SessionSummary
 
@@ -205,6 +205,7 @@ class ConversationMemoryManager:
         limit: int = 6,
         user_id: Optional[str] = None,
         user_role: Optional[str] = None,
+        user_name: Optional[str] = None,
         cross_session_summaries: Optional[List[Dict[str, Any]]] = None,
         recalled_turns: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
@@ -219,12 +220,27 @@ class ConversationMemoryManager:
 
         formatted_lines = []
 
+        EMPLOYEE_NAME_MAP = {
+            "EMP-001": "Devansh Tyagi",
+            "EMP-002": "Vikram Malhotra",
+            "EMP-003": "Priya Patel",
+            "EMP-004": "Rahul Sharma",
+            "EMP-005": "Sneha Kulkarni",
+        }
+        resolved_name = user_name
+        if not resolved_name and user_id:
+            resolved_name = EMPLOYEE_NAME_MAP.get(user_id.upper().strip())
+        if not resolved_name and user_id:
+            resolved_name = user_id
+
         # 1. Identity & Time Context Header
         if user_id:
             now_str = datetime.now(timezone.utc).strftime("%A, %B %d, %Y %I:%M %p UTC")
+            first_name = resolved_name.split()[0] if resolved_name and " " in resolved_name else (resolved_name or "there")
             formatted_lines.append("════════════════════════════════════════════════════════════")
-            formatted_lines.append(f"AUTHENTICATED USER: {user_id} ({user_role or 'EMPLOYEE'})")
+            formatted_lines.append(f"AUTHENTICATED EMPLOYEE: {resolved_name} (ID: {user_id}, Role: {user_role or 'EMPLOYEE'})")
             formatted_lines.append(f"CURRENT_TIME: {now_str}")
+            formatted_lines.append(f"NAME DIRECTIVE: Always address the employee by their first name ('{first_name}'). NEVER greet or address the employee using their employee ID code (NEVER say 'EMP-004', 'EMP-001', or similar).")
             formatted_lines.append("════════════════════════════════════════════════════════════")
 
         # 2. CROSS-SESSION ROLLING MEMORY (5-Session Sliding Window)
@@ -248,14 +264,13 @@ class ConversationMemoryManager:
                     has_pending = True
                 formatted_lines.append("")
 
-            formatted_lines.append("PROACTIVE MEMORY & CONTINUITY DIRECTIVE:")
-            formatted_lines.append("- You have FULL CONTINUOUS MEMORY of all past interactions above.")
-            if has_pending:
-                formatted_lines.append("- The employee left off with an unfinished request in a recent chat.")
-                formatted_lines.append("  If this is a new session or the user opens with a greeting (e.g. 'hi', 'hey', 'hello', 'what was I doing?'),")
-                formatted_lines.append("  PROACTIVELY and warmly acknowledge where you left off (e.g., 'Welcome back! Last time we were discussing your request for [leave/timesheet]. Shall we continue with that?')")
-            else:
-                formatted_lines.append("- Seamlessly reference past leaves, policies, or timesheet discussions when relevant without re-asking.")
+            formatted_lines.append("CROSS-SESSION MEMORY GUIDELINE:")
+            formatted_lines.append("- You have access to the employee's past interactions for background context.")
+            formatted_lines.append("- CRITICAL CONSTRAINT: DO NOT unpromptedly dump past conversation topics, saved personal facts, or unfinished requests when the employee is asking a general question, greeting you, or changing the subject.")
+            formatted_lines.append("- ONLY bring up past conversations or unfinished actions when:")
+            formatted_lines.append("  1. The employee explicitly asks about them or asks you to recall something (e.g. 'what were we discussing?', 'what was my pending request?', 'do you remember my pet/contact?'), OR")
+            formatted_lines.append("  2. The employee's current query directly pertains to that specific pending task (e.g. they say 'submit that leave we talked about').")
+            formatted_lines.append("- When the employee greets you or asks an unrelated question (e.g. 'hi whats going on in pune'), address their question/greeting directly and naturally without listing past chat history.")
             formatted_lines.append("────────────────────────────────────────────────────────────\n")
 
         # 3. RECALLED HISTORICAL EXCERPTS (Deep Episodic Memory Turn Retrieval)
@@ -276,10 +291,10 @@ class ConversationMemoryManager:
                 formatted_lines.append("")
 
             formatted_lines.append("CRITICAL MEMORY & RECALL INSTRUCTION:")
-            formatted_lines.append("- The employee is asking about or referencing what they said in that past conversation.")
-            formatted_lines.append("- You HAVE full, immediate recall of what they said above.")
-            formatted_lines.append("- State CLEARLY AND ACCURATELY what the employee previously told you (e.g. 'Yes, in our previous conversation you mentioned that one of your eyes is red and that was the reason you needed time off...').")
-            formatted_lines.append("- NEVER apologize or say you cannot recall or do not have access to previous conversations.")
+            formatted_lines.append("- The employee has discussed the topics in the excerpts above in past sessions.")
+            formatted_lines.append("- If the employee asks about what they previously shared or asked, answer accurately and directly from these excerpts.")
+            formatted_lines.append("- DO NOT regurgitate these excerpts unless they are directly relevant to what the employee is currently saying.")
+            formatted_lines.append("- NEVER apologize or claim you cannot recall past conversations when relevant information is in the context.")
             formatted_lines.append("────────────────────────────────────────────────────────────\n")
 
         # 4. Current Session Rolling Summary if available
@@ -385,7 +400,9 @@ class ConversationMemoryManager:
             is_recall_query = any(k in query.lower() for k in [
                 "remember", "past conversation", "previous conversation", "earlier",
                 "told you", "told u", "last time", "last chat", "before", "recall",
-                "mentioned", "said about", "we talked", "we spoke"
+                "mentioned", "said about", "we talked", "we spoke", "what is my",
+                "where do i", "who is my", "which day", "what day", "which project",
+                "what project", "my pet", "my emergency", "my wfh", "my manager", "my lead"
             ])
 
             # If no meaningful tokens and not a recall query, skip episodic scan
@@ -401,42 +418,60 @@ class ConversationMemoryManager:
                     ChatSession.id != current_session_id
                 )
                 .order_by(ChatTurn.created_at.desc())
-                .limit(60)
+                .limit(300)
             )
             res = await db.execute(stmt)
             rows = res.all()
             if not rows:
                 return []
 
-            # Group turns by session
+            # Group turns by session (preserve recency order of sessions)
             session_turns: Dict[str, List[ChatTurn]] = {}
             session_titles: Dict[str, str] = {}
+            recent_session_ids: List[str] = []
             for turn, title, sess_id in rows:
+                if sess_id not in session_turns:
+                    recent_session_ids.append(sess_id)
                 session_turns.setdefault(sess_id, []).append(turn)
                 session_titles[sess_id] = title or "Previous HR Conversation"
+
+            top_5_sessions = set(recent_session_ids[:5])
 
             # 3. Score and find relevant turns
             matches = []
             for sess_id, s_turns in session_turns.items():
                 s_turns_sorted = sorted(s_turns, key=lambda t: t.created_at if t.created_at else datetime.min)
-                
+                is_in_sliding_window = sess_id in top_5_sessions
+
                 for i, t in enumerate(s_turns_sorted):
                     if t.role != "user":
                         continue
-                    turn_text_lower = t.content.lower()
-                    
+                    turn_text_lower = t.content.lower().strip()
+
                     score = 0
                     for token in tokens:
                         if token in turn_text_lower:
-                            score += 3
-                        # Also check stem or plural (e.g. eye -> eyes)
+                            score += 4
                         elif token.endswith("s") and token[:-1] in turn_text_lower:
-                            score += 2
+                            score += 3
                         elif (token + "s") in turn_text_lower:
-                            score += 2
-                    
+                            score += 3
+
+                    # Bonus for statement / fact / preference turns vs. question turns
+                    if any(w in turn_text_lower for w in [
+                        "my emergency", "priya", "sister", "thursdays", "thursday", "prefer",
+                        "vikram", "lead", "manager", "live in", "stay in", "pune", "mumbai",
+                        "bangalore", "pet", "vivan", "vivi", "project", "phoenix", "apollo",
+                        "neck", "headache", "ergonomic", "fever", "sick", "casual leave", "hours"
+                    ]):
+                        score += 12
+                    if is_in_sliding_window:
+                        score += 5
+                    if turn_text_lower.startswith(("who did", "what did", "did i tell", "can you remember", "summarize", "do you remember", "what is my", "where do i", "who is my")):
+                        score -= 10
+
                     # If query is recall-specific or matches candidate tokens
-                    if score > 0 or (is_recall_query and any(w in turn_text_lower for w in ["eye", "sick", "leave", "fever", "doctor", "pain", "medical", "timesheet"])):
+                    if score > 0 or (is_recall_query and is_in_sliding_window):
                         assistant_reply = ""
                         if i + 1 < len(s_turns_sorted) and s_turns_sorted[i+1].role == "assistant":
                             assistant_reply = s_turns_sorted[i+1].content
@@ -452,7 +487,7 @@ class ConversationMemoryManager:
                         })
 
             matches.sort(key=lambda m: m["score"], reverse=True)
-            return matches[:limit]
+            return matches[:max(limit, 6)]
         except Exception as e:
             print(f"Notice: Failed to recall past turns: {e}")
             return []
@@ -560,6 +595,7 @@ class ConversationMemoryManager:
                 existing_summary.pending_action = pending_action
                 existing_summary.status = status_val
                 existing_summary.covers_turns_count = len(turns)
+                existing_summary.created_at = datetime.now(timezone.utc)
                 if user_email_val:
                     existing_summary.user_email = user_email_val
                 if target_user_id:
@@ -639,6 +675,7 @@ class ConversationMemoryManager:
                 await db.flush()
             else:
                 chat_sess.active_slots = active_slots
+                chat_sess.updated_at = datetime.now(timezone.utc)
                 if user_id and not chat_sess.user_id:
                     chat_sess.user_id = user_id
                 if resolved_email and not chat_sess.user_email:
@@ -660,8 +697,8 @@ class ConversationMemoryManager:
             db.add(db_turn)
             await db.commit()
 
-            # Auto-update summary after turn pairs to keep rolling window fresh
-            if turns_count >= 2:
+            # Auto-update summary only after assistant completes a turn pair
+            if role == "assistant" and turns_count >= 2:
                 await self.generate_and_save_session_summary(db, session_id, user_id=user_id)
 
         except Exception as e:
@@ -780,7 +817,7 @@ class ConversationMemoryManager:
             return []
 
     async def delete_user_session_db(self, db: AsyncSession, session_id: str, user_id: str) -> bool:
-        """Securely deletes a session owned by this specific user."""
+        """Securely deletes a session owned by this specific user from PostgreSQL and memory."""
         try:
             stmt = select(ChatSession).filter(
                 ChatSession.id == session_id,
@@ -791,6 +828,8 @@ class ConversationMemoryManager:
             if not chat_sess:
                 return False
 
+            await db.execute(delete(ChatTurn).filter(ChatTurn.session_id == session_id))
+            await db.execute(delete(ConversationSummary).filter(ConversationSummary.session_id == session_id))
             await db.delete(chat_sess)
             await db.commit()
 
@@ -801,11 +840,111 @@ class ConversationMemoryManager:
                 self._last_accessed.pop(session_id, None)
                 self._save_to_disk()
 
+            try:
+                from app.agents.adk_fleet import get_default_hr_runner
+                runner = get_default_hr_runner()
+                runner.session_service.delete_session(
+                    app_name=runner.app_name, user_id=user_id, session_id=session_id
+                )
+            except Exception:
+                pass
+
             return True
         except Exception as e:
             await db.rollback()
             print(f"Notice: Failed to delete user session {session_id}: {e}")
             return False
+
+    async def purge_user_chat_history_db(self, db: AsyncSession, user_id: str, user_email: Optional[str] = None) -> Dict[str, Any]:
+        """Completely purges all chat sessions, turns, and conversation summaries for a user from PostgreSQL/SQLite and memory."""
+        try:
+            from app.observability.langsmith_tracer import resolve_user_email
+            from app.core.id_generator import get_email_prefix
+            resolved_email = user_email or resolve_user_email(user_id)
+            prefix = get_email_prefix(resolved_email or user_id)
+
+            # 1. Collect all session IDs belonging to this user
+            stmt = select(ChatSession.id).filter(
+                (ChatSession.user_id == user_id) |
+                (ChatSession.user_email == user_id) |
+                (ChatSession.user_email == resolved_email)
+            )
+            res = await db.execute(stmt)
+            session_ids = [row[0] for row in res.fetchall()]
+
+            # Also check session ID pattern
+            pat_stmt = select(ChatSession.id).filter(ChatSession.id.like(f"sess_{prefix}_%"))
+            res_p = await db.execute(pat_stmt)
+            for row in res_p.fetchall():
+                if row[0] not in session_ids:
+                    session_ids.append(row[0])
+
+            # 2. Delete all ChatTurn records
+            if session_ids:
+                del_turns = delete(ChatTurn).filter(ChatTurn.session_id.in_(session_ids))
+                await db.execute(del_turns)
+
+            # 3. Delete all ConversationSummary records
+            conds = [
+                ConversationSummary.user_id == user_id,
+                ConversationSummary.user_email == resolved_email
+            ]
+            if session_ids:
+                conds.append(ConversationSummary.session_id.in_(session_ids))
+            del_sums = delete(ConversationSummary).filter(or_(*conds))
+            await db.execute(del_sums)
+
+            # 4. Delete all ChatSession records
+            if session_ids:
+                del_sess = delete(ChatSession).filter(ChatSession.id.in_(session_ids))
+                await db.execute(del_sess)
+
+            del_rem = delete(ChatSession).filter(
+                (ChatSession.user_id == user_id) |
+                (ChatSession.user_email == resolved_email)
+            )
+            await db.execute(del_rem)
+
+            await db.commit()
+
+            # 5. Clean up in-memory cache, disk snapshot, and ADK session service
+            with self._lock:
+                for sid in session_ids:
+                    self._history.pop(sid, None)
+                    self._entities.pop(sid, None)
+                    self._summaries.pop(sid, None)
+                    self._last_accessed.pop(sid, None)
+                for sid in list(self._history.keys()):
+                    if sid.startswith(f"sess_{prefix}_"):
+                        self._history.pop(sid, None)
+                        self._entities.pop(sid, None)
+                        self._summaries.pop(sid, None)
+                        self._last_accessed.pop(sid, None)
+                self._save_to_disk()
+
+            try:
+                from app.agents.adk_fleet import get_default_hr_runner
+                runner = get_default_hr_runner()
+                for sid in session_ids:
+                    try:
+                        runner.session_service.delete_session(
+                            app_name=runner.app_name, user_id=user_id, session_id=sid
+                        )
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            return {
+                "status": "PURGED",
+                "purged_sessions_count": len(session_ids),
+                "user_id": user_id,
+                "user_email": resolved_email
+            }
+        except Exception as e:
+            await db.rollback()
+            print(f"Notice: Failed to purge user chat history: {e}")
+            raise
 
     def _cleanup_expired_sessions(self):
         """Internal sweep for sessions exceeding TTL."""

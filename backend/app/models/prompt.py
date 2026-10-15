@@ -16,7 +16,7 @@ class AgentPrompt(Base):
     agent_name = Column(String(100), nullable=False)
     template = Column(Text, nullable=False)
     version = Column(Integer, default=1, nullable=False)
-    label = Column(String(50), default="production", nullable=False)
+    label = Column(String(50), default="live", nullable=False)
     langfuse_version = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

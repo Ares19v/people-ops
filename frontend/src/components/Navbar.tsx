@@ -6,7 +6,7 @@ import { FeatureExplainerIcon } from './FeatureExplainerIcon';
 interface NavbarProps {
   currentUser: User | null;
   currentRole: UserRole;
-  onRoleSwitch: (role: UserRole) => void;
+  onRoleSwitch: (role: UserRole, email?: string) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   toggleChat: () => void;
@@ -31,11 +31,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [roleOpen, setRoleOpen] = useState(false);
   const roleRef = useRef<HTMLDivElement>(null);
 
-  const roles: { label: string; value: UserRole }[] = [
-    { label: 'Employee', value: 'EMPLOYEE' },
-    { label: 'HR Associate', value: 'HR_ASSOCIATE' },
-    { label: 'HR Manager', value: 'HR_MANAGER' },
-    { label: 'Admin', value: 'ADMIN' },
+  const roles: { label: string; value: UserRole; email?: string }[] = [
+    { label: 'Employee', value: 'EMPLOYEE', email: 'aarav.sharma@intelera.com' },
+    { label: 'Employee 2', value: 'EMPLOYEE', email: 'sneha.kulkarni@intelera.com' },
+    { label: 'HR Associate', value: 'HR_ASSOCIATE', email: 'priya.patel@intelera.com' },
+    { label: 'HR Manager', value: 'HR_MANAGER', email: 'vikram.malhotra@intelera.com' },
+    { label: 'Admin', value: 'ADMIN', email: 'devansh.tyagi@intelera.com' },
   ];
 
   const navItems = [
@@ -47,7 +48,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     ...(currentRole !== 'EMPLOYEE' ? [{ id: 'onboarding', label: 'Onboarding' }] : []),
   ];
 
-  const currentRoleLabel = roles.find((r) => r.value === currentRole)?.label ?? 'Employee';
+  const currentRoleLabel =
+    currentUser?.email === 'sneha.kulkarni@intelera.com'
+      ? 'Employee 2'
+      : (roles.find((r) => r.email === currentUser?.email)?.label ??
+         roles.find((r) => r.value === currentRole)?.label ??
+         'Employee');
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -125,13 +131,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             {roleOpen && (
               <div className="role-switcher-dropdown">
                 {roles.map((r) => {
-                  const isSelected = r.value === currentRole;
+                  const isSelected = r.email
+                    ? currentUser?.email === r.email
+                    : r.value === currentRole;
                   return (
                     <button
-                      key={r.value}
+                      key={r.label}
                       className={`role-switcher-option ${isSelected ? 'selected' : ''}`}
                       onClick={() => {
-                        onRoleSwitch(r.value);
+                        onRoleSwitch(r.value, r.email);
                         setRoleOpen(false);
                       }}
                     >

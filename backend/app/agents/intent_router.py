@@ -92,11 +92,19 @@ class SemanticIntentRouter:
         r"\b(zoho|zoho people|external hrms|sync attendance|sync records|api sync)\b",
     ]
 
-    # 7. Conversational greetings
+    # 7. Conversational greetings & personal statements
     GREETING_PATTERNS = [
         r"\b(hi|hello|hey|good morning|good afternoon|good evening|howdy|greetings)\b",
         r"\b(who are you|what can you do|help me|capabilities|what do you do|what are your features)\b",
         r"\bwhat can you help(\s+me)?\s+with\b",
+        r"\b(thank you|thanks|okay|ok|got it|sounds good|great|awesome|cool)\b",
+    ]
+
+    CONVERSATIONAL_PATTERNS = [
+        r"\b(i live in|i stay in|i am from|i'm from|i relocated to|i moved to|my hometown)\b",
+        r"\b(my pet|my dog|my cat|my name is|call me|actually it's|actually its|by the way)\b",
+        r"\b(my favorite|my hobby|my wife|my husband|my brother|my sister|my friend|my family)\b",
+        r"\b(i prefer|my emergency contact|my project lead|my manager is)\b",
     ]
 
     @classmethod
@@ -112,17 +120,50 @@ class SemanticIntentRouter:
         """Classifies a user query into specialized subagent targets and semantic scope."""
         text = query.strip()
         text_lower = text.lower()
-        full_context = f"{conversation_context}\n{text}".lower()
 
-        # Check for pure greeting or capability inquiry (without domain action)
-        is_greeting = cls._matches_any(cls.GREETING_PATTERNS, text_lower)
-        has_domain_keywords = any(w in text_lower for w in ["leave", "timesheet", "hour", "sick", "doctor", "zoho", "balance", "apply"])
-        if is_greeting and not has_domain_keywords:
+        # Check for memory recall / past conversation inquiries
+        is_recall = any(k in text_lower for k in [
+            "summarize all", "previous topic", "previous conversation", "earlier conversation",
+            "past conversation", "what do you remember", "what did we discuss", "earlier chat",
+            "previous chat", "remember about me", "recall about me", "what did i mention earlier",
+            "who did i tell you", "what did i tell you", "who did i mention", "what did i mention",
+            "did i tell you", "did i mention", "where did i say", "when did i say", "emergency contact",
+            "where do i live", "what is my pet", "what's my pet", "who is my project lead",
+            "who is my lead", "who is my manager", "which day do i prefer", "what day do i prefer",
+            "prefer to work from home", "wfh day", "what health", "what symptom", "in our last",
+            "from our last", "from earlier", "last session", "previous session"
+        ])
+        if is_recall:
             return IntentRoute(
                 primary_scope=QueryScope.GENERAL_HELP,
-                selected_tools=["policy_rag_subagent"],
-                confidences={"general": 0.95},
-                reasoning="General greeting or capabilities question."
+                selected_tools=["hr_root_orchestrator"],
+                confidences={"memory_recall": 0.98},
+                reasoning="Cross-session memory recall inquiry."
+            )
+
+        # Check for confirmation of pending drafted action (e.g. Leave submission)
+        is_confirmation = bool(re.search(r"\b(yes|proceed|confirm|submit|go ahead|approve|do it)\b", text_lower)) and not bool(re.search(r"\b(no|cancel|don't|dont|wait)\b", text_lower))
+        if is_confirmation and conversation_context and any(w in conversation_context.lower() for w in ["drafted", "leave application", "would you like me to confirm", "unsubmitted"]):
+            return IntentRoute(
+                primary_scope=QueryScope.PERSONAL_LEDGER,
+                selected_tools=["leave_subagent"],
+                confidences={"action_confirm": 0.99},
+                reasoning="Confirmation of previously drafted leave application."
+            )
+
+        # Check for pure greeting, capability inquiry, or personal conversational statement (without domain action)
+        is_greeting = cls._matches_any(cls.GREETING_PATTERNS, text_lower)
+        is_conversational = cls._matches_any(cls.CONVERSATIONAL_PATTERNS, text_lower)
+        has_domain_keywords = bool(re.search(
+            r"\b(leave|leaves|timesheet|timesheets|hours?|sick|doctor|fever|infection|injury|zoho|balance|balances|apply|policy|statutory|act|section|overtime|holiday|vacation|pto)\b",
+            text_lower
+        ))
+        if (is_greeting or is_conversational) and not has_domain_keywords:
+            return IntentRoute(
+                primary_scope=QueryScope.GENERAL_HELP,
+                selected_tools=["hr_root_orchestrator"],
+                confidences={"general": 0.96},
+                reasoning="General greeting, personal fact, or conversational statement."
             )
 
         # 1. Feature detection
@@ -210,27 +251,17 @@ class SemanticIntentRouter:
 
         # ── Fallback Safety ───────────────────────────────────────────────────
         if not selected_tools:
-            # If no tools matched, check multi-turn context
-            if conversation_context:
-                if any(w in full_context for w in ["eye", "sick", "doctor", "health", "fever", "ill", "infection"]):
-                    selected_tools.append("health_subagent")
-                    confidences["health_subagent"] = 0.75
-                elif any(w in full_context for w in ["leave", "balance", "vacation", "pto"]):
-                    selected_tools.append("leave_subagent")
-                    confidences["leave_subagent"] = 0.65
-                elif any(w in full_context for w in ["timesheet", "hours", "overtime"]):
-                    selected_tools.append("timesheet_subagent")
-                    confidences["timesheet_subagent"] = 0.65
-
-            # Default safe fallback is policy_rag_subagent
-            if not selected_tools:
-                selected_tools.append("policy_rag_subagent")
-                confidences["policy_rag_subagent"] = 0.50
+            # Default conversational / general statements to hr_root_orchestrator
+            # instead of matching old cross-session memory keywords
+            selected_tools.append("hr_root_orchestrator")
+            confidences["hr_root_orchestrator"] = 0.80
 
         # Scope Determination
         is_compound = len(selected_tools) > 1
         if is_compound:
             primary_scope = QueryScope.COMPOUND_HYBRID
+        elif "hr_root_orchestrator" in selected_tools:
+            primary_scope = QueryScope.GENERAL_HELP
         elif "leave_subagent" in selected_tools:
             primary_scope = QueryScope.PERSONAL_LEDGER
         elif "timesheet_subagent" in selected_tools:

@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { CitationItem } from '../types';
+import { CitationItem, UserRole } from '../types';
 import { Search, Shield, BookOpen, Sparkles, ShieldCheck, Network, AlertCircle, RefreshCw } from 'lucide-react';
 import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
 import { LiveKnowledgeGraphViewer } from '../components/LiveKnowledgeGraphViewer';
 
-export const PolicySearchPortal: React.FC = () => {
+interface PolicySearchPortalProps {
+  currentRole?: UserRole;
+}
+
+export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentRole }) => {
+  const isAdmin = currentRole === 'ADMIN';
   const [activeTab, setActiveTab] = useState<'search' | 'graph'>('search');
   const [query, setQuery] = useState('sick leave medical certificate');
   const [results, setResults] = useState<any>(null);
   const [searching, setSearching] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin && activeTab === 'graph') {
+      setActiveTab('search');
+    }
+  }, [isAdmin, activeTab]);
 
   const sampleQueries = [
     'sick leave medical certificate',
@@ -63,34 +74,38 @@ export const PolicySearchPortal: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab((prev) => (prev === 'search' ? 'graph' : 'search'))}
-              className="p-1 -ml-1 rounded-xl hover:bg-blue-50 active:scale-95 transition-all text-blue-600 focus:outline-none group flex items-center justify-center cursor-pointer"
-              title={activeTab === 'search' ? "Switch to Live Knowledge Graph (Neo4j)" : "Back to Policy Search & Citations"}
-            >
-              {activeTab === 'search' ? (
-                <Shield className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
-              ) : (
-                <Network className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
-              )}
-            </button>
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab((prev) => (prev === 'search' ? 'graph' : 'search'))}
+                className="p-1 -ml-1 rounded-xl hover:bg-blue-50 active:scale-95 transition-all text-blue-600 focus:outline-none group flex items-center justify-center cursor-pointer"
+                title={activeTab === 'search' ? "Switch to Live Knowledge Graph (Neo4j)" : "Back to Policy Search & Citations"}
+              >
+                {activeTab === 'search' ? (
+                  <Shield className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                ) : (
+                  <Network className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                )}
+              </button>
+            ) : (
+              <Shield className="w-5 h-5 text-blue-600" />
+            )}
             <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-              {activeTab === 'search'
-                ? 'HR Policy & Maharashtra Labour Law Graph RAG'
-                : 'Live Neo4j Aura Statutory Knowledge Graph'}
+              {isAdmin && activeTab === 'graph'
+                ? 'Live Neo4j Aura Statutory Knowledge Graph'
+                : 'HR Policy & Maharashtra Labour Law Graph RAG'}
             </h2>
             <FeatureExplainerIcon featureKey="policy_rag_search" />
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            {activeTab === 'search'
-              ? 'Explore authoritative policies indexed against the Maharashtra Shops & Establishments Act, 2017 with Neo4j live graph traversal.'
-              : 'Interactive ontology graph topology, directional legal relationships, and property schemas.'}
+            {isAdmin && activeTab === 'graph'
+              ? 'Interactive ontology graph topology, directional legal relationships, and property schemas.'
+              : 'Explore authoritative policies indexed against the Maharashtra Shops & Establishments Act, 2017 with Neo4j live graph traversal.'}
           </p>
         </div>
 
         {/* Action Button if in Graph Mode */}
-        {activeTab === 'graph' && (
+        {isAdmin && activeTab === 'graph' && (
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('search')}
@@ -104,12 +119,12 @@ export const PolicySearchPortal: React.FC = () => {
       </div>
 
       {/* Tab 1: Live Neo4j Graph Visualizer */}
-      {activeTab === 'graph' && (
+      {isAdmin && activeTab === 'graph' && (
         <LiveKnowledgeGraphViewer onSelectQuery={handleQueryFromGraph} />
       )}
 
       {/* Tab 2: Policy Search & Citations */}
-      {activeTab === 'search' && (
+      {(!isAdmin || activeTab === 'search') && (
         <div className="space-y-6">
           {/* Search Input Bar */}
           <div className="card-olixer p-4 sm:p-5 space-y-3">

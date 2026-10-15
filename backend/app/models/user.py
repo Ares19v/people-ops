@@ -68,7 +68,7 @@ class EmployeeProfile(Base):
     user = relationship("User", back_populates="profile")
 
 class Document(Base):
-    __tablename__ = "documents"
+    __tablename__ = "employee_documents"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
@@ -87,7 +87,7 @@ class Document(Base):
     verifier = relationship("User", foreign_keys=[verified_by_id])
 
 class AuditLog(Base):
-    __tablename__ = "audit_logs"
+    __tablename__ = "security_trail"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     actor_id = Column(String(36), ForeignKey("users.id"), nullable=True)

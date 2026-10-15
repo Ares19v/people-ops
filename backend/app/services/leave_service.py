@@ -2,9 +2,10 @@ from datetime import date, datetime, timezone
 from typing import List, Optional, Tuple, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func
 from fastapi import HTTPException, status
 
+from app.core.id_generator import generate_entity_id
 from app.models.user import User, UserRole, AuditLog
 from app.models.leave import LeaveBalance, LeaveApplication, LeaveType, LeaveStatus
 from app.schemas.leave import LeaveApplyRequest, LeaveBalanceSummary, LeaveBalanceItem
@@ -149,6 +150,7 @@ class LeaveService:
         
         # Audit log
         audit = AuditLog(
+            id=generate_entity_id("audit", user.id),
             actor_id=user.id,
             action="LEAVE_APPLY",
             resource_type="leave_application",
@@ -219,6 +221,7 @@ class LeaveService:
 
         # Audit
         audit = AuditLog(
+            id=generate_entity_id("audit", approver.id),
             actor_id=approver.id,
             action=f"LEAVE_{decision}",
             resource_type="leave_application",

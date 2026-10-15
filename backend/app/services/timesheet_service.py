@@ -8,6 +8,7 @@ from sqlalchemy import func, and_
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 
+from app.core.id_generator import generate_entity_id
 from app.models.user import User, UserRole, AuditLog
 from app.models.timesheet import Project, TimesheetEntry, TimesheetStatus
 from app.schemas.timesheet import (
@@ -74,6 +75,7 @@ class TimesheetService:
         db.add(entry)
         
         audit = AuditLog(
+            id=generate_entity_id("audit", user.id),
             actor_id=user.id,
             action="TIMESHEET_LOG",
             resource_type="timesheet_entry",
@@ -118,6 +120,7 @@ class TimesheetService:
             updated_entries.append(e)
 
         audit = AuditLog(
+            id=generate_entity_id("audit", approver.id),
             actor_id=approver.id,
             action=f"TIMESHEET_{decision}",
             resource_type="timesheet_batch",
@@ -157,7 +160,7 @@ class TimesheetService:
         if conditions:
             query = query.filter(and_(*conditions))
 
-        query = query.order_by(TimesheetEntry.entry_date.desc())
+        query = query.order_by(TimesheetEntry.created_at.desc(), TimesheetEntry.entry_date.desc())
         result = await db.execute(query)
         entries = result.scalars().all()
 

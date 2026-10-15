@@ -30,7 +30,7 @@ zoho_adk_agent = Agent(
         "Specialist Zoho People HRMS Integration Agent. Responsible for querying external "
         "synchronized records from Zoho People REST v2 API."
     ),
-    instruction=langfuse_prompt_service.get_prompt("zoho-subagent"),
+    instruction=langfuse_prompt_service.get_prompt("zoho-subagent", label="live"),
     tools=[
         sync_zoho_leave_records,
     ],
@@ -44,7 +44,7 @@ class ZohoAgent:
 
     @property
     def system_prompt(self) -> str:
-        return langfuse_prompt_service.get_prompt("zoho-subagent", label="production")
+        return langfuse_prompt_service.get_prompt("zoho-subagent", label="live")
 
     @property
     def SYSTEM_PROMPT(self) -> str:

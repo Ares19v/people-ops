@@ -30,7 +30,7 @@ router = APIRouter(prefix="/agents", tags=["Multi-Agent System"])
 
 class UpdatePromptPayload(BaseModel):
     template: str
-    label: Optional[str] = "production"
+    label: Optional[str] = "live"
     agent_name: Optional[str] = None
 
 
@@ -39,7 +39,7 @@ async def list_agent_prompts(
     current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
     db: AsyncSession = Depends(get_db)
 ):
-    """Inspect all decoupled subagent prompts, version, and database sync status (Restricted to HR/Admin)."""
+    """Inspect all decoupled subagent prompts, version, and database sync status."""
     from app.models.prompt import AgentPrompt
     from sqlalchemy import select
 
@@ -47,7 +47,48 @@ async def list_agent_prompts(
     try:
         stmt = select(AgentPrompt)
         res = await db.execute(stmt)
-        db_records = {p.prompt_key: p.to_dict() for p in res.scalars().all()}
+        records = res.scalars().all()
+        db_records = {p.prompt_key: p.to_dict() for p in records}
+
+        # Auto-detect if any prompt was modified directly in DB (e.g. in TablePlus)
+        modified_records = []
+        with langfuse_prompt_service._lock:
+            for r in records:
+                cached = langfuse_prompt_service._cache.get(r.prompt_key)
+                if not cached or cached.template != r.template:
+                    langfuse_prompt_service._cache[r.prompt_key] = ManagedPrompt(
+                        name=r.prompt_key,
+                        version=str(r.version),
+                        template=r.template,
+                        label=r.label,
+                        source="database",
+                        fetched_at=time.time(),
+                    )
+                    modified_records.append(r)
+
+        if modified_records:
+            from app.agents.adk_fleet import sync_agent_instructions
+            sync_agent_instructions()
+            if langfuse_prompt_service._langfuse_client:
+                for mod_r in modified_records:
+                    try:
+                        lf_p = langfuse_prompt_service._langfuse_client.create_prompt(
+                            name=mod_r.prompt_key,
+                            prompt=mod_r.template,
+                            labels=["live", "production"],
+                            type="text",
+                            tags=["peopleops", "adk-agents"]
+                        )
+                        new_v = getattr(lf_p, "version", None)
+                        if new_v:
+                            mod_r.version = new_v
+                            db_records[mod_r.prompt_key]["version"] = new_v
+                            with langfuse_prompt_service._lock:
+                                if mod_r.prompt_key in langfuse_prompt_service._cache:
+                                    langfuse_prompt_service._cache[mod_r.prompt_key].version = str(new_v)
+                    except Exception as err:
+                        print(f"Notice: Auto-syncing TablePlus prompt to Langfuse: {err}")
+                await db.commit()
     except Exception:
         db_records = {}
 
@@ -73,6 +114,47 @@ async def list_agent_prompts(
     }
 
 
+@router.get("/prompts/{prompt_key}")
+async def get_agent_prompt(
+    prompt_key: str,
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retrieves a single prompt template by key."""
+    from app.models.prompt import AgentPrompt
+    from sqlalchemy import select
+    try:
+        stmt = select(AgentPrompt).where(AgentPrompt.prompt_key == prompt_key)
+        res = await db.execute(stmt)
+        record = res.scalars().first()
+        if record:
+            return {
+                "status": "success",
+                "prompt_key": record.prompt_key,
+                "template": record.template,
+                "version": str(record.version),
+                "label": record.label,
+                "agent_name": record.agent_name,
+                "updated_at": record.updated_at
+            }
+    except Exception:
+        pass
+
+    with langfuse_prompt_service._lock:
+        cached = langfuse_prompt_service._cache.get(prompt_key)
+        if cached:
+            return {
+                "status": "success",
+                "prompt_key": prompt_key,
+                "template": cached.template,
+                "version": cached.version,
+                "label": cached.label,
+                "agent_name": prompt_key,
+                "updated_at": None
+            }
+    raise HTTPException(status_code=404, detail=f"Prompt '{prompt_key}' not found.")
+
+
 @router.put("/prompts/{prompt_key}")
 async def update_agent_prompt(
     prompt_key: str,
@@ -80,19 +162,52 @@ async def update_agent_prompt(
     current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
     db: AsyncSession = Depends(get_db)
 ):
-    """Updates an agent prompt in the database, invalidates cache, and hot-reloads the ADK fleet immediately."""
-    result = await langfuse_prompt_service.save_prompt_to_db(
-        prompt_key=prompt_key,
-        template=payload.template,
-        agent_name=payload.agent_name,
-        label=payload.label or "production",
-        db=db
-    )
-    return {
-        "status": "success",
-        "message": f"Prompt '{prompt_key}' successfully updated to version {result.get('version')} in the database and reloaded in the ADK fleet.",
-        "prompt": result
-    }
+    """Updates an agent prompt in Langfuse Cloud (the sole authority for agent prompts) and reloads the ADK fleet immediately."""
+    if not langfuse_prompt_service._langfuse_client:
+        langfuse_prompt_service._init_client()
+
+    if langfuse_prompt_service._langfuse_client:
+        try:
+            lf_p = langfuse_prompt_service._langfuse_client.create_prompt(
+                name=prompt_key,
+                prompt=payload.template,
+                labels=[payload.label or "live"],
+                type="text",
+                tags=["peopleops", "adk-agents"]
+            )
+            new_version = getattr(lf_p, "version", "latest")
+            with langfuse_prompt_service._lock:
+                from app.services.langfuse_prompt_service import ManagedPrompt
+                langfuse_prompt_service._cache[prompt_key] = ManagedPrompt(
+                    name=prompt_key,
+                    version=str(new_version),
+                    template=payload.template,
+                    label=payload.label or "live",
+                    source="langfuse_live",
+                    fetched_at=time.time(),
+                )
+            from app.agents.adk_fleet import sync_agent_instructions
+            sync_agent_instructions()
+            # Also log to DB for historical audit only
+            await langfuse_prompt_service.save_prompt_to_db(
+                prompt_key=prompt_key,
+                template=payload.template,
+                agent_name=payload.agent_name,
+                label=payload.label or "live",
+                db=db
+            )
+            return {
+                "status": "success",
+                "message": f"Prompt '{prompt_key}' successfully updated in Langfuse Cloud as version {new_version} and reloaded in the ADK fleet.",
+                "version": str(new_version)
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to update prompt in Langfuse Cloud: {e}")
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Agent prompts can only be changed through Langfuse Cloud, but Langfuse client is not connected."
+        )
 
 @router.post("/prompts/webhook")
 @router.post("/webhooks/langfuse")
@@ -138,13 +253,13 @@ async def langfuse_prompt_webhook(
 
 @router.post("/prompts/reload")
 async def reload_prompts(
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
-    """Force reloads all agent prompts from Langfuse or local registry (Restricted to HR/Admin)."""
-    langfuse_prompt_service._cache.clear()
-    langfuse_prompt_service._load_local_registry()
+    """Force reloads all agent prompts from database/Langfuse (picks up TablePlus changes)."""
+    await langfuse_prompt_service.load_prompts_from_db(db)
     sync_agent_instructions()
-    return {"status": "success", "message": "All agent prompts refreshed successfully across the ADK fleet."}
+    return {"status": "success", "message": "All agent prompts refreshed successfully from PostgreSQL across the ADK fleet."}
 
 
 @router.post("/chat", response_model=AgentChatResponse)
@@ -441,6 +556,15 @@ async def get_chat_session_turns(
         ]
     }
 
+@router.delete("/sessions/purge-history")
+async def purge_user_chat_history(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Completely purges all chat sessions, messages, and memory summaries for the authenticated employee from database and memory (DPDP Right to Erasure)."""
+    return await conversation_memory.purge_user_chat_history_db(db, current_user.id, current_user.email)
+
+
 @router.delete("/sessions/{session_id}")
 async def delete_chat_session(
     session_id: str,
@@ -662,14 +786,16 @@ async def websocket_chat_endpoint(
 
 @router.post("/evaluations/benchmark-25")
 async def trigger_25_benchmark_experiment(
-    run_name: Optional[str] = None,
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+    run_name: Optional[str] = Query(None, description="Custom name for the experiment run"),
+    limit: Optional[int] = Query(None, description="Number of test items to evaluate (default: 25)"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Triggers the automated 25-Prompt Golden Dataset benchmark experiment and pushes scores to Langfuse."""
+    """Triggers the automated Golden Dataset benchmark experiment via Langfuse Experiments tab and evaluates with LLM evaluators."""
     from app.services.dataset_sync_service import langfuse_dataset_service
     res = await langfuse_dataset_service.run_golden_benchmark_experiment(
         experiment_run_name=run_name,
+        limit=limit,
         db_session=db
     )
     return res
@@ -677,24 +803,36 @@ async def trigger_25_benchmark_experiment(
 
 @router.post("/prompts/sync-cloud")
 async def sync_prompts_to_cloud(
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+    db: AsyncSession = Depends(get_db)
 ):
-    """Pushes all 8 local prompt templates to Langfuse Cloud for immediate Playground and versioning access."""
+    """Pushes all prompts from PostgreSQL to Langfuse Cloud under 'live' and 'production' labels."""
     from app.services.dataset_sync_service import langfuse_dataset_service
     from app.services.langfuse_prompt_service import langfuse_prompt_service
     
-    p_res = langfuse_prompt_service.push_all_prompts_to_cloud()
+    p_res = await langfuse_prompt_service.sync_db_prompts_to_cloud(db=db)
     d_res = langfuse_dataset_service.sync_golden_dataset_to_langfuse()
     return {
         "prompts_cloud_sync": p_res,
         "dataset_cloud_sync": d_res,
-        "message": "Prompts and 25-prompt Golden Dataset synced with Langfuse Cloud successfully."
+        "message": f"Successfully synced {p_res.get('pushed_count', 0)} prompts from database to Langfuse Cloud under 'live' and 'production' labels."
     }
+
+
+@router.post("/prompts/{prompt_key}/sync-cloud")
+async def sync_single_prompt_to_cloud(
+    prompt_key: str,
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Syncs a single prompt from PostgreSQL to Langfuse Cloud under 'live' and 'production' labels."""
+    from app.services.langfuse_prompt_service import langfuse_prompt_service
+    return await langfuse_prompt_service.sync_single_prompt_to_cloud(prompt_key=prompt_key, db=db)
 
 
 @router.get("/analytics/token-usage")
 async def get_token_usage_analytics(
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
+    current_user: User = Depends(get_current_user)
 ):
     """Returns token usage and cost analytics broken down by department, employee, and model."""
     from app.observability.langsmith_tracer import MODEL_PRICING
@@ -737,7 +875,7 @@ async def get_token_usage_analytics(
 
 @router.get("/observability/sessions")
 async def get_langfuse_sessions(
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
+    current_user: User = Depends(get_current_user)
 ):
     """Returns conversation session aggregates for the Langfuse Sessions tab."""
     from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
@@ -751,7 +889,7 @@ async def get_langfuse_sessions(
 
 @router.get("/observability/users")
 async def get_langfuse_users(
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
+    current_user: User = Depends(get_current_user)
 ):
     """Returns user profiles with spending & token aggregates for the Langfuse Users tab."""
     from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
@@ -765,7 +903,7 @@ async def get_langfuse_users(
 
 @router.get("/observability/alerts")
 async def get_langfuse_alerts(
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
+    current_user: User = Depends(get_current_user)
 ):
     """Returns configured alert rules and real-time alert events for the Langfuse Alerts tab."""
     from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
@@ -778,7 +916,7 @@ async def get_langfuse_alerts(
 
 @router.get("/observability/evaluators")
 async def get_langfuse_evaluators(
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
+    current_user: User = Depends(get_current_user)
 ):
     """Returns evaluator configurations and scoring criteria for the Langfuse Evaluators tab."""
     from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
@@ -790,7 +928,7 @@ async def get_langfuse_evaluators(
 
 @router.post("/observability/sync-all")
 async def sync_all_observability(
-    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
+    current_user: User = Depends(get_current_user)
 ):
     """One-click synchronization of Prompts, Golden Datasets, Evaluators, Users, and Sessions to Langfuse Cloud."""
     from app.services.dataset_sync_service import langfuse_dataset_service

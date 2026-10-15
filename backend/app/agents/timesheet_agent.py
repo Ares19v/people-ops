@@ -25,7 +25,7 @@ timesheet_adk_agent = Agent(
         "Specialist Timesheet & Time Tracking Agent. Responsible for fetching timesheet "
         "summaries, logging project hours, and enforcing daily/weekly overtime boundaries."
     ),
-    instruction=langfuse_prompt_service.get_prompt("timesheet-subagent"),
+    instruction=langfuse_prompt_service.get_prompt("timesheet-subagent", label="live"),
     tools=[
         get_timesheet_summary,
         log_work_hours,
@@ -41,7 +41,7 @@ class TimesheetAgent:
 
     @property
     def system_prompt(self) -> str:
-        return langfuse_prompt_service.get_prompt("timesheet-subagent", label="production")
+        return langfuse_prompt_service.get_prompt("timesheet-subagent", label="live")
 
     @property
     def SYSTEM_PROMPT(self) -> str:
@@ -52,8 +52,29 @@ class TimesheetAgent:
         msg_lower = message.lower()
         structured_action: Optional[StructuredAction] = None
 
+        # Check if employee asks about working/logging beyond statutory limits (e.g. 12 hours, >11 hours)
+        hours_mentioned = re.search(r"(\d+(\.\d+)?)\s*hours?", msg_lower)
+        num_hours = float(hours_mentioned.group(1)) if hours_mentioned else 0.0
+
+        if num_hours > 11.0 and any(w in msg_lower for w in ["log", "work", "worked", "yesterday", "can i", "permit"]):
+            reply = (
+                f"⚠️ Statutory Limit Violation Notice (Maharashtra Shops & Establishments Act, 2017 - Section 14):\n\n"
+                f"You cannot log {num_hours:g} hours for a single day. Under Section 14(2), no employee is permitted to work beyond a mandatory daily hard ceiling of **11 hours** (inclusive of standard work and overtime).\n\n"
+                f"• Statutory Daily Hard Ceiling: 11 hours maximum per day (Section 14(2))\n"
+                f"• Standard Working Limit: Up to 9 hours/day (Section 13)\n"
+                f"• Overtime Compensation: Hours between 9 and 11 hours qualify for statutory double wages at 2.0x (Section 14(1))\n"
+                f"• Statutory Prohibition: Working {num_hours:g} hours in a single day exceeds legal thresholds and cannot be approved.\n\n"
+                f"Please cap your daily log to a maximum of 11 hours, or split the extra hours across eligible working days."
+            )
+            return {
+                "response": reply,
+                "agent_routed": "TIMESHEET_SUBAGENT",
+                "citations": [],
+                "structured_action": None
+            }
+
         # Check if asking about overtime rules or statutory limits
-        if "overtime" in msg_lower:
+        if "overtime" in msg_lower and not ("log" in msg_lower and "hour" in msg_lower):
             reply = (
                 "Under the Maharashtra Shops and Establishments Act, 2017 (Section 13 & 14) and Company Working Hours Policy:\n\n"
                 "• Standard Hours: 8 hours/day, 40 hours/week\n"
@@ -63,13 +84,14 @@ class TimesheetAgent:
             )
             return {
                 "response": reply,
-                "agent_routed": "TIMESHEET_AGENT",
+                "agent_routed": "TIMESHEET_SUBAGENT",
                 "citations": [],
                 "structured_action": None
             }
 
-        # Check if requesting reports or summary
-        if "report" in msg_lower or "hours" in msg_lower or "summary" in msg_lower:
+        # Check if intent is to log hours (e.g. "log 4 hours on project X for task Y")
+        log_intent = any(w in msg_lower for w in ["log", "record", "enter", "track", "add"]) and "hour" in msg_lower
+        if not log_intent and any(w in msg_lower for w in ["report", "summary", "my hours", "show hours", "view timesheet"]):
             filters = TimesheetReportFilter(user_id=user.id if user.role == UserRole.EMPLOYEE else None)
             summary = await TimesheetService.get_report_summary(db, filters, user)
             
@@ -85,13 +107,10 @@ class TimesheetAgent:
             )
             return {
                 "response": reply,
-                "agent_routed": "TIMESHEET_AGENT",
+                "agent_routed": "TIMESHEET_SUBAGENT",
                 "citations": [],
                 "structured_action": None
             }
-
-        # Check if intent is to log hours (e.g. "log 4 hours on project X for task Y")
-        log_intent = any(w in msg_lower for w in ["log", "record", "enter", "track", "add"]) and "hour" in msg_lower
         if log_intent:
             # Extract hours
             hours_match = re.search(r"(\d+(\.\d+)?)\s*hours?", msg_lower)

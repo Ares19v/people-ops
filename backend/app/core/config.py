@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.5-flash"
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4o"
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "groq/llama-3.3-70b-versatile"
     MOCK_LLM_ENABLED: bool = True
     
     # NeMo Guardrails
@@ -83,6 +85,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=(
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), ".env"),
             os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env"),
             ".env",
         ),

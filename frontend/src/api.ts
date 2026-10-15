@@ -34,8 +34,8 @@ export const api = {
     localStorage.setItem('user_role', res.data.role);
     return res.data;
   },
-  mockLogin: async (role: UserRole) => {
-    const res = await apiClient.post<{ access_token: string; role: UserRole; full_name: string; permissions: string[] }>('/auth/mock-login', { role });
+  mockLogin: async (role: UserRole, email?: string) => {
+    const res = await apiClient.post<{ access_token: string; role: UserRole; full_name: string; permissions: string[] }>('/auth/mock-login', { role, email });
     localStorage.setItem('token', res.data.access_token);
     localStorage.setItem('user_role', res.data.role);
     return res.data;
@@ -50,6 +50,22 @@ export const api = {
   },
   getPrompts: async () => {
     const res = await apiClient.get('/agents/prompts');
+    return res.data;
+  },
+  getSinglePrompt: async (promptKey: string) => {
+    const res = await apiClient.get(`/agents/prompts/${promptKey}`);
+    return res.data;
+  },
+  syncPromptsToCloud: async () => {
+    const res = await apiClient.post('/agents/prompts/sync-cloud');
+    return res.data;
+  },
+  syncSinglePromptToCloud: async (promptKey: string) => {
+    const res = await apiClient.post(`/agents/prompts/${promptKey}/sync-cloud`);
+    return res.data;
+  },
+  updatePrompt: async (promptKey: string, template: string, label = 'live') => {
+    const res = await apiClient.put(`/agents/prompts/${promptKey}`, { template, label });
     return res.data;
   },
 
@@ -177,6 +193,10 @@ export const api = {
   },
   deleteSession: async (sessionId: string) => {
     const res = await apiClient.delete<{ status: string; session_id: string }>(`/agents/sessions/${sessionId}`);
+    return res.data;
+  },
+  purgeUserChatHistory: async () => {
+    const res = await apiClient.delete<{ status: string; purged_sessions_count: number }>('/agents/sessions/purge-history');
     return res.data;
   },
   getActiveMemoryWindow: async (sessionId?: string) => {

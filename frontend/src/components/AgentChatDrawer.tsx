@@ -555,6 +555,7 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({
   const [activeMemoryWindow, setActiveMemoryWindow] = useState<ActiveMemoryWindowResponse | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
+  const [isPurgingHistory, setIsPurgingHistory] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen && initialFullScreen) {
@@ -700,6 +701,23 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({
       loadMemoryWindow();
     } catch (err: any) {
       alert('Failed to delete session: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  const handlePurgeAllHistory = async () => {
+    if (!confirm('Are you sure you want to completely purge all your chat history from the database? Under the DPDP Act Right to Erasure, all your chat sessions, messages, and memory records will be permanently deleted.')) return;
+    setIsPurgingHistory(true);
+    try {
+      await api.purgeUserChatHistory();
+      setSessions([]);
+      setMessages([]);
+      const fresh = getNextUserSessionId(currentUser?.email, true);
+      setSessionId(fresh);
+      await loadMemoryWindow(fresh);
+    } catch (err: any) {
+      alert('Failed to purge chat history: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setIsPurgingHistory(false);
     }
   };
 
@@ -929,16 +947,16 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({
             <div
               className={`${
                 isFullScreen
-                  ? 'w-72 border-r border-slate-200 bg-slate-50/95 flex flex-col shrink-0 z-20'
-                  : 'absolute inset-y-0 left-0 w-full sm:w-80 bg-slate-50/98 z-30 border-r border-slate-200 shadow-2xl flex flex-col'
+                  ? 'w-72 border-r border-slate-200 bg-slate-50 flex flex-col shrink-0 z-20'
+                  : 'absolute inset-y-0 left-0 w-full sm:w-80 bg-slate-50 z-30 border-r border-slate-200 shadow-xl flex flex-col'
               }`}
             >
-              {/* History Header */}
-              <div className="p-3.5 border-b border-slate-200/80 flex items-center justify-between bg-white shrink-0">
+              {/* History Header - Formal Opaque Executive Styling */}
+              <div className="p-3.5 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
                 <div className="flex items-center gap-2">
-                  <History className="w-4 h-4 text-blue-600" />
-                  <h4 className="font-display font-semibold text-xs text-slate-800">Past Conversations</h4>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full font-mono">
+                  <History className="w-4 h-4 text-slate-700" />
+                  <h4 className="font-semibold text-xs text-slate-900 tracking-tight">Past Conversations</h4>
+                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-mono font-medium border border-slate-200">
                     {sessions.length}
                   </span>
                 </div>
@@ -946,14 +964,15 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({
                   <button
                     onClick={handleNewChat}
                     title="Start New Chat"
-                    className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                   {!isFullScreen && (
                     <button
                       onClick={() => setIsHistoryOpen(false)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                      title="Close Past Conversations"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -961,13 +980,13 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({
                 </div>
               </div>
 
-              {/* Sessions List */}
-              <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+              {/* Sessions List - Solid Opaque Background */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50">
                 {sessions.length === 0 ? (
-                  <div className="p-6 text-center text-slate-400 text-xs">
+                  <div className="p-6 text-center bg-white rounded-xl border border-slate-200/80 shadow-2xs my-2">
                     <MessageSquare className="w-8 h-8 mx-auto mb-2 text-slate-300 stroke-[1.5]" />
-                    <p className="font-medium text-slate-600">No past conversations</p>
-                    <p className="text-[11px] text-slate-400 mt-1">
+                    <p className="font-semibold text-xs text-slate-700">No past conversations</p>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
                       Your chats are saved and checkpointed automatically under your employee profile.
                     </p>
                   </div>
@@ -978,18 +997,23 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({
                       <div
                         key={sess.id}
                         onClick={() => handleSelectSession(sess.id)}
-                        className={`group relative p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                        className={`group relative p-3 rounded-xl border text-left cursor-pointer transition-all ${
                           isActive
-                            ? 'bg-blue-50/80 border-blue-200 shadow-2xs text-blue-900'
-                            : 'bg-white hover:bg-slate-100/80 border-slate-200/70 hover:border-slate-300 text-slate-700'
+                            ? 'bg-white border-blue-600 shadow-xs ring-1 ring-blue-600/15'
+                            : 'bg-white hover:bg-slate-100/70 border-slate-200 hover:border-slate-300 shadow-2xs'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-1.5">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <p className={`text-xs font-semibold truncate ${isActive ? 'text-blue-900' : 'text-slate-800'}`}>
-                              {sess.title || 'Conversation'}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400 font-mono">
+                            <div className="flex items-center gap-1.5">
+                              {isActive && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                              )}
+                              <p className={`text-xs font-semibold truncate ${isActive ? 'text-blue-900' : 'text-slate-800'}`}>
+                                {sess.title || 'Conversation'}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400 font-mono">
                               <span>{formatRelativeDate(sess.updated_at || sess.created_at)}</span>
                               <span>&bull;</span>
                               <span>{sess.message_count} msgs</span>
@@ -998,7 +1022,7 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({
                           <button
                             onClick={(e) => handleDeleteSession(sess.id, e)}
                             title="Delete Conversation"
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shrink-0 cursor-pointer"
+                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all shrink-0 cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1009,11 +1033,22 @@ export const AgentChatDrawer: React.FC<ChatDrawerProps> = ({
                 )}
               </div>
 
-              {/* Privacy Footer */}
-              <div className="p-3 bg-slate-100/90 border-t border-slate-200/80 text-[10px] text-slate-500 shrink-0">
-                <div className="flex items-center gap-1.5 text-slate-600 font-medium mb-0.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>DPDP Act Private Vault</span>
+              {/* Privacy Footer - Solid Opaque */}
+              <div className="p-3 bg-white border-t border-slate-200 text-[10px] text-slate-500 shrink-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-1.5 text-slate-700 font-medium">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>DPDP Act Private Vault</span>
+                  </div>
+                  <button
+                    onClick={handlePurgeAllHistory}
+                    disabled={isPurgingHistory || sessions.length === 0}
+                    title="Permanently erase all your chat history and memory from the database (DPDP Right to Erasure)"
+                    className="px-2 py-0.5 rounded text-[10px] font-medium text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-2.5 h-2.5 text-slate-400" />
+                    <span>{isPurgingHistory ? 'Purging...' : 'Purge'}</span>
+                  </button>
                 </div>
                 <p className="text-[10px] text-slate-400 leading-snug">
                   Strictly isolated to your account. No other employee or admin has access.

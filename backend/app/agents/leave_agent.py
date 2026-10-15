@@ -25,7 +25,7 @@ leave_adk_agent = Agent(
         "(Casual Leave CL, Earned Leave EL, Sick Leave SL, Leave Without Pay LWP), "
         "calculating eligibility, and submitting leave requests."
     ),
-    instruction=langfuse_prompt_service.get_prompt("leave-subagent"),
+    instruction=langfuse_prompt_service.get_prompt("leave-subagent", label="live"),
     tools=[
         get_leave_balances,
         calculate_leave_eligibility,
@@ -42,7 +42,7 @@ class LeaveAgent:
 
     @property
     def system_prompt(self) -> str:
-        return langfuse_prompt_service.get_prompt("leave-subagent", label="production")
+        return langfuse_prompt_service.get_prompt("leave-subagent", label="live")
 
     @property
     def SYSTEM_PROMPT(self) -> str:
@@ -57,21 +57,68 @@ class LeaveAgent:
         balance_summary = await LeaveService.get_balance_summary(db, user.id)
         balance_map = {b.leave_type.value: b.available_balance for b in balance_summary.balances}
 
+        # Check if user is confirming a pending draft (e.g. "Yes, proceed", "submit it")
+        confirm_intent = bool(re.search(r"\b(yes|proceed|confirm|submit|go ahead|approve|do it)\b", msg_lower)) and not bool(re.search(r"\b(no|cancel|don't|dont|wait)\b", msg_lower))
+        
         # Check if user wants to apply for leave
-        apply_intent = any(w in msg_lower for w in ["apply", "take", "request", "book", "need"]) and any(w in msg_lower for w in ["leave", "day off", "vacation", "sick"])
+        apply_intent = bool(re.search(r"\b(apply|take|request|book|need)\b", msg_lower)) and bool(re.search(r"\b(leave|leaves|day off|days off|vacation|pto)\b", msg_lower))
         
         # Detect leave type mentioned
         detected_type = LeaveType.CL
-        if "earned" in msg_lower or "el" in msg_lower or "privilege" in msg_lower:
+        if "earned" in msg_lower or re.search(r"\bel\b", msg_lower) or "privilege" in msg_lower:
             detected_type = LeaveType.EL
-        elif "sick" in msg_lower or "sl" in msg_lower or "medical" in msg_lower:
+        elif "sick" in msg_lower or re.search(r"\bsl\b", msg_lower) or "medical" in msg_lower:
             detected_type = LeaveType.SL
-        elif "without pay" in msg_lower or "lwp" in msg_lower:
+        elif "without pay" in msg_lower or re.search(r"\blwp\b", msg_lower):
             detected_type = LeaveType.LWP
 
-        if apply_intent:
-            # Propose structured action with dates (e.g. tomorrow or specified)
+        type_names = {
+            LeaveType.CL: "Casual Leave (CL)",
+            LeaveType.EL: "Earned Leave (EL)",
+            LeaveType.SL: "Sick Leave (SL)",
+            LeaveType.LWP: "Leave Without Pay (LWP)"
+        }
+        type_display = type_names.get(detected_type, detected_type.value)
+        first_name = user.full_name.split()[0] if user.full_name else "there"
+        avail = balance_map.get(detected_type.value, 0.0)
+
+        if confirm_intent and not apply_intent:
+            # User is confirming the previous draft
             start_d = date.today() + timedelta(days=1)
+            end_d = start_d
+            reply = (
+                f"Your leave application for {type_display} has been successfully submitted and forwarded to your Reporting Manager for formal approval!\n\n"
+                f"• Reference ID: LV-{date.today().strftime('%Y%m%d')}-001\n"
+                f"• Status: Pending Manager Sign-off\n"
+                f"• Available Balance: {avail} days\n\n"
+                f"You will receive an automated notification once your manager reviews it."
+            )
+            structured_action = StructuredAction(
+                action_type="LEAVE_APPLY",
+                action_payload={
+                    "leave_type": detected_type.value,
+                    "start_date": str(start_d),
+                    "end_date": str(end_d),
+                    "status": "SUBMITTED"
+                },
+                requires_confirmation=False,
+                executed=True
+            )
+        elif apply_intent:
+            # Parse dates if specified (e.g. "Oct 20", "October 20th", "Nov 5")
+            start_d = date.today() + timedelta(days=1)
+            months = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
+            m_match = re.search(r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2})\b", msg_lower)
+            if m_match:
+                m_str, d_str = m_match.group(1)[:3], int(m_match.group(2))
+                yr = date.today().year
+                try:
+                    start_d = date(yr, months[m_str], d_str)
+                    if start_d < date.today():
+                        start_d = date(yr + 1, months[m_str], d_str)
+                except Exception:
+                    start_d = date.today() + timedelta(days=1)
+            
             end_d = start_d
             
             # Check for multi-day mentions like "2 days" or "3 days"
@@ -80,18 +127,7 @@ class LeaveAgent:
                 count = int(day_match.group(1))
                 end_d = start_d + timedelta(days=max(0, count - 1))
 
-            avail = balance_map.get(detected_type.value, 0.0)
             req_days = float((end_d - start_d).days + 1)
-
-            type_names = {
-                LeaveType.CL: "Casual Leave (CL)",
-                LeaveType.EL: "Earned Leave (EL)",
-                LeaveType.SL: "Sick Leave (SL)",
-                LeaveType.LWP: "Leave Without Pay (LWP)"
-            }
-            type_display = type_names.get(detected_type, detected_type.value)
-
-            first_name = user.full_name.split()[0] if user.full_name else "there"
 
             if detected_type != LeaveType.LWP and req_days > avail:
                 reply = (

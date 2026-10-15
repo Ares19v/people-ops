@@ -20,7 +20,7 @@ policy_adk_agent = Agent(
         "Specialist Statutory Compliance & Policy Knowledge Graph Agent. Responsible for Indian labour laws "
         "(Maharashtra Shops & Establishments Act 2017, Karnataka 1961, Delhi 1954) and HR Handbook policies."
     ),
-    instruction=langfuse_prompt_service.get_prompt("policy-rag-subagent"),
+    instruction=langfuse_prompt_service.get_prompt("policy-rag-subagent", label="live"),
     tools=[
         query_company_policy,
         check_statutory_compliance,
@@ -36,7 +36,7 @@ class HRPolicyAgent:
 
     @property
     def system_prompt(self) -> str:
-        return langfuse_prompt_service.get_prompt("policy-rag-subagent", label="production")
+        return langfuse_prompt_service.get_prompt("policy-rag-subagent", label="live")
 
     @property
     def SYSTEM_PROMPT(self) -> str:

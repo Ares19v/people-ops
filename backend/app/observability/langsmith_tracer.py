@@ -41,6 +41,12 @@ MODEL_PRICING = {
     "gpt-4o-mini": {"prompt": 0.15, "completion": 0.60},
     "gpt-4o": {"prompt": 2.50, "completion": 10.00},
     "claude-3-5-sonnet": {"prompt": 3.00, "completion": 15.00},
+    "groq/llama-3.3-70b-versatile": {"prompt": 0.59, "completion": 0.79},
+    "llama-3.3-70b-versatile": {"prompt": 0.59, "completion": 0.79},
+    "groq/llama-3.1-8b-instant": {"prompt": 0.05, "completion": 0.08},
+    "llama-3.1-8b-instant": {"prompt": 0.05, "completion": 0.08},
+    "groq/openai/gpt-oss-120b": {"prompt": 0.60, "completion": 1.20},
+    "groq/openai/gpt-oss-20b": {"prompt": 0.20, "completion": 0.40},
     "default": {"prompt": 0.10, "completion": 0.40}
 }
 
@@ -156,9 +162,9 @@ class _LocalTraceObservation:
         self.output = None
         self.duration_ms = 0.0
 
-    def update(self, output: Optional[Any] = None, metadata: Optional[Dict[str, Any]] = None):
+    def update(self, output: Optional[Any] = None, metadata: Optional[Dict[str, Any]] = None, **kwargs):
         if output is not None:
-            self.output = str(output)[:300]
+            self.output = str(output)[:2000]
         if metadata:
             self.metadata.update(metadata)
 
@@ -301,7 +307,10 @@ class LangSmithTracer:
                     ) as obs:
                         yield obs
                         return
-            except Exception:
+            except (GeneratorExit, Exception) as langfuse_exc:
+                if isinstance(langfuse_exc, GeneratorExit):
+                    raise
+                # Only fallback if langfuse itself failed during setup before yielding
                 pass
 
         # Persistent local trace span fallback
@@ -314,7 +323,7 @@ class LangSmithTracer:
     def record_generation(
         self,
         name: str = "call_llm",
-        model: str = "gemini-2.5-flash",
+        model: str = "groq/llama-3.3-70b-versatile",
         input_text: str = "",
         output_text: str = "",
         prompt_tokens: int = 0,
@@ -333,7 +342,7 @@ class LangSmithTracer:
 
         if self._langfuse:
             try:
-                self._langfuse.start_observation(
+                obs = self._langfuse.start_observation(
                     name=name,
                     as_type="generation",
                     input=input_text[:500],
@@ -349,6 +358,8 @@ class LangSmithTracer:
                         "total": cost_usd
                     }
                 )
+                if hasattr(obs, "end"):
+                    obs.end()
             except Exception:
                 pass
 
@@ -483,30 +494,30 @@ class LangSmithTracer:
         total_latency_sec: float,
         total_cost_usd: float
     ) -> str:
-        """Renders the exact formatted ASCII/Unicode execution waterfall diagram requested."""
-        return f"""
-TOTAL ROUND-TRIP
-|
-Input
-|
-|-- Input Guardrails ----------- {int(input_guardrails_ms)} ms
-|
-|-- Orchestrator --------------- {int(orchestrator_ms)} ms
-|   |
-|   |-- Subagent --------------- {int(subagent_ms)} ms
-|   |
-|   \\-- Tool Selection --------- {int(tool_selection_ms)} ms
-|       |
-|       \\-- Tool Execution ----- {int(tool_execution_ms)} ms
-|
-\\-- Output Guardrails ---------- {int(output_guardrails_ms)} ms
-|
-v
-Final Response
-
-Total latency: {total_latency_sec:.2f} s
-Total cost: ${total_cost_usd:.5f}
-""".strip()
+        """Renders the exact formatted Unicode execution waterfall diagram requested."""
+        return (
+            "TOTAL ROUND-TRIP\n"
+            "                           │\n"
+            "Input\n"
+            "  │\n"
+            f"  ├── Input Guardrails ───────────── {int(input_guardrails_ms)} ms\n"
+            "  │\n"
+            f"  ├── Orchestrator ───────────────── {int(orchestrator_ms)} ms\n"
+            "  │       │\n"
+            f"  │       ├── Subagent ───────────── {int(subagent_ms)} ms\n"
+            "  │       │\n"
+            f"  │       └── Tool Selection ─────── {int(tool_selection_ms)} ms\n"
+            "  │               │\n"
+            f"  │               └── Tool Execution ─ {int(tool_execution_ms)} ms\n"
+            "  │\n"
+            f"  ├── Output Guardrails ──────────── {int(output_guardrails_ms)} ms\n"
+            "  │\n"
+            "  ▼\n"
+            "Final Response\n"
+            "\n"
+            f"Total latency: {total_latency_sec:.2f} s\n"
+            f"Total cost: ${total_cost_usd:.4f}"
+        )
 
 
 langsmith_tracer = LangSmithTracer()

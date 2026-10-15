@@ -7,12 +7,16 @@ For hybrid vector + BM25 chunk search, see `app.rag.hybrid_retriever`.
 """
 import asyncio
 import json
+import logging
 import os
+import re
 import threading
 import time
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
 from app.schemas.agent import CitationItem
+
+logger = logging.getLogger(__name__)
 
 try:
     from neo4j import AsyncGraphDatabase, GraphDatabase
@@ -71,29 +75,38 @@ class GraphRAGService:
         if not driver:
             return []
         try:
+            from app.rag.entity_extractor import graph_entity_extractor
+            entities = graph_entity_extractor.extract_entities_from_query(query)
+            terms = [e.raw_text.lower() for e in entities]
+            words = [w.lower() for w in re.sub(r'[^a-zA-Z0-9\s]', ' ', query).split() if len(w) >= 4]
+            search_terms = list(set(terms + words)) or [query.strip().lower()]
+
             with driver.session() as session:
                 cypher = """
+                UNWIND $terms AS term
                 MATCH (n)
                 WHERE (n:PolicyNode OR n:Section OR n:StatutoryAct)
                   AND (
-                    toLower(coalesce(n.title, '')) CONTAINS toLower($query) OR 
-                    toLower(coalesce(n.name, '')) CONTAINS toLower($query) OR 
-                    toLower(coalesce(n.provision, '')) CONTAINS toLower($query) OR 
-                    toLower(coalesce(n.content, '')) CONTAINS toLower($query)
+                    toLower(coalesce(n.title, '')) CONTAINS toLower(term) OR 
+                    toLower(coalesce(n.name, '')) CONTAINS toLower(term) OR 
+                    toLower(coalesce(n.provision, '')) CONTAINS toLower(term) OR 
+                    toLower(coalesce(n.description, '')) CONTAINS toLower(term) OR
+                    toLower(coalesce(n.code, '')) CONTAINS toLower(term)
                   )
                 OPTIONAL MATCH (n)-[r]->(target)
-                RETURN coalesce(n.title, n.name) AS title,
+                RETURN DISTINCT coalesce(n.title, n.name) AS title,
                        coalesce(n.content, n.provision, n.description) AS content,
                        coalesce(n.citation, n.section_number, n.code) AS section,
                        labels(n)[0] AS source,
                        type(r) AS relation,
                        coalesce(target.title, target.name) AS related_to,
-                       r.rule AS rule
+                       coalesce(r.rule, properties(r).rule) AS rule
                 LIMIT 5
                 """
-                result = session.run(cypher, query=query)
+                result = session.run(cypher, parameters={"terms": search_terms})
                 return [record.data() for record in result]
-        except Exception:
+        except Exception as e:
+            logger.error("Neo4j live query exception: %s", e, exc_info=True)
             return []
 
     async def search_policies(self, query: str, top_k: int = 3) -> Dict[str, Any]:
@@ -147,7 +160,19 @@ class GraphRAGService:
         if isinstance(neo4j_matched, Exception):
             neo4j_matched = []
 
-        # 5. Assemble Citations
+        # 5. Assemble Citations (Interleaving Live Neo4j Graph with Vector Passages)
+        # Live Neo4j Knowledge Graph facts
+        for nr in neo4j_matched:
+            rel_info = f" [{nr.get('relation')} -> {nr.get('related_to')}]" if nr.get('relation') else ""
+            rule_info = f" Rule: {nr.get('rule')}" if nr.get('rule') else ""
+            citations.append(CitationItem(
+                source_title=f"Neo4j Aura: {nr.get('source', 'StatutoryAct')}",
+                section=f"{nr.get('title', 'Knowledge Graph')}{rel_info}",
+                document_type="ENTERPRISE_GRAPH",
+                citation_text=f"{nr.get('content', '')}{rule_info}".strip() or f"{nr.get('title')}{rel_info}",
+                confidence_score=0.99
+            ))
+
         for p in retrieved_passages:
             citations.append(CitationItem(
                 source_title=p.citation,
@@ -155,16 +180,6 @@ class GraphRAGService:
                 document_type="STATUTORY_LAW" if "Section" in p.section or "Act" in p.citation else "COMPANY_POLICY",
                 citation_text=p.content,
                 confidence_score=round(min(0.99, max(0.85, p.rrf_score * 35)), 2)
-            ))
-
-        # Include any live Neo4j citations
-        for nr in neo4j_matched:
-            citations.append(CitationItem(
-                source_title=nr.get("source", "Neo4j Knowledge Graph"),
-                section=nr.get("section", "General"),
-                document_type="ENTERPRISE_GRAPH",
-                citation_text=nr.get("content", ""),
-                confidence_score=0.99
             ))
 
         # 6. Fallback local scan if neither vector nor graph matched
@@ -186,6 +201,11 @@ class GraphRAGService:
         if getattr(graph_res, 'synthesis', None) and (getattr(graph_res, 'statutory_mandates', None) or getattr(graph_res, 'health_entitlements', None)):
             context_parts.append(graph_res.synthesis)
 
+        for nr in neo4j_matched:
+            rel_info = f" -> {nr.get('relation')} -> {nr.get('related_to')}" if nr.get('relation') else ""
+            rule_info = f" (Rule: {nr.get('rule')})" if nr.get('rule') else ""
+            context_parts.append(f"• [NEO4J AURA GRAPH] {nr.get('source')} '{nr.get('title')}'{rel_info}{rule_info}:\n{nr.get('content') or ''}")
+
         for p in retrieved_passages:
             context_parts.append(f"• [{p.section}] ({p.citation}):\n{p.content}")
 
@@ -196,7 +216,7 @@ class GraphRAGService:
             requires_escalation = True
         else:
             summary_text = f"Synthesized analysis for '{query}':\n" + "\n".join(
-                [f"• {c.section}: {c.citation_text[:140]}..." for c in citations[:top_k]]
+                [f"• {c.section}: {c.citation_text[:140]}..." for c in citations[:max(top_k, 5)]]
             )
 
         result_payload = {
@@ -204,7 +224,7 @@ class GraphRAGService:
             "summary": summary_text,
             "answer": summary_text,
             "context": context_text,
-            "citations": citations[:top_k],
+            "citations": citations[:max(top_k, 5)],
             "requires_escalation": requires_escalation,
             "is_ambiguous": is_ambiguous,
             "legal_disclaimer": "Notice: Information provided is for internal policy guidance and statutory reference under the Maharashtra Shops & Establishments Act, 2017. It does not constitute formal legal advice."

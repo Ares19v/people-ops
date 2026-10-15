@@ -1,4 +1,5 @@
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +22,7 @@ from data.seed_data import seed_initial_data
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Create tables if not exist and seed initial demo data
+    watcher_task = None
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -29,12 +31,22 @@ async def lifespan(app: FastAPI):
         await initialize_database_views()
         from app.services.langfuse_prompt_service import langfuse_prompt_service
         from app.agents.adk_fleet import sync_agent_instructions
-        await langfuse_prompt_service.load_prompts_from_db()
+        # Agent prompts are strictly managed via Langfuse Cloud (not PostgreSQL)
+        await langfuse_prompt_service.load_prompts_from_langfuse()
         sync_agent_instructions()
+        # Launch real-time background watcher for Langfuse Cloud prompt edits & PostgreSQL auto-revert
+        watcher_task = asyncio.create_task(langfuse_prompt_service.start_background_watcher(interval_seconds=2.0))
     except Exception as e:
         print(f"Startup DB init notice: {e}")
     yield
     # Shutdown
+    if watcher_task:
+        try:
+            from app.services.langfuse_prompt_service import langfuse_prompt_service
+            langfuse_prompt_service.stop_background_watcher()
+            watcher_task.cancel()
+        except Exception:
+            pass
     await engine.dispose()
 
 app = FastAPI(

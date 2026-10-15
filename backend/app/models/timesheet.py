@@ -14,7 +14,7 @@ class TimesheetStatus(str, enum.Enum):
     REJECTED = "REJECTED"
 
 class Project(Base):
-    __tablename__ = "projects"
+    __tablename__ = "employee_projects"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(200), nullable=False)
@@ -30,7 +30,7 @@ class TimesheetEntry(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
-    project_id = Column(String(36), ForeignKey("projects.id"), nullable=False)
+    project_id = Column(String(36), ForeignKey("employee_projects.id"), nullable=False)
     task_name = Column(String(200), nullable=False)
     entry_date = Column(Date, nullable=False, index=True)
     hours = Column(Float, nullable=False)

@@ -31,13 +31,13 @@ from app.services.langfuse_prompt_service import langfuse_prompt_service
 # Prompts are fully migrated out of the codebase into Langfuse & decoupled registry.
 # Dynamic resolution with local cache fallback:
 def get_enterprise_system_prompt() -> str:
-    return langfuse_prompt_service.get_prompt("peopleops-enterprise-system", label="production")
+    return langfuse_prompt_service.get_prompt("policy-rag-subagent", label="live")
 
 def get_few_shot_statutory_examples() -> str:
-    return langfuse_prompt_service.get_prompt("peopleops-few-shot-examples", label="production")
+    return langfuse_prompt_service.get_prompt("leave-subagent", label="live")
 
 def get_root_orchestrator_prompt() -> str:
-    return langfuse_prompt_service.get_prompt("peopleops-root-orchestrator", label="production")
+    return langfuse_prompt_service.get_prompt("peopleops-root-orchestrator", label="live")
 
 # Dynamic property aliases for backward compatibility
 ENTERPRISE_SYSTEM_PROMPT = get_enterprise_system_prompt()
