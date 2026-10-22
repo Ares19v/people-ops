@@ -20,7 +20,7 @@ if %ERRORLEVEL% EQU 0 (
 )
 
 echo.
-echo Tunneling Vite Frontend on port 5173 (which reverse-proxies FastAPI Backend on port 8000)...
+echo Tunneling Vite Frontend on port 5173 (which reverse-proxies FastAPI Backend on port 38290)...
 echo.
 "%NGROK_EXEC%" http 5173
 

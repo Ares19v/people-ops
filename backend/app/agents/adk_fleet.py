@@ -50,10 +50,42 @@ from app.agents.health_agent import health_adk_agent as health_agent
 from app.agents.policy_agent import policy_adk_agent as policy_agent
 from app.agents.zoho_agent import zoho_adk_agent as zoho_agent
 from app.agents.orchestrator import hr_root_orchestrator
+from app.core import directory
+
+# Patch Google ADK telemetry to prevent 'TypeError: Object of type bytes is not JSON serializable'
+try:
+    import google.adk.telemetry as _adk_tel
+    _orig_trace_call_llm = _adk_tel.trace_call_llm
+    def _safe_trace_call_llm(invocation_context, event_id, llm_request, llm_response):
+        try:
+            _orig_trace_call_llm(invocation_context, event_id, llm_request, llm_response)
+        except TypeError as exc:
+            # ADK fails to JSON-encode bytes payloads (e.g. inline file parts); tracing must not break the turn.
+            logger.debug("Skipped ADK LLM span attributes: %s", exc)
+    _adk_tel.trace_call_llm = _safe_trace_call_llm
+    import google.adk.flows.llm_flows.base_llm_flow as _base_flow
+    _base_flow.trace_call_llm = _safe_trace_call_llm
+except Exception:
+    logger.debug("Suppressed non-fatal error", exc_info=True)
+
+
+_root_instruction_override: Optional[str] = None
+
+
+def set_root_instruction_override(instruction: Optional[str]):
+    """Allows experiment benchmarks to evaluate a specific prompt version."""
+    global _root_instruction_override
+    _root_instruction_override = instruction
+    if hr_root_orchestrator:
+        if instruction:
+            hr_root_orchestrator.instruction = instruction
+        else:
+            hr_root_orchestrator.instruction = langfuse_prompt_service.get_prompt("peopleops-root-orchestrator", label="live")
 
 
 def refresh_adk_fleet_models(model_override: Optional[str] = None):
     """Updates the LLM model instance on all ADK agents in the fleet."""
+    global _hr_runner
     new_model = get_llm_model(model_override=model_override)
     for agent_obj in (
         hr_root_orchestrator,
@@ -67,25 +99,40 @@ def refresh_adk_fleet_models(model_override: Optional[str] = None):
             agent_obj.model = new_model
         except Exception as exc:
             logger.warning("Failed to update model on agent %s: %s", getattr(agent_obj, "name", "?"), exc)
+    # Invalidate cached runner so new queries use the updated model
+    _hr_runner = None
 
 
 def sync_agent_instructions():
-    """Dynamically syncs all agent instructions from Langfuse at runtime strictly using the 'live' label."""
+    """Dynamically syncs all agent instructions from Langfuse at runtime strictly using the 'live' label unless overridden."""
     leave_agent.instruction = langfuse_prompt_service.get_prompt("leave-subagent", label="live")
     timesheet_agent.instruction = langfuse_prompt_service.get_prompt("timesheet-subagent", label="live")
     health_agent.instruction = langfuse_prompt_service.get_prompt("health-subagent", label="live")
     policy_agent.instruction = langfuse_prompt_service.get_prompt("policy-rag-subagent", label="live")
     zoho_agent.instruction = langfuse_prompt_service.get_prompt("zoho-subagent", label="live")
-    hr_root_orchestrator.instruction = langfuse_prompt_service.get_prompt("peopleops-root-orchestrator", label="live")
+    if _root_instruction_override:
+        hr_root_orchestrator.instruction = _root_instruction_override
+    else:
+        hr_root_orchestrator.instruction = langfuse_prompt_service.get_prompt("peopleops-root-orchestrator", label="live")
 
 
 # ── Runner Factory & Execution ────────────────────────────────────────────────
 
+def build_session_service():
+    """Database-backed ADK sessions when ADK_SESSION_DB_URL is set, otherwise in-memory."""
+    if settings.ADK_SESSION_DB_URL:
+        try:
+            from google.adk.sessions import DatabaseSessionService
+            return DatabaseSessionService(db_url=settings.ADK_SESSION_DB_URL)
+        except Exception as exc:
+            logger.warning("ADK DatabaseSessionService unavailable (%s); falling back to in-memory sessions", exc)
+    return InMemorySessionService()
+
+
 def create_hr_runner(session_service: Optional[InMemorySessionService] = None) -> Runner:
     """Create and return an ADK Runner wired to the root HR orchestrator."""
     sync_agent_instructions()
-    refresh_adk_fleet_models()
-    svc = session_service or InMemorySessionService()
+    svc = session_service or build_session_service()
     return Runner(
         agent=hr_root_orchestrator,
         app_name=settings.APP_NAME,
@@ -95,6 +142,12 @@ def create_hr_runner(session_service: Optional[InMemorySessionService] = None) -
 
 # Global singleton runner
 _hr_runner: Optional[Runner] = None
+
+
+def reset_default_hr_runner():
+    """Reset cached singleton runner."""
+    global _hr_runner
+    _hr_runner = None
 
 
 def get_default_hr_runner() -> Runner:
@@ -127,16 +180,9 @@ async def run_hr_query(
     start = time.monotonic()
     alog.agent_start(session_id=session_id, user_id=user_id, message=message)
 
-    EMPLOYEE_NAME_MAP = {
-        "EMP-001": "Devansh Tyagi",
-        "EMP-002": "Vikram Malhotra",
-        "EMP-003": "Priya Patel",
-        "EMP-004": "Rahul Sharma",
-        "EMP-005": "Sneha Kulkarni",
-    }
     resolved_name = user_name
     if not resolved_name and user_id:
-        resolved_name = EMPLOYEE_NAME_MAP.get(user_id.upper().strip())
+        resolved_name = directory.name_for(user_id)
     first_name = resolved_name.split()[0] if resolved_name and " " in resolved_name else (resolved_name or "there")
     user_header = f"[Active Employee: {resolved_name} (ID: {user_id}) - Address as {first_name}, NEVER call by ID code]" if resolved_name else f"[Active Employee ID: {user_id}]"
 

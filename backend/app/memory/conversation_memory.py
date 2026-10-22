@@ -6,6 +6,7 @@ Features persistent snapshot backing, automatic entity extraction, episodic sear
 and PostgreSQL database checkpointing with strict per-user privacy isolation.
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
@@ -16,8 +17,11 @@ import time
 from typing import Any, Dict, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, func, and_, or_
+from app.core import directory
 from app.core.security import mask_all_pii
 from app.models.chat_session import ChatSession, ChatTurn, ConversationSummary, SessionSummary
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -58,7 +62,7 @@ class ConversationMemoryManager:
         self._max_turns = max_turns_per_session
         self._ttl_seconds = ttl_seconds
         self._summary_threshold = summary_threshold
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._persistence_file = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
             "data",
@@ -79,25 +83,31 @@ class ConversationMemoryManager:
                         self._entities = data.get("entities", {})
                         self._summaries = data.get("summaries", {})
             except Exception as e:
-                print(f"Notice: Failed to load conversation memory from disk: {e}")
+                logger.warning("Failed to load conversation memory from disk: %s", e)
 
     def _save_to_disk(self):
-        """Asynchronously or synchronously flushes active sessions to disk."""
+        """Flushes active sessions to disk (snapshot under the lock, atomic replace on disk).
+
+        This file is a warm-restart cache only; PostgreSQL (`persist_turn_db`) is the system of record.
+        """
         try:
             os.makedirs(os.path.dirname(self._persistence_file), exist_ok=True)
-            export_data = {
-                "history": {
-                    sid: [t.to_dict() for t in turns]
-                    for sid, turns in self._history.items()
-                },
-                "entities": self._entities,
-                "summaries": self._summaries,
-                "saved_at": time.time()
-            }
-            with open(self._persistence_file, "w", encoding="utf-8") as f:
-                json.dump(export_data, f, indent=2)
+            with self._lock:
+                payload = json.dumps({
+                    "history": {
+                        sid: [t.to_dict() for t in turns]
+                        for sid, turns in self._history.items()
+                    },
+                    "entities": self._entities,
+                    "summaries": self._summaries,
+                    "saved_at": time.time()
+                })
+            tmp_path = f"{self._persistence_file}.{os.getpid()}.tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(payload)
+            os.replace(tmp_path, self._persistence_file)
         except Exception as e:
-            print(f"Notice: Failed to persist conversation memory: {e}")
+            logger.warning("Failed to persist conversation memory: %s", e)
 
     def add_turn(self, session_id: str, role: str, content: str, metadata: Optional[Dict[str, Any]] = None):
         """Appends a new turn to session history, ensuring zero raw PII storage and auto-updating entity states."""
@@ -220,16 +230,9 @@ class ConversationMemoryManager:
 
         formatted_lines = []
 
-        EMPLOYEE_NAME_MAP = {
-            "EMP-001": "Devansh Tyagi",
-            "EMP-002": "Vikram Malhotra",
-            "EMP-003": "Priya Patel",
-            "EMP-004": "Rahul Sharma",
-            "EMP-005": "Sneha Kulkarni",
-        }
         resolved_name = user_name
         if not resolved_name and user_id:
-            resolved_name = EMPLOYEE_NAME_MAP.get(user_id.upper().strip())
+            resolved_name = directory.name_for(user_id)
         if not resolved_name and user_id:
             resolved_name = user_id
 
@@ -362,7 +365,7 @@ class ConversationMemoryManager:
                 for s in ordered
             ]
         except Exception as e:
-            print(f"Notice: Failed to fetch sliding window summaries for user {user_id}: {e}")
+            logger.warning(f"Notice: Failed to fetch sliding window summaries for user {user_id}: {e}")
             return []
 
     async def recall_relevant_past_turns(
@@ -489,7 +492,7 @@ class ConversationMemoryManager:
             matches.sort(key=lambda m: m["score"], reverse=True)
             return matches[:max(limit, 6)]
         except Exception as e:
-            print(f"Notice: Failed to recall past turns: {e}")
+            logger.warning(f"Notice: Failed to recall past turns: {e}")
             return []
 
     async def generate_and_save_session_summary(
@@ -556,7 +559,7 @@ class ConversationMemoryManager:
                 if llm_sum and not llm_sum.startswith("[MOCK SUMMARY]") and len(llm_sum) > 20:
                     summary_text = llm_sum.strip()
             except Exception as sum_exc:
-                print(f"Notice: LLM summary generation fallback: {sum_exc}")
+                logger.warning(f"Notice: LLM summary generation fallback: {sum_exc}")
 
             # 4. Fallback intelligent heuristic if LLM unavailable
             if not summary_text:
@@ -633,7 +636,7 @@ class ConversationMemoryManager:
             }
         except Exception as e:
             await db.rollback()
-            print(f"Notice: Failed to generate and save session summary: {e}")
+            logger.warning(f"Notice: Failed to generate and save session summary: {e}")
             return None
 
     async def persist_turn_db(
@@ -703,7 +706,7 @@ class ConversationMemoryManager:
 
         except Exception as e:
             await db.rollback()
-            print(f"Notice: Database checkpointing non-fatal exception: {e}")
+            logger.warning(f"Notice: Database checkpointing non-fatal exception: {e}")
 
         return MemoryTurn(role=role, content=mask_all_pii(content), metadata=metadata or {})
 
@@ -745,7 +748,7 @@ class ConversationMemoryManager:
                 self._save_to_disk()
             return True
         except Exception as e:
-            print(f"Notice: Failed to load session from DB: {e}")
+            logger.warning(f"Notice: Failed to load session from DB: {e}")
             return False
 
     async def clear_session_async(self, session_id: str, db: Optional[AsyncSession] = None):
@@ -759,12 +762,15 @@ class ConversationMemoryManager:
 
         if db:
             try:
+                # Explicit child deletes: SQLite does not enforce ON DELETE CASCADE.
+                await db.execute(delete(ChatTurn).where(ChatTurn.session_id == session_id))
+                await db.execute(delete(ConversationSummary).where(ConversationSummary.session_id == session_id))
                 stmt = delete(ChatSession).filter(ChatSession.id == session_id)
                 await db.execute(stmt)
                 await db.commit()
             except Exception as e:
                 await db.rollback()
-                print(f"Notice: Failed to clear session from DB: {e}")
+                logger.warning(f"Notice: Failed to clear session from DB: {e}")
 
     async def get_user_sessions_db(self, db: AsyncSession, user_id: str, limit: int = 30) -> List[Dict[str, Any]]:
         """Returns all past chat sessions for a specific user from PostgreSQL.
@@ -813,7 +819,7 @@ class ConversationMemoryManager:
                 })
             return results
         except Exception as e:
-            print(f"Notice: Failed to query user sessions from DB: {e}")
+            logger.warning(f"Notice: Failed to query user sessions from DB: {e}")
             return []
 
     async def delete_user_session_db(self, db: AsyncSession, session_id: str, user_id: str) -> bool:
@@ -847,12 +853,12 @@ class ConversationMemoryManager:
                     app_name=runner.app_name, user_id=user_id, session_id=session_id
                 )
             except Exception:
-                pass
+                logger.debug("Suppressed non-fatal error", exc_info=True)
 
             return True
         except Exception as e:
             await db.rollback()
-            print(f"Notice: Failed to delete user session {session_id}: {e}")
+            logger.warning(f"Notice: Failed to delete user session {session_id}: {e}")
             return False
 
     async def purge_user_chat_history_db(self, db: AsyncSession, user_id: str, user_email: Optional[str] = None) -> Dict[str, Any]:
@@ -931,9 +937,9 @@ class ConversationMemoryManager:
                             app_name=runner.app_name, user_id=user_id, session_id=sid
                         )
                     except Exception:
-                        pass
+                        logger.debug("Suppressed non-fatal error", exc_info=True)
             except Exception:
-                pass
+                logger.debug("Suppressed non-fatal error", exc_info=True)
 
             return {
                 "status": "PURGED",
@@ -943,7 +949,7 @@ class ConversationMemoryManager:
             }
         except Exception as e:
             await db.rollback()
-            print(f"Notice: Failed to purge user chat history: {e}")
+            logger.warning(f"Notice: Failed to purge user chat history: {e}")
             raise
 
     def _cleanup_expired_sessions(self):

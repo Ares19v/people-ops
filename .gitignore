@@ -44,3 +44,6 @@ backend/data/token_vault/
 backend/data/traces/
 graphify-out/
 chat context/
+
+# Runtime conversation memory (rewritten on every chat turn)
+backend/data/conversation_sessions.json

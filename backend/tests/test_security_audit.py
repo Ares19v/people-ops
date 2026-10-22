@@ -10,10 +10,10 @@ Verifies patches for:
 """
 
 import sys
-import sys
 import pytest
 from httpx import AsyncClient, ASGITransport
 from app.main import app
+from app.core.config import settings
 
 @pytest.mark.asyncio
 async def test_security_audit():
@@ -54,7 +54,7 @@ async def test_security_audit():
         res_wh_auth = await client.post(
             "/api/v1/agents/prompts/webhook",
             json={"event": "prompt.updated", "prompt_name": "leave-subagent"},
-            headers={"X-Webhook-Secret": "peopleops_webhook_secret_2026"}
+            headers={"X-Webhook-Secret": settings.LANGFUSE_WEBHOOK_SECRET}
         )
         t2_auth_pass = (res_wh_auth.status_code == 200)
         test_results.append(("Authenticated Webhook Acceptance (With Secret)", t2_auth_pass, f"HTTP {res_wh_auth.status_code}"))

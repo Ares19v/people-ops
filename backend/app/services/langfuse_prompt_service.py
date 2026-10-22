@@ -7,6 +7,7 @@ Tier 3: Langfuse Cloud Registry - Remote prompt engineering sandbox & A/B testin
 Tier 4: Local JSON Registry (`data/prompts_registry.json`) - Zero-network air-gapped fallback
 """
 
+import logging
 from dataclasses import dataclass
 import json
 import os
@@ -17,7 +18,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.observability.langfuse_client import get_langfuse
 from app.core.database import db_session
+
+logger = logging.getLogger(__name__)
 
 try:
     from langfuse import Langfuse
@@ -38,6 +42,7 @@ class ManagedPrompt:
     label: str
     source: str  # "database", "langfuse_live", or "local_cache"
     fetched_at: float
+    client: Optional[Any] = None  # Langfuse prompt client when fetched from Langfuse
 
 
 class LangfusePromptService:
@@ -56,15 +61,7 @@ class LangfusePromptService:
         self._load_local_registry()
 
     def _init_client(self):
-        if LANGFUSE_AVAILABLE and settings.LANGFUSE_PUBLIC_KEY and settings.LANGFUSE_SECRET_KEY:
-            try:
-                self._langfuse_client = Langfuse(
-                    public_key=settings.LANGFUSE_PUBLIC_KEY,
-                    secret_key=settings.LANGFUSE_SECRET_KEY,
-                    host=settings.LANGFUSE_BASE_URL or settings.LANGFUSE_HOST,
-                )
-            except Exception:
-                self._langfuse_client = None
+        self._langfuse_client = get_langfuse()
 
     def _load_local_registry(self):
         """Loads prompt templates decoupled from codebase into local memory."""
@@ -84,7 +81,7 @@ class LangfusePromptService:
                                     fetched_at=time.time(),
                                 )
             except Exception as e:
-                print(f"Notice: Failed to load local prompts registry: {e}")
+                logger.warning(f"Notice: Failed to load local prompts registry: {e}")
 
     async def seed_db_from_registry(self, db: Optional[AsyncSession] = None) -> int:
         """Seeds the agent_prompts table from local registry if the database table is empty."""
@@ -118,7 +115,7 @@ class LangfusePromptService:
                         await session.commit()
                 except Exception as e:
                     await session.rollback()
-                    print(f"Notice: Failed to seed prompts to DB: {e}")
+                    logger.warning(f"Notice: Failed to seed prompts to DB: {e}")
             return count
 
         if db:
@@ -160,17 +157,17 @@ class LangfusePromptService:
                             )
                         results[key] = f"v{getattr(lf_prompt, 'version', 'latest')}"
                 except Exception as e:
-                    print(f"Notice: Failed to load '{key}' from Langfuse Cloud: {e}")
+                    logger.warning(f"Notice: Failed to load '{key}' from Langfuse Cloud: {e}")
 
         # Ensure local registry fallback for any missing key
         self._load_local_registry()
-        print(f"[Langfuse-PromptService] Initialized agent prompts from Langfuse Cloud: {results}")
+        logger.info(f"[Langfuse-PromptService] Initialized agent prompts from Langfuse Cloud: {results}")
 
         # Self-healing: Revert any modified or drifted PostgreSQL rows to match Langfuse Cloud
         try:
             await self.reconcile_db_with_langfuse()
         except Exception as e:
-            print(f"Notice: Initial DB reconcile with Langfuse: {e}")
+            logger.warning(f"Notice: Initial DB reconcile with Langfuse: {e}")
 
         return results
 
@@ -216,7 +213,7 @@ class LangfusePromptService:
 
             await session.commit()
             await session.refresh(record)
-            print(f"[DB-Audit] Prompt '{prompt_key}' saved to database for historical audit. Active agent prompts remain managed strictly via Langfuse Cloud.")
+            logger.info(f"[DB-Audit] Prompt '{prompt_key}' saved to database for historical audit. Active agent prompts remain managed strictly via Langfuse Cloud.")
             return record.to_dict()
 
         if db:
@@ -225,57 +222,70 @@ class LangfusePromptService:
             async with db_session() as session:
                 return await _save(session)
 
+    def _render(self, template: str) -> str:
+        return (
+            template
+            .replace("{{ organization_name }}", settings.ORGANIZATION_NAME)
+            .replace("{{organization_name}}", settings.ORGANIZATION_NAME)
+        )
+
     def get_prompt(self, prompt_name: str, label: str = "live", max_age_seconds: int = 15) -> str:
-        """Retrieves prompt template checking memory cache (from Langfuse Cloud), then Langfuse Cloud live, then local registry fallback.
-        PostgreSQL database is NOT used for agent prompts (Langfuse Cloud is the sole authority).
+        """Retrieves a prompt template: fresh memory cache, then Langfuse Cloud, then the local registry.
+
+        Langfuse is the authority for agent prompts. If it is unreachable, the SDK serves its own cached
+        copy or the local-registry fallback passed below, so a Langfuse outage never breaks the agents.
         """
         now = time.time()
 
-        # 1. Check memory cache first (only valid if sourced from Langfuse Cloud and within TTL)
+        # 1. Fresh copy fetched from Langfuse within the TTL
         with self._lock:
             cached = self._cache.get(prompt_name)
             if cached and cached.source == "langfuse_live" and (now - cached.fetched_at < max_age_seconds):
-                return (
-                    cached.template
-                    .replace("{{ organization_name }}", settings.ORGANIZATION_NAME)
-                    .replace("{{organization_name}}", settings.ORGANIZATION_NAME)
-                )
+                return self._render(cached.template)
+            local_template = cached.template if cached else None
 
-        # 2. Try live Langfuse fetch if client configured
+        # 2. Live Langfuse fetch (SDK handles caching, retries and the fallback template)
         if self._langfuse_client:
             try:
-                lf_prompt = self._langfuse_client.get_prompt(name=prompt_name, label=label)
+                kwargs: Dict[str, Any] = {
+                    "cache_ttl_seconds": max_age_seconds,
+                    "fetch_timeout_seconds": 3,
+                    "max_retries": 1,
+                }
+                if local_template:
+                    kwargs["fallback"] = local_template
+                lf_prompt = self._langfuse_client.get_prompt(name=prompt_name, label=label, **kwargs)
                 if lf_prompt and hasattr(lf_prompt, "prompt"):
+                    from_langfuse = not getattr(lf_prompt, "is_fallback", False)
                     with self._lock:
                         self._cache[prompt_name] = ManagedPrompt(
                             name=prompt_name,
                             version=str(getattr(lf_prompt, "version", "latest")),
                             template=lf_prompt.prompt,
                             label=label,
-                            source="langfuse_live",
+                            source="langfuse_live" if from_langfuse else "local_cache",
                             fetched_at=now,
+                            client=lf_prompt if from_langfuse else None,
                         )
-                    return (
-                        lf_prompt.prompt
-                        .replace("{{ organization_name }}", settings.ORGANIZATION_NAME)
-                        .replace("{{organization_name}}", settings.ORGANIZATION_NAME)
-                    )
-            except Exception:
-                pass  # Fall back to cached / local registry seamlessly
+                    return self._render(lf_prompt.prompt)
+            except Exception as exc:
+                logger.warning("Langfuse prompt '%s' (label=%s) unavailable, using cached/local copy: %s", prompt_name, label, exc)
 
-        # 3. Return cached / fallback template from local registry
+        # 3. Cached / local registry template
         with self._lock:
             if prompt_name in self._cache:
-                raw = self._cache[prompt_name].template
-                return (
-                    raw
-                    .replace("{{ organization_name }}", settings.ORGANIZATION_NAME)
-                    .replace("{{organization_name}}", settings.ORGANIZATION_NAME)
-                )
+                return self._render(self._cache[prompt_name].template)
 
         return f"System Prompt [{prompt_name}] template missing."
 
-        return f"System Prompt [{prompt_name}] template missing."
+    def get_prompt_client(self, prompt_name: str) -> Optional[Any]:
+        """Langfuse prompt client last fetched for `prompt_name` (None if served locally).
+
+        Pass it to `langsmith_tracer.record_generation(prompt=...)` to link generations to a prompt version.
+        """
+        with self._lock:
+            cached = self._cache.get(prompt_name)
+            return cached.client if cached else None
 
     def compile_prompt(self, prompt_name: str, variables: Optional[Dict[str, Any]] = None, label: str = "live") -> str:
         """Gets prompt and performs variable interpolation (e.g. {{variable}})."""
@@ -286,34 +296,9 @@ class LangfusePromptService:
         return template
 
     def verify_hmac_signature(self, raw_body: bytes, signature_header: Optional[str]) -> bool:
-        """Verifies cryptographic HMAC-SHA256 signature for inbound Langfuse/CMS webhooks."""
-        import hmac
-        import hashlib
-
-        valid_secrets = [
-            getattr(settings, "LANGFUSE_WEBHOOK_SECRET", None),
-            "peopleops_webhook_secret_2026",
-            "dev_langfuse_webhook_secret_key"
-        ]
-        valid_secrets = [s for s in valid_secrets if s]
-        if not signature_header:
-            return False
-
-        # Support formats: "sha256=<hex>" or plain "<hex>" or Bearer token
-        sig = signature_header.strip()
-        if sig.startswith("sha256="):
-            sig = sig[7:]
-        elif sig.startswith("Bearer "):
-            sig = sig[7:]
-
-        for sec in valid_secrets:
-            if hmac.compare_digest(sig, sec):
-                return True
-            expected_hash = hmac.new(sec.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-            if hmac.compare_digest(sig.lower(), expected_hash.lower()):
-                return True
-
-        return False
+        """Verifies a webhook credential: Langfuse `t=..,v1=..` signature, shared secret, or body HMAC."""
+        from app.services.webhook_auth import verify_webhook_credentials
+        return verify_webhook_credentials(raw_body, [signature_header])
 
     def is_live_label(self, label: Optional[str]) -> bool:
         """Filters labels to strictly allow 'live' and skip 'production', 'v1-v5', 'latest', 'dev'."""
@@ -338,6 +323,32 @@ class LangfusePromptService:
             "event": event_payload.get("event", "prompt.updated")
         }
 
+    @staticmethod
+    def parse_webhook_event(payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalise a webhook body.
+
+        Langfuse sends {"type": "prompt-version", "action": created|updated|deleted,
+        "prompt": {"name", "version", "labels", "prompt", ...}}. The older flat shape
+        ({"prompt_name", "label", "template"} / {"data": {...}}) is still understood.
+        """
+        prompt_obj = payload.get("prompt") if isinstance(payload.get("prompt"), dict) else {}
+        data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+        name = prompt_obj.get("name") or payload.get("prompt_name") or data.get("name") or payload.get("name")
+        labels = prompt_obj.get("labels")
+        if labels is None:
+            single = payload.get("label") or data.get("label")
+            labels = [single] if single else (data.get("labels") or [])
+        template = prompt_obj.get("prompt") or payload.get("template") or data.get("prompt") or data.get("template")
+        return {
+            "event": payload.get("type") or payload.get("event") or "prompt.updated",
+            "action": payload.get("action") or "updated",
+            "prompt_name": name,
+            "version": prompt_obj.get("version") or data.get("version"),
+            "labels": [str(l) for l in labels],
+            "template": template if isinstance(template, str) else None,
+            "langfuse_format": bool(prompt_obj),
+        }
+
     async def handle_webhook_event_async(
         self,
         event_payload: Dict[str, Any],
@@ -345,68 +356,71 @@ class LangfusePromptService:
         signature: Optional[str] = None,
         db: Optional[AsyncSession] = None
     ) -> Dict[str, Any]:
-        """Always-On Webhook Pipeline:
-        1. Verifies HMAC signature
-        2. Skips labels: v1-v5, latest, dev
-        3. Upserts production / live labels only into PostgreSQL
-        4. Hot-reloads memory cache and ADK fleet instructions
+        """Prompt webhook pipeline (the caller has already authenticated the request):
+        1. Ignore events that do not concern the 'live' label
+        2. Pull the new live version from Langfuse (or take the template from the payload)
+        3. Hot-reload the ADK fleet so the next turn uses it
+        4. Record an audit row in PostgreSQL (history only; Langfuse stays the authority)
         """
-        # 1. HMAC verification if signature provided
-        if raw_body and signature:
-            if not self.verify_hmac_signature(raw_body, signature):
-                return {"status": "unauthorized", "error": "Invalid HMAC signature"}
+        if raw_body and signature and not self.verify_hmac_signature(raw_body, signature):
+            return {"status": "unauthorized", "error": "Invalid webhook signature"}
 
-        event_type = event_payload.get("event") or event_payload.get("type", "prompt.updated")
-        data = event_payload.get("data", {})
-        prompt_name = event_payload.get("prompt_name") or data.get("name") or event_payload.get("name")
-        label = event_payload.get("label") or data.get("label") or (data.get("labels", ["live"])[0] if data.get("labels") else "live")
-        template = event_payload.get("template") or data.get("prompt") or data.get("template")
+        event = self.parse_webhook_event(event_payload)
+        prompt_name, labels, template = event["prompt_name"], event["labels"], event["template"]
+        base = {"event": event["event"], "action": event["action"], "prompt_name": prompt_name, "timestamp": time.time()}
 
-        # 2. Label Filtering (Strictly require 'live', skip 'production', 'dev', 'latest')
-        if not self.is_live_label(label):
-            return {
-                "status": "skipped",
-                "reason": f"Skipped non-live label '{label}'. Only prompts tagged 'live' trigger PostgreSQL upserts and fleet reloading.",
-                "prompt_name": prompt_name,
-                "label": label,
-                "event": event_type
-            }
+        # 1. Only changes to the live label matter. With no label information at all, assume live.
+        concerns_live = (not labels) or any(self.is_live_label(l) for l in labels)
+        if not concerns_live:
+            return {**base, "status": "skipped", "label": labels[0] if labels else None,
+                    "reason": f"Skipped labels {labels}: only prompts tagged 'live' trigger a reload."}
 
-        # 3. Fetch template if not passed directly in webhook payload
-        if not template and prompt_name and self._langfuse_client:
-            try:
-                lf_p = self._langfuse_client.get_prompt(name=prompt_name, label=label)
-                if lf_p and hasattr(lf_p, "prompt"):
-                    template = lf_p.prompt
-            except Exception as e:
-                print(f"Notice: Failed to fetch live prompt from Langfuse client: {e}")
+        # 2./3. Refresh the cache and the agents
+        if event["action"] == "deleted" and prompt_name:
+            with self._lock:
+                self._cache.pop(prompt_name, None)
+            self._load_local_registry()
+            self._reload_fleet()
+            return {**base, "status": "invalidated", "label": "live"}
 
-        # 4. Upsert to PostgreSQL Database Table (agent_prompts)
-        db_record = None
-        if prompt_name and template:
-            db_record = await self.save_prompt_to_db(
-                prompt_key=prompt_name,
-                template=template,
-                label=label,
-                db=db
-            )
+        refreshed: List[str] = []
+        if prompt_name:
+            refreshed = await self.check_langfuse_cloud_changes_once(names=[prompt_name])
+            if not refreshed and template and not self._langfuse_client:
+                with self._lock:
+                    self._cache[prompt_name] = ManagedPrompt(
+                        name=prompt_name, version=str(event["version"] or "latest"), template=template,
+                        label="live", source="langfuse_live", fetched_at=time.time(),
+                    )
+                self._reload_fleet()
+                refreshed = [prompt_name]
         else:
             with self._lock:
-                if prompt_name and prompt_name in self._cache:
-                    self._cache.pop(prompt_name, None)
-                else:
-                    self._cache.clear()
+                self._cache.clear()
             self._load_local_registry()
+            refreshed = await self.check_langfuse_cloud_changes_once()
+            self._reload_fleet()
+
+        # 4. Audit trail
+        db_record = None
+        if prompt_name and template:
+            db_record = await self.save_prompt_to_db(prompt_key=prompt_name, template=template, label="live", db=db)
 
         return {
+            **base,
             "status": "upserted",
-            "event": event_type,
-            "prompt_name": prompt_name,
-            "label": label,
+            "label": "live",
+            "reloaded": refreshed,
             "database": "postgresql",
-            "version": db_record.get("version") if db_record else "latest",
-            "timestamp": time.time(),
+            "version": (db_record or {}).get("version") or event["version"] or "latest",
         }
+
+    def _reload_fleet(self) -> None:
+        try:
+            from app.agents.adk_fleet import sync_agent_instructions
+            sync_agent_instructions()
+        except Exception as exc:
+            logger.warning("Could not hot-reload ADK fleet instructions: %s", exc)
 
     async def sync_db_prompts_to_cloud(self, db: Optional[AsyncSession] = None) -> Dict[str, Any]:
         """Loads all active prompts directly from PostgreSQL, updates local cache and ADK fleet,
@@ -571,32 +585,37 @@ class LangfusePromptService:
             "errors": errors
         }
 
-    async def check_langfuse_cloud_changes_once(self) -> List[str]:
-        """Checks Langfuse Cloud for any prompt template changes published under the 'live' label.
-        If a new version or modified template is detected, updates the in-memory cache and hot-reloads the ADK fleet."""
+    REGISTERED_PROMPTS = (
+        "peopleops-root-orchestrator",
+        "leave-subagent",
+        "timesheet-subagent",
+        "policy-rag-subagent",
+        "health-subagent",
+        "zoho-subagent",
+    )
+
+    async def check_langfuse_cloud_changes_once(self, names: Optional[List[str]] = None) -> List[str]:
+        """Fetches the 'live' prompts straight from Langfuse (bypassing the SDK cache) and, if any changed,
+        updates the in-memory cache and hot-reloads the ADK fleet. Returns the names that changed."""
         if not self._langfuse_client:
             self._init_client()
         if not self._langfuse_client:
             return []
 
-        registered_keys = [
-            "peopleops-root-orchestrator",
-            "leave-subagent",
-            "timesheet-subagent",
-            "policy-rag-subagent",
-            "health-subagent",
-            "zoho-subagent"
-        ]
-        modified = []
+        modified: List[str] = []
         now = time.time()
-        for key in registered_keys:
+        for key in (names or self.REGISTERED_PROMPTS):
             try:
-                lf_prompt = self._langfuse_client.get_prompt(name=key, label="live")
-                if lf_prompt and hasattr(lf_prompt, "prompt"):
+                lf_prompt = self._langfuse_client.get_prompt(
+                    name=key, label="live", cache_ttl_seconds=0, fetch_timeout_seconds=5, max_retries=1
+                )
+                if lf_prompt and hasattr(lf_prompt, "prompt") and not getattr(lf_prompt, "is_fallback", False):
                     new_version = str(getattr(lf_prompt, "version", "latest"))
                     with self._lock:
                         cached = self._cache.get(key)
-                        if not cached or cached.version != new_version or cached.template != lf_prompt.prompt:
+                        if (not cached or cached.version != new_version or cached.template != lf_prompt.prompt
+                                or cached.source != "langfuse_live"):
+                            changed = not cached or cached.version != new_version or cached.template != lf_prompt.prompt
                             self._cache[key] = ManagedPrompt(
                                 name=key,
                                 version=new_version,
@@ -604,16 +623,17 @@ class LangfusePromptService:
                                 label="live",
                                 source="langfuse_live",
                                 fetched_at=now,
+                                client=lf_prompt,
                             )
-                            modified.append(key)
-                            print(f"[Langfuse-Watcher] Detected updated prompt for '{key}' (v{new_version}) in Langfuse Cloud.")
-            except Exception:
-                pass
+                            if changed:
+                                modified.append(key)
+                                logger.info(f"[Langfuse-Watcher] Detected updated prompt for '{key}' (v{new_version}) in Langfuse Cloud.")
+            except Exception as exc:
+                logger.debug("Langfuse prompt check for '%s' failed: %s", key, exc)
 
         if modified:
-            from app.agents.adk_fleet import sync_agent_instructions
-            sync_agent_instructions()
-            print(f"[Langfuse-Watcher] Successfully hot-reloaded ADK agent fleet with Langfuse Cloud prompts: {modified}")
+            self._reload_fleet()
+            logger.info(f"[Langfuse-Watcher] Hot-reloaded ADK agent fleet with Langfuse Cloud prompts: {modified}")
 
         return modified
 
@@ -647,7 +667,7 @@ class LangfusePromptService:
                         version_drifted = (str(r.version) != str(cached.version))
 
                     if template_drifted or version_drifted:
-                        print(f"[Self-Healing-Revert] Reverting unauthorized edit in PostgreSQL for '{r.prompt_key}'. Restoring authoritative prompt from Langfuse Cloud (v{cached.version})...")
+                        logger.info(f"[Self-Healing-Revert] Reverting unauthorized edit in PostgreSQL for '{r.prompt_key}'. Restoring authoritative prompt from Langfuse Cloud (v{cached.version})...")
                         r.template = cached.template
                         try:
                             r.version = int(cached.version)
@@ -659,7 +679,7 @@ class LangfusePromptService:
 
             if reverted:
                 await session.commit()
-                print(f"[Self-Healing-Revert] Successfully reverted {len(reverted)} prompt(s) in PostgreSQL back to Langfuse Cloud source of truth: {reverted}")
+                logger.info(f"[Self-Healing-Revert] Successfully reverted {len(reverted)} prompt(s) in PostgreSQL back to Langfuse Cloud source of truth: {reverted}")
 
             return reverted
 
@@ -673,14 +693,15 @@ class LangfusePromptService:
         """Runs a single reconciliation check: reverts any direct PostgreSQL prompt edits back to Langfuse Cloud."""
         return await self.reconcile_db_with_langfuse(db=db)
 
-    async def start_background_watcher(self, interval_seconds: float = 2.0):
+    async def start_background_watcher(self, interval_seconds: Optional[float] = None):
         """Continuous background task:
         1. Checks Langfuse Cloud for new prompt versions and hot-reloads ADK agents.
         2. Automatically reverts any unauthorized PostgreSQL edits back to Langfuse Cloud.
         """
         import asyncio
+        interval_seconds = interval_seconds or settings.PROMPT_WATCH_INTERVAL_SECONDS
         self._watcher_running = True
-        print(f"[Langfuse-Watcher] Started real-time Langfuse Cloud watcher & PostgreSQL auto-revert (checking every {interval_seconds}s).")
+        logger.info(f"[Langfuse-Watcher] Started real-time Langfuse Cloud watcher & PostgreSQL auto-revert (checking every {interval_seconds}s).")
         while getattr(self, "_watcher_running", False):
             try:
                 # 1. Sync from Langfuse Cloud if updated remotely
@@ -688,7 +709,7 @@ class LangfusePromptService:
                 # 2. Revert any local PostgreSQL drift back to Langfuse Cloud
                 await self.reconcile_db_with_langfuse()
             except Exception:
-                pass
+                logger.debug("Suppressed non-fatal error", exc_info=True)
             await asyncio.sleep(interval_seconds)
 
     def stop_background_watcher(self):

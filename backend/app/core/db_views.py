@@ -5,10 +5,13 @@ Provides clean, direct relational queries for the visual inspector
 without polluting the database schema with redundant SQL views.
 """
 
+import logging
 from typing import List, Dict, Any, Optional
 from sqlalchemy import text, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import engine
+
+logger = logging.getLogger(__name__)
 
 INSPECTOR_QUERIES = {
     "v_employees_overview": {
@@ -284,7 +287,7 @@ async def initialize_database_views():
             for view_key in legacy_views:
                 await conn.execute(text(f"DROP VIEW IF EXISTS {view_key} CASCADE;"))
     except Exception:
-        pass
+        logger.debug("Suppressed non-fatal error", exc_info=True)
 
 
 async def get_available_views_metadata(db: AsyncSession) -> List[Dict[str, Any]]:
@@ -321,7 +324,9 @@ async def fetch_view_records(db: AsyncSession, view_name: str, search: Optional[
     # When inspecting prompts, auto-detect any changes made in TablePlus / DB and sync to Langfuse
     if view_name == "v_agent_prompts":
         try:
-            from app.services.langfuse_prompt_service import langfuse_prompt_service, ManagedPrompt
+            from app.services.langfuse_prompt_service import (
+                ENABLE_POSTGRES_TO_LANGFUSE_SYNC, langfuse_prompt_service, ManagedPrompt,
+            )
             from app.models.prompt import AgentPrompt
             from app.agents.adk_fleet import sync_agent_instructions
             import time
@@ -331,7 +336,7 @@ async def fetch_view_records(db: AsyncSession, view_name: str, search: Optional[
             p_records = p_res.scalars().all()
             changed = []
             with langfuse_prompt_service._lock:
-                for r in p_records:
+                for r in (p_records if ENABLE_POSTGRES_TO_LANGFUSE_SYNC else []):
                     cached = langfuse_prompt_service._cache.get(r.prompt_key)
                     if not cached or cached.template != r.template:
                         langfuse_prompt_service._cache[r.prompt_key] = ManagedPrompt(
@@ -362,10 +367,10 @@ async def fetch_view_records(db: AsyncSession, view_name: str, search: Optional[
                                     if ch_r.prompt_key in langfuse_prompt_service._cache:
                                         langfuse_prompt_service._cache[ch_r.prompt_key].version = str(new_v)
                         except Exception as e:
-                            print(f"Notice: Auto-pushing view prompt change to Langfuse: {e}")
+                            logger.warning(f"Notice: Auto-pushing view prompt change to Langfuse: {e}")
                     await db.commit()
         except Exception as e:
-            print(f"Notice: v_agent_prompts auto-sync check: {e}")
+            logger.warning(f"Notice: v_agent_prompts auto-sync check: {e}")
 
     full_sql = f"SELECT * FROM ({base_query}) AS t LIMIT {limit}"
 

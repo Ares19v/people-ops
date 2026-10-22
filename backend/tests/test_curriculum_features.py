@@ -62,7 +62,7 @@ def test_hierarchical_markdown_chunking():
 def test_networkx_policy_knowledge_graph():
     res = enterprise_knowledge_graph.search_graph("Earned leave carry forward and statutory accrual")
     assert len(res.statutory_mandates) > 0
-    assert any("Section_18" in m["source"] for m in res.statutory_mandates)
+    assert any("Section 18" in m["source"] for m in res.statutory_mandates)
 
 def test_hybrid_rrf_retrieval():
     query = "casual leave quota maharashtra shops"

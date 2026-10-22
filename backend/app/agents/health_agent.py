@@ -2,6 +2,7 @@
 
 from typing import Any, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core import policy_facts as pf
 from app.models.user import User
 from app.rag.agentic_rag import agentic_policy_rag
 from app.schemas.agent import CitationItem
@@ -53,7 +54,7 @@ class HealthAgent:
             response_parts.append(
                 f"I'm sorry to hear that you're feeling unwell, {first_name}! Please take care of yourself.\n\n"
                 "Here are the key sick leave guidelines to keep in mind:\n"
-                "• Full-time personnel are entitled to 12 days of paid Sick Leave (SL) per year.\n"
+                f"• Full-time personnel are entitled to {pf.days(pf.quota('SL'))} days of paid Sick Leave (SL) per year.\n"
                 "• Medical Note Protocol: Absence exceeding 2 consecutive days mandates submission of a signed medical certificate from a registered physician.\n"
                 "• Confidentiality: Health records are secured under HIPAA and DPDP standards with zero unredacted PII exposure.\n\n"
                 "Rest up and get well soon! Would you like me to help log your absence for today?"

@@ -28,6 +28,7 @@ class AgentChatResponse(BaseModel):
     citations: List[CitationItem] = []
     structured_action: Optional[StructuredAction] = None
     session_id: str
+    trace_id: Optional[str] = None  # Langfuse trace id; send it back to /agents/feedback
     latency_ms: float
     token_usage: Dict[str, int] = {}
     cost_usd: Optional[float] = 0.0

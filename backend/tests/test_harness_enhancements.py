@@ -17,10 +17,11 @@ def mock_user():
     )
 
 def test_langfuse_prompt_service_loading():
-    # Verify prompt is loaded decoupled from python code
+    # Langfuse is disabled under tests, so this verifies the local-registry fallback that agents
+    # run on during a Langfuse outage: prompts are loaded decoupled from python code.
     prompt = langfuse_prompt_service.get_prompt("peopleops-root-orchestrator")
     assert "PeopleOps Enterprise Root Orchestrator" in prompt
-    assert "PRIVACY BOUNDARY" in prompt
+    assert "PRIVACY & ADDRESSING" in prompt
 
 def test_langfuse_prompt_webhook_invalidation():
     # Verify webhook listener invalidates cache dynamically
@@ -67,6 +68,7 @@ async def test_llm_root_orchestrator_zoho_tool_delegation(mock_user):
     assert "Zoho People System Sync" in resp.response
     assert len(resp.citations) > 0
 
+@pytest.mark.live_llm
 @pytest.mark.asyncio
 async def test_llm_root_orchestrator_multi_turn_memory(mock_user):
     session_id = "sess-memory-flow"

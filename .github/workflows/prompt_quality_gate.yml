@@ -1,0 +1,60 @@
+name: AI Prompt & Model Quality Gate
+
+on:
+  pull_request:
+    paths:
+      - 'backend/app/agents/**'
+      - 'backend/app/services/langfuse_prompt_service.py'
+      - 'backend/data/prompts_registry.json'
+      - '.env.example'
+  workflow_dispatch:
+    inputs:
+      benchmark_limit:
+        description: 'Number of golden benchmark cases to evaluate'
+        required: false
+        default: '3'
+      challenger_version:
+        description: 'Challenger prompt version to test'
+        required: false
+        default: '13'
+
+jobs:
+  prompt-quality-gate:
+    name: Evaluate A/B Prompt & Model Regressions
+    runs-on: ubuntu-latest
+    # Calls live LLM + Langfuse APIs: skip PRs from forks (no secrets) and keep it opt-in via label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.labels.*.name, 'run-quality-gate'))
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Langfuse Quality Gate Benchmark
+        env:
+          PYTHONPATH: ./backend
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST || 'https://us.cloud.langfuse.com' }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CI_BENCHMARK_LIMIT: ${{ github.event.inputs.benchmark_limit || '2' }}
+          CI_CHALLENGER_VERSION: ${{ github.event.inputs.challenger_version || '13' }}
+          CI_MIN_OVERALL_SCORE: '0.80'
+          CI_MIN_SCORE_DELTA: '-0.05'
+          CI_MIN_PASS_RATE: '80.0'
+        run: |
+          python backend/scripts/ci_quality_gate.py

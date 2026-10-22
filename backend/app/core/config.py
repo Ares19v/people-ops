@@ -10,8 +10,11 @@ class Settings(BaseSettings):
     COMPANY_DOMAIN: str = "intelera.com"
     DEFAULT_JURISDICTION: str = "MAHARASHTRA"
     ENVIRONMENT: str = "development"
+    APP_VERSION: str = "1.0.0"
     LOG_LEVEL: str = "INFO"
     API_V1_STR: str = "/api/v1"
+    PORT: int = 38290
+    BACKEND_PORT: int = 38290
     
     # Security & JWT
     SECRET_KEY: str = "dev_super_secret_jwt_key_at_least_32_characters_long"
@@ -52,12 +55,15 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     VERTEX_PROJECT_ID: Optional[str] = None
     VERTEX_LOCATION: str = "us-central1"
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4o"
     GROQ_API_KEY: Optional[str] = None
-    GROQ_MODEL: str = "groq/llama-3.3-70b-versatile"
+    GROQ_MODEL: str = "groq/openai/gpt-oss-120b"
     MOCK_LLM_ENABLED: bool = True
+    # Sync SQLAlchemy URL for ADK sessions (e.g. the SYNC_DATABASE_URL). Empty = in-memory sessions
+    # (lost on restart, not shared between workers).
+    ADK_SESSION_DB_URL: Optional[str] = None
     
     # NeMo Guardrails
     NEMO_GUARDRAILS_CONFIG_DIR: str = "app/guardrails/config"
@@ -73,6 +79,11 @@ class Settings(BaseSettings):
     LANGFUSE_HOST: str = "https://cloud.langfuse.com"
     LANGFUSE_BASE_URL: Optional[str] = None
     LANGFUSE_WEBHOOK_SECRET: str = "dev_langfuse_webhook_secret_key"
+    LANGFUSE_WEBHOOK_TOLERANCE_SECONDS: int = 600  # max age of a signed webhook; 0 disables the check
+    PROMPT_WATCH_INTERVAL_SECONDS: float = 30.0  # safety-net poll of Langfuse for prompt changes
+    LANGFUSE_ENABLED: bool = True
+    LANGFUSE_SAMPLE_RATE: float = 1.0
+    LANGFUSE_RELEASE: Optional[str] = None
 
     # Zoho People API Integration
     ZOHO_CLIENT_ID: Optional[str] = None
@@ -81,6 +92,7 @@ class Settings(BaseSettings):
     ZOHO_ACCOUNTS_URL: str = "https://accounts.zoho.in/oauth/v2/token"
     ZOHO_BASE_URL: str = "https://people.zoho.in/people/api"
     ZOHO_ORG_ID: str = "intelera_people_01"
+    ZOHO_WEBHOOK_SECRET: Optional[str] = None
     ZOHO_MOCK_ENABLED: bool = False
 
     model_config = SettingsConfigDict(
@@ -103,6 +115,17 @@ class Settings(BaseSettings):
                 raise ValueError("CRITICAL SECURITY ERROR: Wildcard CORS '*' with credentials is forbidden in production.")
             if "dev_langfuse_webhook" in self.LANGFUSE_WEBHOOK_SECRET:
                 raise ValueError("CRITICAL SECURITY ERROR: Default LANGFUSE_WEBHOOK_SECRET must be rotated in production.")
+            if self.MOCK_SSO_ENABLED:
+                raise ValueError("CRITICAL SECURITY ERROR: MOCK_SSO_ENABLED must be false in production.")
+            default_credentials = {
+                "NEO4J_PASSWORD": "hr_neo4j_password",
+                "S3_SECRET_KEY": "minio_secret_password",
+            }
+            for field, default in default_credentials.items():
+                if getattr(self, field) == default:
+                    raise ValueError(f"CRITICAL SECURITY ERROR: Default {field} must be rotated in production.")
+            if ":hr_password@" in self.DATABASE_URL or ":hr_password@" in self.SYNC_DATABASE_URL:
+                raise ValueError("CRITICAL SECURITY ERROR: Default database password must be rotated in production.")
         return self
 
 settings = Settings()

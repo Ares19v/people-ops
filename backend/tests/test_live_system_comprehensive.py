@@ -197,8 +197,11 @@ async def test_live_system():
             # Check that raw stars or hashtags formatting was cleaned up
             assert "###" not in reply_1, "Raw markdown hashtags found in chat response!"
 
+            # The API normalises session ids; use the one it returns for follow-ups.
+            active_session_id = resp_1["session_id"]
+
             # Verify memory checkpoint endpoint
-            mem_r = await client.get(f"{BASE_URL}/agents/memory/{test_session_id}", headers=emp_headers)
+            mem_r = await client.get(f"{BASE_URL}/agents/memory/{active_session_id}", headers=emp_headers)
             assert mem_r.status_code == 200
             mem_data = mem_r.json()
             assert mem_data["turns_count"] >= 1
@@ -206,7 +209,7 @@ async def test_live_system():
             # Turn 2: Follow-up question relying on past memory
             chat_2 = await client.post(
                 f"{BASE_URL}/agents/chat",
-                json={"message": "Based on my balances, can I take 2 days off next week?", "session_id": test_session_id},
+                json={"message": "Based on my balances, can I take 2 days off next week?", "session_id": active_session_id},
                 headers=emp_headers
             )
             assert chat_2.status_code == 200
@@ -215,12 +218,12 @@ async def test_live_system():
             assert len(reply_2) > 0
 
             # Verify memory grew to at least 2 turns
-            mem_r2 = await client.get(f"{BASE_URL}/agents/memory/{test_session_id}", headers=emp_headers)
+            mem_r2 = await client.get(f"{BASE_URL}/agents/memory/{active_session_id}", headers=emp_headers)
             assert mem_r2.status_code == 200
             assert mem_r2.json()["turns_count"] >= 2
 
             # Test Clear Session
-            clear_r = await client.delete(f"{BASE_URL}/agents/memory/{test_session_id}", headers=emp_headers)
+            clear_r = await client.delete(f"{BASE_URL}/agents/memory/{active_session_id}", headers=emp_headers)
             assert clear_r.status_code == 200
             assert clear_r.json()["status"] == "CLEARED"
 

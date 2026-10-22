@@ -1,3 +1,4 @@
+import logging
 import os
 import asyncio
 from contextlib import asynccontextmanager
@@ -19,6 +20,8 @@ from app.api.v1.agents import router as agents_router
 from app.api.v1.health import router as health_router
 from data.seed_data import seed_initial_data
 
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Create tables if not exist and seed initial demo data
@@ -35,9 +38,9 @@ async def lifespan(app: FastAPI):
         await langfuse_prompt_service.load_prompts_from_langfuse()
         sync_agent_instructions()
         # Launch real-time background watcher for Langfuse Cloud prompt edits & PostgreSQL auto-revert
-        watcher_task = asyncio.create_task(langfuse_prompt_service.start_background_watcher(interval_seconds=2.0))
+        watcher_task = asyncio.create_task(langfuse_prompt_service.start_background_watcher())
     except Exception as e:
-        print(f"Startup DB init notice: {e}")
+        logger.warning(f"Startup DB init notice: {e}")
     yield
     # Shutdown
     if watcher_task:
@@ -46,7 +49,13 @@ async def lifespan(app: FastAPI):
             langfuse_prompt_service.stop_background_watcher()
             watcher_task.cancel()
         except Exception:
-            pass
+            logger.debug("Suppressed non-fatal error", exc_info=True)
+    # Make sure buffered traces/scores reach Langfuse before the process exits.
+    try:
+        from app.observability import langfuse_client
+        langfuse_client.shutdown()
+    except Exception as exc:
+        logger.warning("Langfuse shutdown failed: %s", exc)
     await engine.dispose()
 
 app = FastAPI(

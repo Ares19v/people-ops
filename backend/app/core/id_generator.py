@@ -31,15 +31,8 @@ def get_email_prefix(user_identifier: Optional[str]) -> str:
     if "@" in raw:
         prefix = raw.split("@")[0]
     else:
-        # Map known EMP codes
-        emp_map = {
-            "emp-001": "devansh.tyagi",
-            "emp-002": "vikram.malhotra",
-            "emp-003": "priya.patel",
-            "emp-004": "aarav.sharma",
-            "emp-005": "sneha.kulkarni",
-        }
-        prefix = emp_map.get(raw, raw.replace("-", ".").replace("_", "."))
+        from app.core.directory import email_prefix_for
+        prefix = email_prefix_for(raw) or raw.replace("-", ".").replace("_", ".")
         
     clean = re.sub(r'[^a-z0-9.]', '', prefix).strip(".")
     return clean or "devansh.tyagi"

@@ -212,7 +212,7 @@ def populate_langfuse():
             lat = turn["latency_ms"]
             p_tok = turn["prompt_tokens"]
             c_tok = turn["completion_tokens"]
-            cost = calculate_cost_usd("gemini-2.5-flash", p_tok, c_tok)
+            cost = calculate_cost_usd("gemini-3.8-flash", p_tok, c_tok)
             total_cost += cost
             total_turns += 1
 
@@ -299,7 +299,7 @@ def populate_langfuse():
                         as_type="generation",
                         input=q,
                         output=ans,
-                        model="gemini-2.5-flash",
+                        model="gemini-3.8-flash",
                         usage_details={"input": p_tok, "output": c_tok, "total": p_tok + c_tok},
                         cost_details={"total": cost}
                     )

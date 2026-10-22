@@ -143,7 +143,7 @@ class LLMRootOrchestratorAgent:
                 try:
                     reply_text = await generate_summary(conv_prompt)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed non-fatal error", exc_info=True)
                 if not reply_text or reply_text.startswith("[MOCK SUMMARY]"):
                     reply_text = (
                         f"Got it — I have noted that down for you ({query}). "
@@ -171,6 +171,29 @@ class LLMRootOrchestratorAgent:
         """LLM Root Decision: Dispatches to specialized subagents using semantic intent router."""
         route = intent_router.classify(message, conversation_context=memory_context)
         return route.selected_tools
+
+    _RECALL_STOPWORDS = frozenset(
+        "what which when where who whom whose does did have has had that this with from about your mine "
+        "tell told remember recall earlier before last time chat conversation previous past please "
+        "there their they them then than into over under again also just only some more most very".split()
+    )
+
+    @classmethod
+    def _select_relevant_recall(cls, query: str, past_turns: Optional[List[Dict[str, Any]]], limit: int = 3) -> List[str]:
+        """Rank recalled turns by word overlap with the query and return the top few as bullets."""
+        terms = {w for w in re.findall(r"[a-z]{4,}", query.lower()) if w not in cls._RECALL_STOPWORDS}
+        if not terms or not past_turns:
+            return []
+        scored = []
+        for turn in past_turns:
+            text = str(turn.get("user_turn", "")).strip()
+            if not text:
+                continue
+            overlap = len(terms & set(re.findall(r"[a-z]{4,}", text.lower())))
+            if overlap:
+                scored.append((overlap, text))
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        return [f"• You mentioned: {text[:240]}" for _, text in scored[:limit]]
 
     @staticmethod
     def sanitize_chat_formatting(text: str) -> str:
@@ -248,6 +271,7 @@ class LLMRootOrchestratorAgent:
             input=message,
             metadata={"session_id": session_id, "user_id": user_email, "employee_id": emp_id, "user_email": user_email, "user_role": user.role.value, "department": user_dept}
         ) as root_span:
+            trace_id = langsmith_tracer.current_trace_id()
             # 1. INPUT GUARDRAILS
             t0_ig = time.perf_counter()
             with langsmith_tracer.span(
@@ -270,7 +294,7 @@ class LLMRootOrchestratorAgent:
                     input_guardrails_span.update(output=f"BLOCKED: {blocked_reason}")
                     cost_val = langsmith_tracer.record_generation(
                         name="call_llm",
-                        model="gemini-2.5-flash",
+                        model=settings.GEMINI_MODEL,
                         input_text=message,
                         output_text=refusal_msg or "Blocked",
                         prompt_tokens=len(message) // 4,
@@ -300,7 +324,7 @@ class LLMRootOrchestratorAgent:
                         try:
                             root_span.set_trace_io(output=waterfall_diag)
                         except Exception:
-                            pass
+                            logger.debug("Suppressed non-fatal error", exc_info=True)
                     langsmith_tracer.trace_agent_run(
                         session_id=session_id,
                         user_id=user_email,
@@ -315,8 +339,8 @@ class LLMRootOrchestratorAgent:
                         safety_score=0.0,
                         department=user_dept
                     )
-                    langsmith_tracer.flush()
                     return AgentChatResponse(
+                        trace_id=trace_id,
                         response=refusal_msg or "Request blocked by safety policy.",
                         agent_routed="ROOT_LLM_ORCHESTRATOR",
                         guardrail_status="INPUT_BLOCKED",
@@ -424,7 +448,7 @@ class LLMRootOrchestratorAgent:
                                             if overridden and not overridden.startswith("[MOCK SUMMARY]"):
                                                 raw_response = overridden.strip()
                                         except Exception:
-                                            pass
+                                            logger.debug("Suppressed non-fatal error", exc_info=True)
 
                                     adk_used = True
                                     agent_raw = adk_res.get("agent_name", "hr_root_orchestrator").upper()
@@ -475,50 +499,16 @@ class LLMRootOrchestratorAgent:
                                     primary_agent = "HR_ROOT_ORCHESTRATOR"
                                     tools_to_run = ["hr_root_orchestrator"]
                             except Exception:
-                                pass
+                                logger.debug("Suppressed non-fatal error", exc_info=True)
 
                             if not direct_recalled and (recalled_past_turns or cross_session_summaries):
-                                q_lower = message.lower()
-                                matched_facts = []
-                                all_recalled_text = " ".join([
-                                    f"{t.get('user_turn', '')} {t.get('assistant_turn', '')} {t.get('session_title', '')}"
-                                    for t in (recalled_past_turns or [])
-                                ]) + " " + " ".join([
-                                    f"{s.get('summary_text', '')} {s.get('session_title', '')}"
-                                    for s in (cross_session_summaries or [])
-                                ])
-
-                                # 1. Emergency contact
-                                if any(w in q_lower for w in ["emergency contact", "emergency", "contact person"]):
-                                    if "priya" in all_recalled_text.lower():
-                                        matched_facts.append("• Emergency Contact: Sister Priya")
-                                    else:
-                                        m_contact = re.search(r"emergency contact\s+(?:is\s+)?(?:my\s+)?([A-Za-z]+(?:\s+[A-Za-z]+)?)", all_recalled_text, re.IGNORECASE)
-                                        if m_contact and m_contact.group(1).lower() not in ["is", "the", "and", "who", "what", "my"]:
-                                            matched_facts.append(f"• Emergency Contact: {m_contact.group(1).strip()}")
-
-                                # 2. Work from home preference
-                                if any(w in q_lower for w in ["work from home", "wfh", "prefer to work", "home day"]):
-                                    if "thursday" in all_recalled_text.lower():
-                                        matched_facts.append("• Work From Home Day: Thursdays")
-                                    else:
-                                        m_day = re.search(r"(?:work from home on|home on|prefer)\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Thursdays)", all_recalled_text, re.IGNORECASE)
-                                        if m_day:
-                                            matched_facts.append(f"• Work From Home Day: {m_day.group(1).strip()}")
-
-                                # 3. Health symptoms / illness
-                                if any(w in q_lower for w in ["symptom", "health symptom", "neck", "headache"]):
-                                    if "neck strain" in all_recalled_text.lower() or "headache" in all_recalled_text.lower():
-                                        matched_facts.append("• Health Symptoms: Neck strain and headaches resulting from monitor")
-
-                                # 4. Project lead / manager
-                                if any(w in q_lower for w in ["lead", "lead?", "manager", "manager?"]) and "leave" not in q_lower:
-                                    if "vikram" in all_recalled_text.lower():
-                                        matched_facts.append("• Project Lead: Vikram")
+                                # LLM synthesis unavailable: fall back to the recalled excerpts that best
+                                # overlap with the question (no topic-specific rules).
+                                matched_facts = self._select_relevant_recall(message, recalled_past_turns)
 
                                 if matched_facts:
                                     raw_response = (
-                                        "Based on our earlier conversations, here are the details I remember about you:\n\n"
+                                        "Based on our earlier conversations, here is what I found:\n\n"
                                         + "\n".join(matched_facts)
                                         + "\n\nPlease let me know if you would like me to assist you with anything else!"
                                     )
@@ -606,11 +596,11 @@ class LLMRootOrchestratorAgent:
                 # 8.1. FORMATTING SANITIZER: Clean asterisks, hashtags, and raw pipe tables
                 final_output = self.sanitize_chat_formatting(final_output)
 
-                # 8.2. NAME GREETING SANITIZER: Prevent raw employee ID greetings (e.g. "Welcome back, EMP-004!" -> "Welcome back, Rahul!")
+                # 8.2. NAME GREETING SANITIZER: Prevent raw employee ID greetings (e.g. "Welcome back, EMP-004!" -> "Welcome back, Aarav!")
                 first_name = (user_full_name.split()[0] if user_full_name else "").strip()
                 if not first_name:
-                    from app.memory.conversation_memory import EMPLOYEE_NAME_MAP
-                    mapped = EMPLOYEE_NAME_MAP.get(user.id.upper().strip(), "")
+                    from app.core import directory
+                    mapped = directory.name_for(user.id) or ""
                     first_name = mapped.split()[0] if mapped else ""
                 if first_name and user.id:
                     final_output = re.sub(
@@ -643,7 +633,8 @@ class LLMRootOrchestratorAgent:
                 output_text=final_output,
                 prompt_tokens=p_tokens,
                 completion_tokens=c_tokens,
-                metadata={"department": user_dept, "user_id": user_email, "employee_id": emp_id, "user_role": user.role.value}
+                metadata={"department": user_dept, "user_id": user_email, "employee_id": emp_id, "user_role": user.role.value},
+                prompt=langfuse_prompt_service.get_prompt_client("peopleops-root-orchestrator"),
             )
 
             duration = (time.perf_counter() - start_time) * 1000
@@ -673,7 +664,7 @@ class LLMRootOrchestratorAgent:
                 try:
                     root_span.set_trace_io(output=waterfall_diagram_rendered)
                 except Exception:
-                    pass
+                    logger.debug("Suppressed non-fatal error", exc_info=True)
 
         if tools_to_run:
             agent_label = tools_to_run[0].upper() if len(tools_to_run) == 1 else f"CONCURRENT({'+'.join(t.upper() for t in tools_to_run)})"
@@ -719,17 +710,16 @@ class LLMRootOrchestratorAgent:
             eval_res = llm_judge_service.evaluate_response(
                 query=message,
                 response_text=final_output,
-                trace_id=session_id,
+                trace_id=trace_id,
                 session_id=session_id,
                 latency_ms=duration,
                 agent_name=agent_label,
-                push_to_langfuse=True
+                push_to_langfuse=trace_id is not None,
+                live=True
             )
             eval_scores_dict = eval_res.metrics
         except Exception:
             eval_scores_dict = {}
-
-        langsmith_tracer.flush()
 
         if not waterfall_diagram_rendered:
             waterfall_diagram_rendered = langsmith_tracer.format_waterfall_diagram(
@@ -744,6 +734,7 @@ class LLMRootOrchestratorAgent:
             )
 
         return AgentChatResponse(
+            trace_id=trace_id,
             response=final_output,
             agent_routed=agent_label,
             guardrail_status=g_status,

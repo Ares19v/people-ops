@@ -14,11 +14,13 @@ Integrates:
 - Reversible De-Redaction for Authorized Enterprise Roles
 """
 
+import asyncio
 from typing import Any, Dict, List, Optional, TypedDict
 import time
 import uuid
 
 from langgraph.graph import StateGraph, END
+from app.core import policy_facts as pf
 from app.compliance.phi_engine import compliance_engine
 from app.guardrails.guardrails_manager import guardrails_manager
 from app.rag.agentic_rag import agentic_policy_rag
@@ -92,36 +94,38 @@ def supervisor_router_node(state: EnterpriseState) -> Dict[str, Any]:
 def routing_decision(state: EnterpriseState) -> str:
     return state.get("routed_agent", "POLICY_AGENT")
 
+def _run_sync(coro):
+    """Run a coroutine from sync LangGraph nodes, whether or not an event loop is already running."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(asyncio.run, coro).result()
+
+
 def leave_worker_node(state: EnterpriseState) -> Dict[str, Any]:
     from app.tools.leave.get_leave_balances import get_leave_balances
     user_id = state.get("user_id", "")
     try:
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    res = executor.submit(asyncio.run, get_leave_balances(user_id)).result()
-            else:
-                res = loop.run_until_complete(get_leave_balances(user_id))
-        except Exception:
-            res = asyncio.run(get_leave_balances(user_id))
+        res = _run_sync(get_leave_balances(user_id))
 
         balances = res.get("balances", {})
-        el = balances.get("EL", {}).get("available", 18.0)
-        cl = balances.get("CL", {}).get("available", 8.0)
-        sl = balances.get("SL", {}).get("available", 10.0)
+        el = balances.get("EL", {}).get("available", pf.quota("EL") or 0.0)
+        cl = balances.get("CL", {}).get("available", pf.quota("CL") or 0.0)
+        sl = balances.get("SL", {}).get("available", pf.quota("SL") or 0.0)
         lwp = balances.get("LWP", {}).get("available", 0.0)
         output = (
             f"Statutory Leave Ledger (Database Verified):\n"
-            f"• Earned Leave (EL): {el} days (Accrual under Section 18(1)(a); 45-day carry-forward cap)\n"
-            f"• Casual Leave (CL): {cl} days (8 days annual quota under Section 18(1)(b))\n"
+            f"• Earned Leave (EL): {el} days (Accrual under Section 18(1)(a); {pf.days(pf.max_accumulation('EL'))}-day carry-forward cap)\n"
+            f"• Casual Leave (CL): {cl} days ({pf.days(pf.quota('CL'))} days annual quota under Section 18(1)(b))\n"
             f"• Sick Leave (SL): {sl} days\n"
             f"• Leave Without Pay (LWP): {lwp} days available\n\n"
             f"Governed under Maharashtra Shops and Establishments Act, 2017."
         )
     except Exception as exc:
-        output = f"Statutory Leave Ledger (Maharashtra Act 2017 Sec 18): EL capped at 45 days carry-over, CL 8 days annual. ({exc})"
+        output = f"Statutory Leave Ledger (Maharashtra Act 2017 Sec 18): EL capped at {pf.days(pf.max_accumulation('EL'))} days carry-over, CL {pf.days(pf.quota('CL'))} days annual. ({exc})"
 
     citations = [
         {"source_title": "Maharashtra Act LXI of 2017", "section": "Section 18(1)(a)", "citation_text": "Earned Leave 18 days/yr, 45 days max accumulation", "document_type": "STATUTORY_LAW", "confidence_score": 0.98}
@@ -136,16 +140,7 @@ def timesheet_worker_node(state: EnterpriseState) -> Dict[str, Any]:
     from app.tools.timesheet.get_timesheet_summary import get_timesheet_summary
     user_id = state.get("user_id", "")
     try:
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    res = executor.submit(asyncio.run, get_timesheet_summary(user_id)).result()
-            else:
-                res = loop.run_until_complete(get_timesheet_summary(user_id))
-        except Exception:
-            res = asyncio.run(get_timesheet_summary(user_id))
+        res = _run_sync(get_timesheet_summary(user_id))
 
         tot = res.get("total_hours", 0.0)
         billable = res.get("billable_hours", 0.0)
@@ -176,7 +171,7 @@ def health_worker_node(state: EnterpriseState) -> Dict[str, Any]:
     needs_cert = any(w in msg for w in ["sick", "medical", "fever", "illness", "doctor"])
     output = (
         f"Occupational Health & Medical Operations for {state['redacted_input']}:\n"
-        "• Annual Sick Leave Quota: 12 days/yr.\n"
+        f"• Annual Sick Leave Quota: {pf.days(pf.quota('SL'))} days/yr.\n"
         "• Statutory Health Protocol: Medical absence exceeding 2 consecutive days requires a certified doctor's note.\n"
         "• Group Medical Insurance: Sum insured INR 5,00,000 family floater."
     )

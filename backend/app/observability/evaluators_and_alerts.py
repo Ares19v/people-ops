@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from app.core.config import settings
+from app.observability.langfuse_client import get_langfuse
 
 logger = logging.getLogger(__name__)
 
@@ -164,15 +165,7 @@ class EvaluatorsAndAlertsManager:
         self._init_langfuse()
 
     def _init_langfuse(self):
-        if LANGFUSE_AVAILABLE and settings.LANGFUSE_PUBLIC_KEY and settings.LANGFUSE_SECRET_KEY:
-            try:
-                self._langfuse = Langfuse(
-                    public_key=settings.LANGFUSE_PUBLIC_KEY,
-                    secret_key=settings.LANGFUSE_SECRET_KEY,
-                    host=settings.LANGFUSE_BASE_URL or settings.LANGFUSE_HOST,
-                )
-            except Exception:
-                self._langfuse = None
+        self._langfuse = get_langfuse()
 
     def trigger_alert(
         self,
@@ -224,156 +217,6 @@ class EvaluatorsAndAlertsManager:
                 "timestamp": a.timestamp
             }
             for a in reversed(self._alerts_history[-limit:])
-        ]
-
-    def get_users_summary(self) -> List[Dict[str, Any]]:
-        """Returns registered users with spend and usage metrics for the Langfuse Users tab."""
-        return [
-            {
-                "user_id": "devansh.tyagi@intelera.com",
-                "full_name": "Devansh Tyagi",
-                "email": "devansh.tyagi@intelera.com",
-                "department": "Executive / IT",
-                "role": "ADMIN",
-                "total_sessions": 14,
-                "total_queries": 68,
-                "total_tokens": 142800,
-                "total_cost_usd": 0.0428,
-                "status": "Active",
-                "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            },
-            {
-                "user_id": "vikram.malhotra@intelera.com",
-                "full_name": "Vikram Malhotra",
-                "email": "vikram.malhotra@intelera.com",
-                "department": "Human Resources",
-                "role": "HR_MANAGER",
-                "total_sessions": 22,
-                "total_queries": 95,
-                "total_tokens": 199500,
-                "total_cost_usd": 0.0598,
-                "status": "Active",
-                "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            },
-            {
-                "user_id": "priya.patel@intelera.com",
-                "full_name": "Priya Patel",
-                "email": "priya.patel@intelera.com",
-                "department": "HR Operations",
-                "role": "HR_ASSOCIATE",
-                "total_sessions": 18,
-                "total_queries": 74,
-                "total_tokens": 155400,
-                "total_cost_usd": 0.0466,
-                "status": "Active",
-                "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            },
-            {
-                "user_id": "aarav.sharma@intelera.com",
-                "full_name": "Aarav Sharma",
-                "email": "aarav.sharma@intelera.com",
-                "department": "Engineering",
-                "role": "EMPLOYEE",
-                "total_sessions": 35,
-                "total_queries": 142,
-                "total_tokens": 298200,
-                "total_cost_usd": 0.0894,
-                "status": "Active",
-                "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            },
-            {
-                "user_id": "sneha.kulkarni@intelera.com",
-                "full_name": "Sneha Kulkarni",
-                "email": "sneha.kulkarni@intelera.com",
-                "department": "Operations",
-                "role": "EMPLOYEE",
-                "total_sessions": 12,
-                "total_queries": 46,
-                "total_tokens": 96600,
-                "total_cost_usd": 0.0289,
-                "status": "Active",
-                "last_active": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            }
-        ]
-
-    def get_sessions_summary(self) -> List[Dict[str, Any]]:
-        """Returns multi-turn conversation sessions for the Langfuse Sessions tab."""
-        return [
-            {
-                "session_id": "sess_devansh.tyagi_statutory_audit",
-                "user_id": "devansh.tyagi@intelera.com",
-                "user_name": "Devansh Tyagi",
-                "department": "Executive Leadership",
-                "title": "Maharashtra Act 2017 Compliance & Overtime Auditing",
-                "turns_count": 5,
-                "total_duration_sec": 4.8,
-                "total_tokens": 1560,
-                "total_cost_usd": 0.00045,
-                "agents_involved": ["POLICY_SUBAGENT", "STATUTORY_CRITIC"],
-                "avg_groundedness": 1.0,
-                "avg_safety": 1.0,
-                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            },
-            {
-                "session_id": "sess_vikram.malhotra_policy_review",
-                "user_id": "vikram.malhotra@intelera.com",
-                "user_name": "Vikram Malhotra",
-                "department": "Human Resources",
-                "title": "Earned Leave Encashment Rules & Statutory Limits",
-                "turns_count": 4,
-                "total_duration_sec": 3.9,
-                "total_tokens": 1180,
-                "total_cost_usd": 0.00035,
-                "agents_involved": ["LEAVE_SUBAGENT", "POLICY_SUBAGENT"],
-                "avg_groundedness": 1.0,
-                "avg_safety": 1.0,
-                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            },
-            {
-                "session_id": "sess_priya.patel_onboarding_check",
-                "user_id": "priya.patel@intelera.com",
-                "user_name": "Priya Patel",
-                "department": "Human Resources",
-                "title": "DPDP 2023 Consent & Onboarding Verification",
-                "turns_count": 3,
-                "total_duration_sec": 2.9,
-                "total_tokens": 920,
-                "total_cost_usd": 0.00028,
-                "agents_involved": ["POLICY_SUBAGENT"],
-                "avg_groundedness": 1.0,
-                "avg_safety": 1.0,
-                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            },
-            {
-                "session_id": "sess_aarav.sharma_timesheet_audit",
-                "user_id": "aarav.sharma@intelera.com",
-                "user_name": "Aarav Sharma",
-                "department": "Engineering",
-                "title": "Project Hours Logging & Overtime 2.0x Calculation",
-                "turns_count": 3,
-                "total_duration_sec": 3.8,
-                "total_tokens": 980,
-                "total_cost_usd": 0.00029,
-                "agents_involved": ["TIMESHEET_SUBAGENT"],
-                "avg_groundedness": 1.0,
-                "avg_safety": 1.0,
-                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            },
-            {
-                "session_id": "sess_sneha.kulkarni_leave_planning",
-                "user_id": "sneha.kulkarni@intelera.com",
-                "user_name": "Sneha Kulkarni",
-                "department": "Operations",
-                "title": "Casual Leave Quota & Application",
-                "turns_count": 2,
-                "total_duration_sec": 2.2,
-                "total_tokens": 640,
-                "total_cost_usd": 0.00019,
-                "agents_involved": ["LEAVE_SUBAGENT"],
-                "avg_groundedness": 1.0,
-                "avg_safety": 1.0,
-                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-            }
         ]
 
 

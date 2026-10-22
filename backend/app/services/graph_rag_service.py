@@ -310,7 +310,7 @@ class GraphRAGService:
                         self._graph_cache_time = now
                     return res
             except Exception:
-                pass
+                logger.debug("Suppressed non-fatal error", exc_info=True)
 
         from app.rag.entity_extractor import DOMAIN_NODES, DOMAIN_RELATIONSHIPS
         local_nodes = []

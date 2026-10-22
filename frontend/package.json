@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cmd /c \"cd /d ..\\backend && set PYTHONPATH=.\\.venv\\Lib\\site-packages;. && py -V:Astral/CPython3.11.15 -m uvicorn app.main:app --host 127.0.0.1 --port 38290 --reload\"",
+    "dev:ngrok": "ngrok http --domain=upcountry-scarcity-hatchery.ngrok-free.dev 38290",
+    "dev:all": "node scripts/banner.js && npm run dev:all:fleet",
+    "dev:all:fleet": "concurrently -k -n \"backend,frontend,ngrok\" -c \"blue.bold,green.bold,magenta.bold\" \"npm run dev:backend\" \"npm run dev\" \"npm run dev:ngrok\"",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -23,6 +27,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.6.1",
+    "concurrently": "^10.0.6",
     "oxlint": "^1.81.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.17",

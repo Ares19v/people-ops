@@ -17,42 +17,31 @@ from app.main import app
 
 
 @pytest.mark.asyncio
-async def test_db_prompt_seeding_and_hot_reload():
-    """Verify that agent prompts are seeded into DB, updated, and hot-reloaded into active ADK agents."""
+async def test_db_prompts_are_audit_only_and_do_not_change_active_agents():
+    """Langfuse is the sole authority for agent prompts; DB rows are a historical audit log."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     async with AsyncSessionLocal() as session:
-        # 1. Seed from registry to DB
-        count = await langfuse_prompt_service.load_prompts_from_db(session)
-        assert count >= 5, f"Expected at least 5 prompts seeded, got {count}"
+        # Loading from the DB is deprecated and must not seed or mutate anything.
+        assert isinstance(await langfuse_prompt_service.load_prompts_from_db(session), int)
 
-        # 2. Check DB records
-        stmt = select(AgentPrompt).where(AgentPrompt.prompt_key == "leave-subagent")
-        res = await session.execute(stmt)
-        record = res.scalar_one_or_none()
-        assert record is not None
-        assert record.version >= 1
-        assert "Leave" in record.template or "leave" in record.template
-
-        initial_version = record.version
-
-        # 3. Update prompt in DB and verify hot reload
-        new_instruction = "UPDATED_TEST_LEAVE_INSTRUCTION: Always prioritize statutory maternity leaves."
-        saved = await langfuse_prompt_service.save_prompt_to_db(
-            prompt_key="leave-subagent",
-            template=new_instruction,
-            db=session
+        first = await langfuse_prompt_service.save_prompt_to_db(
+            prompt_key="audit-test-prompt", template="AUDIT_V1", db=session
         )
-        assert saved["version"] == initial_version + 1
+        second = await langfuse_prompt_service.save_prompt_to_db(
+            prompt_key="audit-test-prompt", template="AUDIT_V2", db=session
+        )
+        assert second["version"] == first["version"] + 1
 
-        # 4. In-memory cache must reflect it immediately
-        cached = langfuse_prompt_service.get_prompt("leave-subagent")
-        assert cached == new_instruction
+        res = await session.execute(select(AgentPrompt).where(AgentPrompt.prompt_key == "audit-test-prompt"))
+        record = res.scalar_one()
+        assert record.template == "AUDIT_V2"
 
-        # 5. Active ADK fleet instance must have updated instruction
-        sync_agent_instructions()
-        assert leave_agent.instruction == new_instruction
+    # Audit rows never leak into the live prompt cache or the ADK fleet.
+    assert langfuse_prompt_service.get_prompt("audit-test-prompt") != "AUDIT_V2"
+    sync_agent_instructions()
+    assert "AUDIT_V" not in leave_agent.instruction
 
 
 @pytest.mark.asyncio
@@ -78,7 +67,7 @@ async def test_rolling_conversational_summaries_and_identity_context():
         # Verify summary was generated
         assert test_session_id in mem._summaries
         summary_text = mem._summaries[test_session_id]
-        assert "Prior conversation covered" in summary_text
+        assert "leave balance" in summary_text.lower()
 
         # Verify summary was checkpointed in database
         stmt = select(ConversationSummary).where(ConversationSummary.session_id == test_session_id)
@@ -94,8 +83,8 @@ async def test_rolling_conversational_summaries_and_identity_context():
             user_id="emp_test_123",
             user_role="EMPLOYEE"
         )
-        assert "AUTHENTICATED USER: emp_test_123" in formatted
-        assert "Previous Conversation Rolling Summary" in formatted
+        assert "AUTHENTICATED EMPLOYEE:" in formatted and "emp_test_123" in formatted
+        assert "Current Session In-Progress Summary" in formatted
 
         # Verify turns table contains turn_metadata
         stmt = select(ChatTurn).where(ChatTurn.session_id == test_session_id)
@@ -106,9 +95,19 @@ async def test_rolling_conversational_summaries_and_identity_context():
 
 
 @pytest.mark.asyncio
-async def test_prompts_crud_endpoint_integration():
-    """Verify GET /prompts and PUT /prompts endpoints using test client."""
+async def test_prompts_crud_endpoint_integration(monkeypatch):
+    """GET /prompts, and PUT /prompts against a fake Langfuse client (never the real cloud project)."""
+    import types
     from httpx import AsyncClient, ASGITransport
+
+    created = {}
+
+    def create_prompt(**kw):
+        created.update(kw)
+        return types.SimpleNamespace(version=9)
+
+    monkeypatch.setitem(langfuse_prompt_service._cache, "timesheet-subagent", langfuse_prompt_service._cache["timesheet-subagent"])
+    monkeypatch.setattr(langfuse_prompt_service, "_langfuse_client", types.SimpleNamespace(create_prompt=create_prompt))
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         # Mock login as HR Manager
@@ -135,9 +134,23 @@ async def test_prompts_crud_endpoint_integration():
         )
         assert put_res.status_code == 200
         assert put_res.json()["status"] == "success"
+        assert created["name"] == "timesheet-subagent" and created["prompt"] == put_payload["template"]
 
         # Check prompt in memory and DB
         assert langfuse_prompt_service.get_prompt("timesheet-subagent") == put_payload["template"]
+
+
+@pytest.mark.asyncio
+async def test_prompt_edit_is_rejected_when_langfuse_is_not_connected(monkeypatch):
+    """Langfuse is the only place prompts can be edited; without it the API must refuse, not silently succeed."""
+    from httpx import AsyncClient, ASGITransport
+
+    monkeypatch.setattr(langfuse_prompt_service, "_langfuse_client", None)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        login = await client.post("/api/v1/auth/mock-login", json={"role": "HR_MANAGER"})
+        headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+        res = await client.put("/api/v1/agents/prompts/timesheet-subagent", json={"template": "X", "label": "live"}, headers=headers)
+        assert res.status_code == 400
 
 
 def test_websocket_chat_flow():

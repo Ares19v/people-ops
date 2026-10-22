@@ -1,7 +1,8 @@
 import asyncio
 import json
+import logging
 import time
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Request, WebSocket, WebSocketDisconnect, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -16,7 +17,11 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
 
 from app.services.langfuse_prompt_service import langfuse_prompt_service
+from app.services.webhook_auth import require_langfuse_webhook
+from app.services.dataset_sync_service import langfuse_dataset_service
 from app.agents.adk_fleet import sync_agent_instructions
+
+logger = logging.getLogger(__name__)
 
 class RedactPayload(BaseModel):
     text: str
@@ -51,9 +56,12 @@ async def list_agent_prompts(
         db_records = {p.prompt_key: p.to_dict() for p in records}
 
         # Auto-detect if any prompt was modified directly in DB (e.g. in TablePlus)
+        # Langfuse is the source of truth: DB edits are ignored (and reverted by the watcher) unless the
+        # DB -> Langfuse sync has been explicitly re-enabled.
+        from app.services.langfuse_prompt_service import ENABLE_POSTGRES_TO_LANGFUSE_SYNC
         modified_records = []
         with langfuse_prompt_service._lock:
-            for r in records:
+            for r in (records if ENABLE_POSTGRES_TO_LANGFUSE_SYNC else []):
                 cached = langfuse_prompt_service._cache.get(r.prompt_key)
                 if not cached or cached.template != r.template:
                     langfuse_prompt_service._cache[r.prompt_key] = ManagedPrompt(
@@ -87,7 +95,7 @@ async def list_agent_prompts(
                                 if mod_r.prompt_key in langfuse_prompt_service._cache:
                                     langfuse_prompt_service._cache[mod_r.prompt_key].version = str(new_v)
                     except Exception as err:
-                        print(f"Notice: Auto-syncing TablePlus prompt to Langfuse: {err}")
+                        logger.warning(f"Notice: Auto-syncing TablePlus prompt to Langfuse: {err}")
                 await db.commit()
     except Exception:
         db_records = {}
@@ -138,7 +146,7 @@ async def get_agent_prompt(
                 "updated_at": record.updated_at
             }
     except Exception:
-        pass
+        logger.debug("Suppressed non-fatal error", exc_info=True)
 
     with langfuse_prompt_service._lock:
         cached = langfuse_prompt_service._cache.get(prompt_key)
@@ -212,44 +220,24 @@ async def update_agent_prompt(
 @router.post("/prompts/webhook")
 @router.post("/webhooks/langfuse")
 async def langfuse_prompt_webhook(
-    request: Request,
+    raw_body: bytes = Depends(require_langfuse_webhook),
     db: AsyncSession = Depends(get_db),
-    x_webhook_secret: Optional[str] = Header(None, alias="x-webhook-secret"),
-    x_langfuse_signature: Optional[str] = Header(None, alias="x-langfuse-signature"),
-    x_hub_signature_256: Optional[str] = Header(None, alias="x-hub-signature-256"),
-    authorization: Optional[str] = Header(None)
 ):
     """
-    Prompt Push & Sync (Always-On Webhook Pipeline):
-    1. Verifies HMAC-SHA256 signature
-    2. Skips non-live labels (v1-v5, latest, dev)
-    3. Upserts live / production prompts directly into PostgreSQL (agent_prompts table)
-    4. Hot-reloads memory cache and active Google ADK fleet instructions
+    Prompt change webhook (Langfuse -> ngrok -> here). The request is authenticated by
+    `require_langfuse_webhook` (Langfuse `t=..,v1=..` signature, shared secret, or body HMAC), then:
+    1. Events that do not concern the 'live' label are skipped
+    2. The new live version is pulled from Langfuse and the ADK fleet is hot-reloaded
+    3. An audit row is written to PostgreSQL (history only)
     """
-    from app.core.config import settings
-
-    raw_body = await request.body()
     try:
         payload = json.loads(raw_body.decode("utf-8")) if raw_body else {}
     except Exception:
         payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
 
-    sig = x_langfuse_signature or x_hub_signature_256 or x_webhook_secret or authorization
-
-    # Verify HMAC or secret token
-    if not sig or not langfuse_prompt_service.verify_hmac_signature(raw_body, sig):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Unauthorized: Invalid HMAC signature or webhook secret."
-        )
-
-    res = await langfuse_prompt_service.handle_webhook_event_async(
-        event_payload=payload,
-        raw_body=raw_body,
-        signature=sig,
-        db=db
-    )
-    return res
+    return await langfuse_prompt_service.handle_webhook_event_async(event_payload=payload, db=db)
 
 @router.post("/prompts/reload")
 async def reload_prompts(
@@ -257,9 +245,13 @@ async def reload_prompts(
     db: AsyncSession = Depends(get_db)
 ):
     """Force reloads all agent prompts from database/Langfuse (picks up TablePlus changes)."""
-    await langfuse_prompt_service.load_prompts_from_db(db)
+    refreshed = await langfuse_prompt_service.check_langfuse_cloud_changes_once()
     sync_agent_instructions()
-    return {"status": "success", "message": "All agent prompts refreshed successfully from PostgreSQL across the ADK fleet."}
+    return {
+        "status": "success",
+        "changed": refreshed,
+        "message": "Agent prompts re-fetched from Langfuse and reloaded across the ADK fleet.",
+    }
 
 
 @router.post("/chat", response_model=AgentChatResponse)
@@ -371,11 +363,300 @@ async def stream_chat_with_multi_agent_system(
         media_type="text/event-stream"
     )
 
+class FeedbackPayload(BaseModel):
+    trace_id: str = Field(..., min_length=8, max_length=64, pattern=r"^[A-Za-z0-9_-]+$",
+                          description="`trace_id` returned by /chat")
+    helpful: bool = Field(..., description="True = thumbs up, False = thumbs down")
+    comment: Optional[str] = Field(None, max_length=1000)
+
+
+@router.post("/feedback")
+async def submit_chat_feedback(
+    payload: FeedbackPayload,
+    current_user: User = Depends(get_current_user),
+):
+    """Records end-user feedback on a chat answer as a `user_feedback` score on its Langfuse trace."""
+    from app.core.security import mask_all_pii
+    from app.observability import langfuse_client
+    from app.observability.langsmith_tracer import langsmith_tracer
+
+    if langfuse_client.get_langfuse() is None:
+        return {"status": "skipped", "reason": "Langfuse tracing is disabled", "trace_id": payload.trace_id}
+
+    comment = mask_all_pii(payload.comment) if payload.comment else None
+    langsmith_tracer.score(
+        name="user_feedback",
+        value=1.0 if payload.helpful else 0.0,
+        comment=comment,
+        trace_id=payload.trace_id,
+        data_type="BOOLEAN",
+    )
+    return {"status": "recorded", "trace_id": payload.trace_id, "helpful": payload.helpful}
+
+
 @router.post("/webhooks/zoho")
-async def zoho_inbound_webhook(payload: Dict[str, Any]):
-    """Receives real-time attendance and leave approval webhooks from Zoho People."""
+async def zoho_inbound_webhook(
+    payload: Dict[str, Any],
+    x_webhook_secret: Optional[str] = Header(None, alias="x-webhook-secret"),
+):
+    """Receives real-time attendance and leave approval webhooks from Zoho People.
+
+    Requires the shared secret in `x-webhook-secret` (ZOHO_WEBHOOK_SECRET).
+    """
+    from app.core.config import settings
+    import hmac
+
+    expected = settings.ZOHO_WEBHOOK_SECRET
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Zoho webhook is disabled: ZOHO_WEBHOOK_SECRET is not configured."
+        )
+    if not x_webhook_secret or not hmac.compare_digest(x_webhook_secret, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized: invalid webhook secret."
+        )
     res = zoho_service.handle_inbound_webhook(payload)
     return res
+
+@router.post("/webhooks/experiment")
+async def langfuse_remote_experiment_webhook(
+    background_tasks: BackgroundTasks,
+    raw_body: bytes = Depends(require_langfuse_webhook),
+):
+    """
+    Langfuse Remote Experiment Webhook Handler:
+    Receives remote experiment triggers from Langfuse Cloud UI via ngrok.
+    Returns 200 OK immediately within Langfuse's 10-second timeout window,
+    and runs the full suite of LLM evaluators across dataset items in the background.
+    """
+    from app.services.dataset_sync_service import langfuse_dataset_service
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8")) if raw_body else {}
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    from app.evaluations.grid_config import GridConfigError, is_grid_request, normalize_grid_config, normalize_trigger_body
+
+    payload = normalize_trigger_body(payload)  # Langfuse sends the config as a JSON string under "payload"
+    if is_grid_request(payload):
+        try:
+            plan = normalize_grid_config(payload)
+        except GridConfigError as exc:
+            # Rejected synchronously so the Langfuse UI shows the problem instead of a silent failure.
+            raise HTTPException(status_code=422, detail={"message": "Invalid grid config", "problems": exc.problems})
+        background_tasks.add_task(langfuse_dataset_service.run_grid_tracked, payload)
+        return {
+            "status": "ACCEPTED",
+            "mode": "grid",
+            "message": "Grid accepted and running in the background; poll GET /api/v1/agents/experiments/grid/latest.",
+            "run_prefix": plan["run_prefix"],
+            "prompts": [langfuse_dataset_service._variant_tag(v) for v in plan["variants"]],
+            "models": [m or "default" for m in plan["models"]],
+            "cells": len(plan["variants"]) * len(plan["models"]),
+            "judge": plan["judge"] or "heuristic",
+            "optimization_enabled": plan["optimization"] is not None,
+            "timestamp": time.time(),
+        }
+
+    dataset_name = payload.get("dataset_name") or payload.get("datasetName") or "peopleops-golden-benchmark-25"
+    run_name = payload.get("run_name") or payload.get("runName")
+    limit = payload.get("limit") or payload.get("count")
+    model = payload.get("model") or payload.get("model_name")
+    prompt_name = payload.get("prompt_name") or payload.get("promptName")
+    prompt_version = payload.get("prompt_version") or payload.get("promptVersion")
+    prompt_label = payload.get("prompt_label") or payload.get("promptLabel")
+
+    try:
+        limit = int(limit) if limit is not None else None
+        prompt_version = int(prompt_version) if prompt_version is not None else None
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="'limit' and 'prompt_version' must be integers.")
+
+    async def _run_experiment():
+        logger.info(
+            "[Remote-Experiment] Starting: %s (dataset: %s) | model: %s | prompt: %s (v%s)",
+            run_name or "auto", dataset_name, model or "default",
+            prompt_name or "orchestrator", prompt_version or prompt_label or "live",
+        )
+        try:
+            res = await langfuse_dataset_service.run_golden_benchmark_experiment(
+                experiment_run_name=run_name,
+                limit=limit,
+                model_name=model,
+                prompt_name=prompt_name,
+                prompt_version=prompt_version,
+                prompt_label=prompt_label,
+            )
+            logger.info("[Remote-Experiment] Completed: %s | URL: %s", res.get("run_name"), res.get("dataset_run_url"))
+        except Exception:
+            logger.exception("[Remote-Experiment] Error running experiment")
+
+    background_tasks.add_task(_run_experiment)
+
+    return {
+        "status": "ACCEPTED",
+        "message": f"Experiment accepted. Running LLM evaluators on '{dataset_name}' in background.",
+        "dataset_name": dataset_name,
+        "run_name": run_name,
+        "model": model,
+        "prompt_name": prompt_name,
+        "prompt_version": prompt_version,
+        "timestamp": time.time()
+    }
+
+
+class CompareExperimentPayload(BaseModel):
+    limit: Optional[int] = 3
+    test_id: Optional[str] = None
+    baseline_model: Optional[str] = "groq/openai/gpt-oss-120b"
+    baseline_prompt: Optional[str] = "peopleops-root-orchestrator"
+    baseline_version: Optional[int] = 1
+    challenger_model: Optional[str] = "gemini-3.8-flash"
+    challenger_prompt: Optional[str] = "peopleops-root-orchestrator"
+    challenger_version: Optional[int] = 13
+
+
+@router.post("/experiments/compare")
+async def trigger_model_and_prompt_comparison(
+    payload: Optional[CompareExperimentPayload] = None,
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+):
+    """
+    Triggers an automated side-by-side A/B comparison experiment in Langfuse:
+    Compares Baseline (e.g. Model A + Prompt v1) against Challenger (e.g. Model B + Prompt v13).
+    Evaluates both on the golden dataset and uploads comparison results to Langfuse.
+    """
+    from app.services.dataset_sync_service import langfuse_dataset_service
+    p = payload or CompareExperimentPayload()
+
+    baseline_cfg = {
+        "model_name": p.baseline_model,
+        "prompt_name": p.baseline_prompt,
+        "prompt_version": p.baseline_version,
+        "run_name": f"exp-{p.baseline_model.split('/')[-1]}-prompt-v{p.baseline_version}-{int(time.time())}"
+    }
+    challenger_cfg = {
+        "model_name": p.challenger_model,
+        "prompt_name": p.challenger_prompt,
+        "prompt_version": p.challenger_version,
+        "run_name": f"exp-{p.challenger_model.split('/')[-1]}-prompt-v{p.challenger_version}-{int(time.time())}"
+    }
+
+    try:
+        return await langfuse_dataset_service.run_comparison_experiment(
+            baseline=baseline_cfg,
+            challenger=challenger_cfg,
+            limit=p.limit or 3,
+            test_id=p.test_id
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+@router.post("/experiments/grid")
+async def run_prompt_model_grid(
+    config: Dict[str, Any],
+    background_tasks: BackgroundTasks,
+    wait: bool = Query(False, description="Block until the whole grid finishes (can take minutes)"),
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+):
+    """Grid test: every prompt version/label x every model on the golden dataset, scored by the judge.
+
+    Body: {"config": {"prompt_label": "baseline", "prompt_versions": ["v1","v2"], "models": [...],
+    "items": [...], "judge": "openai/gpt-4o-mini", "run_prefix": "...", "optimization": {...}}}
+    """
+    from app.evaluations.grid_config import GridConfigError, normalize_grid_config
+
+    try:
+        plan = normalize_grid_config(config)
+    except GridConfigError as exc:
+        raise HTTPException(status_code=422, detail={"message": "Invalid grid config", "problems": exc.problems})
+
+    if wait:
+        return await langfuse_dataset_service.run_grid_tracked(config)
+    background_tasks.add_task(langfuse_dataset_service.run_grid_tracked, config)
+    return {
+        "status": "ACCEPTED",
+        "cells": len(plan["variants"]) * len(plan["models"]),
+        "prompts": [langfuse_dataset_service._variant_tag(v) for v in plan["variants"]],
+        "models": [m or "default" for m in plan["models"]],
+        "poll": "/api/v1/agents/experiments/grid/latest",
+    }
+
+
+@router.get("/experiments/grid/latest")
+async def get_latest_grid_run(
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+):
+    """Status/result of the most recent grid run started in the background (in memory; lost on restart)."""
+    return langfuse_dataset_service.last_grid_run
+
+
+@router.get("/webhooks/status")
+async def get_webhooks_and_ngrok_status(
+    request: Request,
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
+):
+    """Detects the active ngrok tunnel and lists the public webhook URLs to give Langfuse and Zoho."""
+    import httpx
+    public_url = None
+    tunnel_target = None
+
+    try:
+        async with httpx.AsyncClient(timeout=1.5) as client:
+            resp = await client.get("http://127.0.0.1:4040/api/tunnels")
+            if resp.status_code == 200:
+                tunnels = resp.json().get("tunnels", [])
+                # Prefer the https tunnel; ngrok lists http and https variants of the same forward.
+                tunnel = next((t for t in tunnels if str(t.get("public_url", "")).startswith("https://")), None) or (tunnels[0] if tunnels else None)
+                if tunnel:
+                    public_url = tunnel.get("public_url")
+                    tunnel_target = (tunnel.get("config") or {}).get("addr")
+    except Exception:
+        logger.debug("ngrok local API not reachable", exc_info=True)
+
+    local_base = str(request.base_url).rstrip("/")
+    backend_port = request.url.port or 80
+    base = public_url or local_base
+    langfuse_auth = "x-langfuse-signature (set automatically by Langfuse) or x-webhook-secret: <LANGFUSE_WEBHOOK_SECRET>"
+
+    return {
+        "ngrok_tunnel_active": public_url is not None,
+        "ngrok_forwards_to": tunnel_target,
+        "public_base_url": public_url or f"Tunnel not detected (run 'ngrok http {backend_port}' or npm run dev:ngrok)",
+        "webhooks": {
+            "langfuse_remote_experiment": {
+                "url": f"{base}/api/v1/agents/webhooks/experiment",
+                "method": "POST",
+                "auth": langfuse_auth,
+                "purpose": "Run a golden-dataset experiment or a prompt x model grid from the Langfuse UI",
+                "body": "flat keys (model, prompt_version, limit, ...) or {\"config\": {models, prompt_versions, items, judge, optimization}}",
+            },
+            "langfuse_prompts": {
+                "url": f"{base}/api/v1/agents/webhooks/langfuse",
+                "method": "POST",
+                "auth": langfuse_auth,
+                "purpose": "Prompt-version events: reload the live prompt into the ADK fleet",
+            },
+            "langfuse_alerts": {
+                "url": f"{base}/api/v1/agents/observability/alerts/webhook",
+                "method": "POST",
+                "auth": langfuse_auth,
+                "purpose": "Inbound latency / safety alerts from Langfuse Cloud",
+            },
+            "zoho_people": {
+                "url": f"{base}/api/v1/agents/webhooks/zoho",
+                "method": "POST",
+                "auth": "x-webhook-secret: <ZOHO_WEBHOOK_SECRET>",
+                "purpose": "Inbound leave approvals and attendance sync from Zoho People",
+            },
+        },
+    }
 
 @router.get("/zoho/status")
 async def get_zoho_integration_status(
@@ -781,14 +1062,14 @@ async def websocket_chat_endpoint(
         try:
             await websocket.send_text(json.dumps({"type": "error", "message": str(exc)}))
         except Exception:
-            pass
+            logger.debug("Suppressed non-fatal error", exc_info=True)
 
 
 @router.post("/evaluations/benchmark-25")
 async def trigger_25_benchmark_experiment(
     run_name: Optional[str] = Query(None, description="Custom name for the experiment run"),
     limit: Optional[int] = Query(None, description="Number of test items to evaluate (default: 25)"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
     db: AsyncSession = Depends(get_db)
 ):
     """Triggers the automated Golden Dataset benchmark experiment via Langfuse Experiments tab and evaluates with LLM evaluators."""
@@ -811,7 +1092,7 @@ async def sync_prompts_to_cloud(
     from app.services.langfuse_prompt_service import langfuse_prompt_service
     
     p_res = await langfuse_prompt_service.sync_db_prompts_to_cloud(db=db)
-    d_res = langfuse_dataset_service.sync_golden_dataset_to_langfuse()
+    d_res = langfuse_dataset_service.sync_golden_dataset_to_langfuse(archive_legacy_duplicates=archive_legacy_duplicates)
     return {
         "prompts_cloud_sync": p_res,
         "dataset_cloud_sync": d_res,
@@ -832,78 +1113,47 @@ async def sync_single_prompt_to_cloud(
 
 @router.get("/analytics/token-usage")
 async def get_token_usage_analytics(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Returns token usage and cost analytics broken down by department, employee, and model."""
+    """Live token usage and cost per department, aggregated from persisted chat turns."""
+    from app.core.llm_bridge import get_active_groq_model, resolve_llm_provider
     from app.observability.langsmith_tracer import MODEL_PRICING
-    
-    # Department breakdown estimate based on active employee roles
-    analytics = {
-        "model_pricing_rates_per_1m_tokens": MODEL_PRICING,
-        "department_metrics": [
-            {
-                "department": "Engineering",
-                "active_employees": 3,
-                "total_queries": 420,
-                "total_tokens": 168000,
-                "estimated_cost_usd": 0.0504,
-                "primary_agents": ["timesheet_agent", "leave_agent", "policy_agent"]
-            },
-            {
-                "department": "Operations",
-                "active_employees": 1,
-                "total_queries": 180,
-                "total_tokens": 72000,
-                "estimated_cost_usd": 0.0216,
-                "primary_agents": ["leave_agent", "zoho_agent"]
-            },
-            {
-                "department": "Human Resources",
-                "active_employees": 1,
-                "total_queries": 310,
-                "total_tokens": 124000,
-                "estimated_cost_usd": 0.0372,
-                "primary_agents": ["policy_agent", "health_agent", "nemo_guardrails"]
-            }
-        ],
-        "overall_total_tokens": 364000,
-        "overall_total_cost_usd": 0.1092,
-        "provider": "Google Gemini 2.5 Flash / ADK Fleet"
-    }
-    return analytics
+    from app.observability.usage_analytics import token_usage_by_department
 
+    provider = resolve_llm_provider()
+    model = get_active_groq_model() if provider == "groq" else (settings.OPENAI_MODEL if provider == "openai" else settings.GEMINI_MODEL)
+    analytics = await token_usage_by_department(db)
+    analytics.update({
+        "model_pricing_rates_per_1m_tokens": MODEL_PRICING,
+        "provider": f"{provider} / {model}",
+    })
+    return analytics
 
 @router.get("/observability/sessions")
 async def get_langfuse_sessions(
-    current_user: User = Depends(get_current_user)
+    limit: int = Query(50, ge=1, le=500),
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Returns conversation session aggregates for the Langfuse Sessions tab."""
-    from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
-    sessions = evaluators_and_alerts_manager.get_sessions_summary()
-    return {
-        "status": "success",
-        "total_sessions": len(sessions),
-        "sessions": sessions
-    }
-
+    """Live conversation session aggregates (turns, latency, tokens, cost, guardrail blocks)."""
+    from app.observability.usage_analytics import sessions_summary
+    sessions = await sessions_summary(db, limit=limit)
+    return {"status": "success", "total_sessions": len(sessions), "sessions": sessions}
 
 @router.get("/observability/users")
 async def get_langfuse_users(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Returns user profiles with spending & token aggregates for the Langfuse Users tab."""
-    from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
-    users = evaluators_and_alerts_manager.get_users_summary()
-    return {
-        "status": "success",
-        "total_users": len(users),
-        "users": users
-    }
-
+    """Live per-user usage and spend aggregates."""
+    from app.observability.usage_analytics import users_summary
+    users = await users_summary(db)
+    return {"status": "success", "total_users": len(users), "users": users}
 
 @router.get("/observability/alerts")
 async def get_langfuse_alerts(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
 ):
     """Returns configured alert rules and real-time alert events for the Langfuse Alerts tab."""
     from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
@@ -928,7 +1178,8 @@ async def get_langfuse_evaluators(
 
 @router.post("/observability/sync-all")
 async def sync_all_observability(
-    current_user: User = Depends(get_current_user)
+    archive_legacy_duplicates: bool = Query(False, description="Archive id-less dataset items created by older syncs"),
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN]))
 ):
     """One-click synchronization of Prompts, Golden Datasets, Evaluators, Users, and Sessions to Langfuse Cloud."""
     from app.services.dataset_sync_service import langfuse_dataset_service
@@ -936,12 +1187,12 @@ async def sync_all_observability(
     from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
     
     p_res = langfuse_prompt_service.push_all_prompts_to_cloud()
-    d_res = langfuse_dataset_service.sync_golden_dataset_to_langfuse()
+    d_res = langfuse_dataset_service.sync_golden_dataset_to_langfuse(archive_legacy_duplicates=archive_legacy_duplicates)
     evals = evaluators_and_alerts_manager.get_evaluators()
     rules = evaluators_and_alerts_manager.get_alerts_config()
     
     return {
-        "status": "synchronized",
+        "status": "synchronized" if d_res.get("status") == "success" else "partial",
         "prompts_synced": p_res,
         "dataset_synced": d_res,
         "evaluators_registered": len(evals),
@@ -951,8 +1202,11 @@ async def sync_all_observability(
 
 
 @router.post("/observability/alerts/webhook")
-async def receive_langfuse_alert_webhook(payload: Dict[str, Any]):
-    """Receives inbound alert notifications from Langfuse Cloud webhooks."""
+async def receive_langfuse_alert_webhook(
+    payload: Dict[str, Any],
+    _raw_body: bytes = Depends(require_langfuse_webhook),
+):
+    """Receives inbound alert notifications from Langfuse Cloud webhooks (authenticated like the other webhooks)."""
     from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
     alert_name = payload.get("alertName") or payload.get("name") or "Langfuse Cloud Alert"
     severity = payload.get("severity") or "WARNING"

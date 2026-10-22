@@ -62,7 +62,7 @@ def push_and_sync_prompt(
     print("=" * 70)
     print("STEP 2 & 3: WEBHOOK RECEIVER (HMAC Verification + Label Filter)")
     print("=" * 70)
-    secret = getattr(settings, "LANGFUSE_WEBHOOK_SECRET", "peopleops_webhook_secret_2026")
+    secret = settings.LANGFUSE_WEBHOOK_SECRET
     payload = {
         "event": "prompt.updated",
         "prompt_name": prompt_name,

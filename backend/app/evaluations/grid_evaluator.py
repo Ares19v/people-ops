@@ -11,6 +11,7 @@ from app.agents.orchestrator import llm_root_orchestrator
 from app.memory.conversation_memory import conversation_memory
 from app.services.langfuse_prompt_service import langfuse_prompt_service
 from app.models.user import User, UserRole
+from app.evaluations.eval_isolation import EVAL_USER_EMAIL, discard_eval_session, eval_session_id
 
 @dataclass
 class EvalTestCase:
@@ -88,21 +89,24 @@ class GridEvaluator:
     async def run_single_eval(self, test_case: EvalTestCase, db: Any) -> GridEvalResult:
         mock_user = User(
             id="EMP-004",
-            email="eval.benchmarks@intelera.com",
+            email=EVAL_USER_EMAIL,
             full_name="Evaluation Benchmark Runner",
             role=UserRole.EMPLOYEE,
             is_active=True
         )
 
-        session_id = f"eval_sess_{test_case.test_id}_{int(time.time())}"
+        session_id = eval_session_id(test_case.test_id)
         start_t = time.perf_counter()
 
-        response = await llm_root_orchestrator.process_message(
-            db=db,
-            user=mock_user,
-            message=test_case.user_query,
-            session_id=session_id
-        )
+        try:
+            response = await llm_root_orchestrator.process_message(
+                db=db,
+                user=mock_user,
+                message=test_case.user_query,
+                session_id=session_id
+            )
+        finally:
+            await discard_eval_session(session_id)
 
         elapsed = (time.perf_counter() - start_t) * 1000
         resp_text = response.response.lower()

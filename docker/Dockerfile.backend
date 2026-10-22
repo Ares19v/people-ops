@@ -11,16 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir uv
 
 # Copy dependency specifications
-COPY pyproject.toml .
+COPY requirements.txt .
 
 # Install dependencies using uv
-RUN uv pip install --system -r <(python -c '
-import tomllib
-with open("pyproject.toml", "rb") as f:
-    d = tomllib.load(f)
-deps = d["project"]["dependencies"]
-print("\n".join(deps))
-')
+RUN uv pip install --system -r requirements.txt
 
 # Copy application source code
 COPY . .

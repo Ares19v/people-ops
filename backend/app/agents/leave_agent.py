@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import policy_facts as pf
 from app.models.user import User
 from app.models.leave import LeaveType
 from app.services.leave_service import LeaveService
@@ -159,9 +160,9 @@ class LeaveAgent:
             # Informational balance reply
             reply = (
                 f"Hi {first_name}, here are your verified leave balances:\n\n"
-                f"• Earned Leave (EL): {balance_map.get('EL', 0.0)} days (Accrues monthly; max accumulation 45 days)\n"
-                f"• Casual Leave (CL): {balance_map.get('CL', 0.0)} days (8 days statutory; non-cumulative)\n"
-                f"• Sick Leave (SL): {balance_map.get('SL', 0.0)} days (Cumulative up to 20 days)\n"
+                f"• Earned Leave (EL): {balance_map.get('EL', 0.0)} days (Accrues monthly; max accumulation {pf.days(pf.max_accumulation('EL'))} days)\n"
+                f"• Casual Leave (CL): {balance_map.get('CL', 0.0)} days ({pf.days(pf.quota('CL'))} days per year; non-cumulative)\n"
+                f"• Sick Leave (SL): {balance_map.get('SL', 0.0)} days (Cumulative up to {pf.days(pf.max_accumulation('SL'))} days)\n"
                 f"• Leave Without Pay (LWP): Uncapped (Discretionary management approval)\n\n"
                 f"Would you like me to help you prepare a leave application or book upcoming time off?"
             )

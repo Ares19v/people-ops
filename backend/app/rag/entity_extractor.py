@@ -18,6 +18,8 @@ import re
 import json
 import logging
 from typing import Any, Dict, List, Optional, Set, Tuple
+
+from app.core import policy_facts as pf
 import networkx as nx
 
 from app.rag.graph_schema import (
@@ -119,7 +121,7 @@ DOMAIN_NODES: List[NodeSchema] = [
         name="Enterprise Earned Leave (EL) Policy 2026",
         domain=HRDomainCategory.LEAVE_MANAGEMENT.value,
         statutory_citation="Company HR Handbook § 4.1",
-        properties={"annual_quota": 18, "accrual": "1.5 days/month", "carryover_cap": 45, "encashable": True}
+        properties={"annual_quota": pf.quota("EL"), "accrual": "1.5 days/month", "carryover_cap": pf.max_accumulation("EL"), "encashable": True}
     ),
     NodeSchema(
         id="pol_casual_leave",
@@ -127,7 +129,7 @@ DOMAIN_NODES: List[NodeSchema] = [
         name="Enterprise Casual Leave (CL) Policy 2026",
         domain=HRDomainCategory.LEAVE_MANAGEMENT.value,
         statutory_citation="Company HR Handbook § 4.2",
-        properties={"annual_quota": 8, "max_consecutive_days": 3, "encashable": False, "lapses_dec_31": True}
+        properties={"annual_quota": pf.quota("CL"), "max_consecutive_days": 3, "encashable": False, "lapses_dec_31": True}
     ),
     NodeSchema(
         id="pol_sick_leave",
@@ -135,7 +137,7 @@ DOMAIN_NODES: List[NodeSchema] = [
         name="Enterprise Sick Leave (SL) & Medical Protocol",
         domain=HRDomainCategory.OCCUPATIONAL_HEALTH.value,
         statutory_citation="Company HR Handbook § 4.3",
-        properties={"annual_quota": 12, "med_cert_threshold_days": 2, "encashable": False}
+        properties={"annual_quota": pf.quota("SL"), "med_cert_threshold_days": 2, "encashable": False}
     ),
     NodeSchema(
         id="pol_overtime_rules",

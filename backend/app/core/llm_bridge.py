@@ -24,7 +24,6 @@ _exhausted_groq_models: set[str] = set()
 GROQ_FALLBACK_MODELS = [
     "groq/openai/gpt-oss-120b",
     "groq/openai/gpt-oss-20b",
-    "groq/qwen/qwen3.8-27b",
 ]
 
 
@@ -55,6 +54,50 @@ def switch_groq_fallback_model(failed_model: Optional[str] = None) -> str:
         _active_groq_model = next_model
         logger.warning("Groq model '%s' rate-limited or failed; switched active model to '%s'", current, next_model)
     return get_active_groq_model()
+
+
+def set_active_model(model_name: Optional[str]) -> str:
+    """Set active model for LLM executions (supports Gemini, Groq, OpenAI)."""
+    global _active_groq_model, _resolved_provider
+    if not model_name:
+        return get_active_groq_model()
+    if settings.MOCK_LLM_ENABLED:
+        # Same rule as resolve_llm_provider(): mock mode never reaches a live provider, even for an
+        # explicit per-run model (experiments / grid cells). Callers surface this via `mock_mode`.
+        logger.warning("MOCK_LLM_ENABLED is set: model override '%s' ignored; staying on the mock provider", model_name)
+        return model_name
+    name_lower = model_name.lower()
+    if "gemini" in name_lower:
+        _resolved_provider = "gemini"
+        settings.GEMINI_MODEL = model_name
+        return settings.GEMINI_MODEL
+    elif "openai" in name_lower and not ("groq" in name_lower or "gpt-oss" in name_lower):
+        _resolved_provider = "openai"
+        settings.OPENAI_MODEL = model_name
+        return settings.OPENAI_MODEL
+    else:
+        _resolved_provider = "groq"
+        _active_groq_model = model_name
+        return _active_groq_model
+
+
+def snapshot_model_state() -> dict:
+    """Capture the mutable model selection so a temporary override can be undone."""
+    return {
+        "resolved_provider": _resolved_provider,
+        "active_groq_model": _active_groq_model,
+        "gemini_model": settings.GEMINI_MODEL,
+        "openai_model": settings.OPENAI_MODEL,
+    }
+
+
+def restore_model_state(state: dict) -> None:
+    """Restore a selection captured by snapshot_model_state()."""
+    global _resolved_provider, _active_groq_model
+    _resolved_provider = state["resolved_provider"]
+    _active_groq_model = state["active_groq_model"]
+    settings.GEMINI_MODEL = state["gemini_model"]
+    settings.OPENAI_MODEL = state["openai_model"]
 
 
 def _get_gemini_key() -> Optional[str]:
@@ -116,10 +159,18 @@ def resolve_llm_provider() -> str:
       1. Explicit "groq" or Groq key present -> use Groq via LiteLLM
       2. Explicit "openai" -> use OpenAI via LiteLLM
       3. "gemini" -> test Gemini; fallback if unavailable
+      0. MOCK_LLM_ENABLED=true -> always "mock"
       4. If no valid keys, fall back to "mock" for zero-crash local development
     """
     global _resolved_provider
     if _resolved_provider is not None:
+        return _resolved_provider
+
+    # An explicit MOCK_LLM_ENABLED=true must never reach a live provider, even if keys
+    # are present in .env (keeps tests and offline demos deterministic and free).
+    if settings.MOCK_LLM_ENABLED:
+        _resolved_provider = "mock"
+        logger.info("MOCK_LLM_ENABLED is set — operating in MOCK_LLM mode")
         return _resolved_provider
 
     groq_key = _get_groq_key()
@@ -210,7 +261,7 @@ async def generate_summary(prompt: str) -> str:
             os.environ["GROQ_API_KEY"] = groq_key
         import litellm
 
-        fast_default = "groq/llama-3.1-8b-instant"
+        fast_default = "groq/openai/gpt-oss-20b"
         models_to_try = [m for m in ([fast_default] + GROQ_FALLBACK_MODELS) if m not in _exhausted_groq_models]
         if not models_to_try:
             models_to_try = list(GROQ_FALLBACK_MODELS)

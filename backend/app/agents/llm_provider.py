@@ -4,6 +4,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
 from app.core.config import settings
+from app.core import policy_facts as pf
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +22,8 @@ class MockLLMProvider(BaseLLMProvider):
         if "carry forward" in q_lower or "carried forward" in q_lower or "accumulation" in q_lower or "accumulate" in q_lower:
             return (
                 "Under Company Policy Section 4.1 and Section 18(1) of the Maharashtra Shops and Establishments Act, 2017:\n"
-                "• Earned Leave (EL) can be accumulated and carried forward up to a maximum statutory ceiling of 45 days.\n"
-                "• Any accrued EL beyond 45 days is subject to encashment or lapses at the end of the calendar year.\n"
+                f"• Earned Leave (EL) can be accumulated and carried forward up to a maximum ceiling of {pf.days(pf.max_accumulation('EL'))} days.\n"
+                f"• Any accrued EL beyond {pf.days(pf.max_accumulation('EL'))} days is subject to encashment or lapses at the end of the calendar year.\n"
                 "• Casual Leave (CL) cannot be carried forward and lapses on December 31st."
             )
 
@@ -47,8 +48,8 @@ class MockLLMProvider(BaseLLMProvider):
         if "section 18" in q_lower:
             return (
                 "Section 18 of the Maharashtra Shops and Establishments Act, 2017 governs employee leave entitlements:\n"
-                "• Earned Leave (EL): 1 day for every 20 days worked (18 days/year), accumulation capped at 45 days.\n"
-                "• Casual Leave (CL): 8 days/year, non-cumulative, lapses on Dec 31.\n"
+                f"• Earned Leave (EL): 1 day for every 20 days worked ({pf.days(pf.quota('EL'))} days/year), accumulation capped at {pf.days(pf.max_accumulation('EL'))} days.\n"
+                f"• Casual Leave (CL): {pf.days(pf.quota('CL'))} days/year, non-cumulative, lapses on Dec 31.\n"
                 "• Public Holidays: 8 mandatory paid national and festival holidays."
             )
 
@@ -66,15 +67,15 @@ class MockLLMProvider(BaseLLMProvider):
             if re.search(r"\b(cl|casual)\b", q_lower):
                 return (
                     "Under Company Policy 2026 (Section 4.2) and Section 18(2) of the Maharashtra Shops and Establishments Act, 2017:\n"
-                    "- Allocation: You receive 8 days of Casual Leave (CL) per calendar year.\n"
+                    f"- Allocation: You receive {pf.days(pf.quota('CL'))} days of Casual Leave (CL) per calendar year.\n"
                     "- Carry Forward: CL lapses on December 31st and cannot be carried forward or encashed.\n"
                     "- Notice Period: At least 1 day prior notice is recommended."
                 )
             elif re.search(r"\b(el|earned|privilege)\b", q_lower):
                 return (
                     "Under Company Policy 2026 (Section 4.1) in accordance with Section 18(1) of the Maharashtra Act LXI of 2017:\n"
-                    "- Allocation: 18 days of Earned Leave (EL) annually, credited at 1.5 days per month.\n"
-                    "- Carry Forward: Up to 45 days can be accumulated and carried over into the next year.\n"
+                    f"- Allocation: {pf.days(pf.quota('EL'))} days of Earned Leave (EL) annually, credited at 1.5 days per month.\n"
+                    f"- Carry Forward: Up to {pf.days(pf.max_accumulation('EL'))} days can be accumulated and carried over into the next year.\n"
                     "- Encashment: Permitted up to 30 days upon exit/resignation."
                 )
             elif re.search(r"\b(lwp|without pay)\b", q_lower):
@@ -86,9 +87,9 @@ class MockLLMProvider(BaseLLMProvider):
             else:
                 return (
                     "Here is a summary of the leave categories:\n"
-                    "1. Earned Leave (EL): 18 days/year, max accumulation of 45 days (Maharashtra Act 2017 Sec 18(1)).\n"
-                    "2. Casual Leave (CL): 8 days/year, non-cumulative (Maharashtra Act 2017 Sec 18(2)).\n"
-                    "3. Sick Leave (SL): 10 days/year, cumulative up to 20 days.\n"
+                    f"1. Earned Leave (EL): {pf.days(pf.quota('EL'))} days/year, max accumulation of {pf.days(pf.max_accumulation('EL'))} days (Maharashtra Act 2017 Sec 18(1)).\n"
+                    f"2. Casual Leave (CL): {pf.days(pf.quota('CL'))} days/year, non-cumulative (Maharashtra Act 2017 Sec 18(2)).\n"
+                    f"3. Sick Leave (SL): {pf.days(pf.quota('SL'))} days/year, cumulative up to {pf.days(pf.max_accumulation('SL'))} days.\n"
                     "4. Leave Without Pay (LWP): Uncapped discretionary leave requiring manager and HR concurrence."
                 )
 

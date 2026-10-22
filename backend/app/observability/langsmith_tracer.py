@@ -11,12 +11,15 @@ Handles:
 
 import os
 import time
-from contextlib import contextmanager
+import logging
+from contextlib import ExitStack, contextmanager
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 import json
 
 from app.core.config import settings
+from app.core import directory
+from app.observability import langfuse_client
 from app.core.security import mask_all_pii
 from app.observability.evaluators_and_alerts import evaluators_and_alerts_manager
 
@@ -27,14 +30,17 @@ except ImportError:
     LANGSMITH_AVAILABLE = False
 
 try:
-    from langfuse import Langfuse, propagate_attributes
+    from langfuse import propagate_attributes
     LANGFUSE_AVAILABLE = True
 except ImportError:
     LANGFUSE_AVAILABLE = False
 
+logger = logging.getLogger(__name__)
+
 
 # Standard Model Pricing Table (Per 1 Million Tokens in USD)
 MODEL_PRICING = {
+    "gemini-3.8-flash": {"prompt": 0.75, "completion": 3.75},
     "gemini-2.5-flash": {"prompt": 0.075, "completion": 0.30},
     "gemini-1.5-flash": {"prompt": 0.075, "completion": 0.30},
     "gemini-1.5-pro": {"prompt": 1.25, "completion": 5.00},
@@ -45,42 +51,12 @@ MODEL_PRICING = {
     "llama-3.3-70b-versatile": {"prompt": 0.59, "completion": 0.79},
     "groq/llama-3.1-8b-instant": {"prompt": 0.05, "completion": 0.08},
     "llama-3.1-8b-instant": {"prompt": 0.05, "completion": 0.08},
-    "groq/openai/gpt-oss-120b": {"prompt": 0.60, "completion": 1.20},
-    "groq/openai/gpt-oss-20b": {"prompt": 0.20, "completion": 0.40},
+    "groq/openai/gpt-oss-120b": {"prompt": 0.15, "completion": 0.60},
+    "groq/openai/gpt-oss-20b": {"prompt": 0.075, "completion": 0.30},
     "default": {"prompt": 0.10, "completion": 0.40}
 }
 
 # Canonical Mapping for Employee and Synthetic IDs to Corporate Emails
-EMPLOYEE_EMAIL_MAP = {
-    # Devansh Tyagi (Admin / EMP-001)
-    "EMP-001": "devansh.tyagi@intelera.com",
-    "ADMIN": "devansh.tyagi@intelera.com",
-    "DEVANSH": "devansh.tyagi@intelera.com",
-    
-    # Vikram Malhotra (HR Manager / EMP-002)
-    "EMP-002": "vikram.malhotra@intelera.com",
-    "MANAGER": "vikram.malhotra@intelera.com",
-    "HR": "vikram.malhotra@intelera.com",
-    
-    # Priya Patel (HR Associate / EMP-003)
-    "EMP-003": "priya.patel@intelera.com",
-    "ASSOCIATE": "priya.patel@intelera.com",
-    
-    # Aarav Sharma (Senior Software Engineer / EMP-004)
-    "EMP-004": "aarav.sharma@intelera.com",
-    "USR-EMP-004": "aarav.sharma@intelera.com",
-    "EMPLOYEE": "aarav.sharma@intelera.com",
-    "USR-EMP-7701": "aarav.sharma@intelera.com",
-    
-    # Sneha Kulkarni (Operations Associate / EMP-005)
-    "EMP-005": "sneha.kulkarni@intelera.com",
-    "EMPLOYEE2": "sneha.kulkarni@intelera.com",
-    
-    # Benchmarks & Synthetic QA
-    "USR-EVAL-999": "eval.benchmarks@intelera.com",
-    "EVAL-USER": "eval.benchmarks@intelera.com",
-    "USR-TEST-101": "qa.automation@intelera.com",
-}
 
 import re
 
@@ -93,16 +69,9 @@ def resolve_user_email(user_identifier: Optional[str]) -> str:
     if "@" in raw:
         return raw.lower().replace("@intelera.corp", "@intelera.com")
     
-    norm = raw.upper().replace("_", "-").replace(" ", "-")
-    if raw in EMPLOYEE_EMAIL_MAP:
-        return EMPLOYEE_EMAIL_MAP[raw]
-    if norm in EMPLOYEE_EMAIL_MAP:
-        return EMPLOYEE_EMAIL_MAP[norm]
-    
-    if norm.startswith("USR-"):
-        sub = norm[4:]
-        if sub in EMPLOYEE_EMAIL_MAP:
-            return EMPLOYEE_EMAIL_MAP[sub]
+    known = directory.email_for(raw)
+    if known:
+        return known
     
     clean = re.sub(r'[^a-zA-Z0-9.-]', '', raw).lower()
     return f"{clean}@intelera.com"
@@ -184,7 +153,7 @@ class _LocalTraceObservation:
             with open(trace_file, "a", encoding="utf-8") as f:
                 f.write(json.dumps(record) + "\n")
         except Exception:
-            pass
+            logger.debug("Suppressed non-fatal error", exc_info=True)
 
 
 class LangSmithTracer:
@@ -206,15 +175,25 @@ class LangSmithTracer:
             except Exception:
                 self._client = None
 
-        if LANGFUSE_AVAILABLE and settings.LANGFUSE_PUBLIC_KEY and settings.LANGFUSE_SECRET_KEY:
-            try:
-                self._langfuse = Langfuse(
-                    public_key=settings.LANGFUSE_PUBLIC_KEY,
-                    secret_key=settings.LANGFUSE_SECRET_KEY,
-                    host=settings.LANGFUSE_BASE_URL or settings.LANGFUSE_HOST,
-                )
-            except Exception:
-                self._langfuse = None
+        self._langfuse = langfuse_client.get_langfuse()
+
+    @staticmethod
+    def _string_meta(meta: Dict[str, Any]) -> Dict[str, str]:
+        """Langfuse propagated metadata must be str -> str (max 200 chars)."""
+        return {str(k): str(v)[:200] for k, v in meta.items() if v is not None}
+
+    @staticmethod
+    def _base_tags(department: str, user_role: str, resolved_email: str) -> List[str]:
+        return [
+            langfuse_client.langfuse_environment(),
+            f"dept:{department.lower()}",
+            f"role:{user_role.lower()}",
+            f"user:{resolved_email.lower()}",
+        ]
+
+    def current_trace_id(self) -> Optional[str]:
+        """Id of the trace that is active right now (None when Langfuse is off or outside a trace)."""
+        return langfuse_client.current_trace_id()
 
     @contextmanager
     def trace_session(
@@ -230,9 +209,8 @@ class LangSmithTracer:
         """Context manager setting OpenTelemetry attributes so Sessions and Users are populated with emails in Langfuse Cloud."""
         resolved_email = resolve_user_email(user_id)
         clean_sid = resolve_clean_session_id(session_id, resolved_email)
-        all_tags = list(tags or [])
-        all_tags.extend(["production", f"dept:{department.lower()}", f"role:{user_role.lower()}", f"user:{resolved_email.lower()}"])
-        meta = metadata or {}
+        all_tags = list(tags or []) + self._base_tags(department, user_role, resolved_email)
+        meta = dict(metadata or {})
         meta.update({
             "department": department,
             "user_role": user_role,
@@ -241,20 +219,25 @@ class LangSmithTracer:
             "employee_id": str(user_id)
         })
 
+        stack = ExitStack()
         if LANGFUSE_AVAILABLE and self._langfuse:
             try:
-                with propagate_attributes(
+                stack.enter_context(propagate_attributes(
                     user_id=resolved_email,
                     session_id=clean_sid,
+                    environment=langfuse_client.langfuse_environment(),
+                    version=settings.LANGFUSE_RELEASE or settings.APP_VERSION,
                     tags=all_tags,
-                    metadata=meta,
+                    metadata=self._string_meta(meta),
                     trace_name=trace_name
-                ):
-                    yield
-                    return
-            except Exception:
-                pass
-        yield
+                ))
+            except Exception as exc:
+                logger.warning("Langfuse attribute propagation failed; continuing untraced: %s", exc)
+                stack.close()
+                stack = ExitStack()
+        # Exceptions raised by the caller's block propagate normally through the stack.
+        with stack:
+            yield
 
     @contextmanager
     def span(
@@ -268,6 +251,8 @@ class LangSmithTracer:
         safe_input = mask_all_pii(str(input)) if input is not None else None
         meta = metadata or {}
 
+        obs = None
+        stack = ExitStack()
         if self._langfuse:
             try:
                 raw_user = meta.get("user_id") or meta.get("user_email")
@@ -278,40 +263,36 @@ class LangSmithTracer:
                     meta["session_id"] = session_id
 
                 if resolved_email and session_id:
-                    dept = meta.get("department", "engineering")
-                    role = meta.get("user_role", "employee")
-                    tags = ["production", f"dept:{dept.lower()}", f"role:{role.lower()}", f"user:{resolved_email.lower()}"]
                     meta["user_id"] = resolved_email
                     meta["user_email"] = resolved_email
-                    with propagate_attributes(
+                    stack.enter_context(propagate_attributes(
                         user_id=resolved_email,
                         session_id=session_id,
-                        tags=tags,
-                        metadata=meta,
+                        environment=langfuse_client.langfuse_environment(),
+                        version=settings.LANGFUSE_RELEASE or settings.APP_VERSION,
+                        tags=self._base_tags(meta.get("department", "engineering"), meta.get("user_role", "employee"), resolved_email),
+                        metadata=self._string_meta(meta),
                         trace_name=f"PeopleOps Turn [{resolved_email}]" if name == "TOTAL ROUND-TRIP" else name
-                    ):
-                        with self._langfuse.start_as_current_observation(
-                            name=name,
-                            as_type=as_type,
-                            input=safe_input,
-                            metadata=meta,
-                        ) as obs:
-                            yield obs
-                            return
-                else:
-                    with self._langfuse.start_as_current_observation(
-                        name=name,
-                        as_type=as_type,
-                        input=safe_input,
-                        metadata=meta,
-                    ) as obs:
-                        yield obs
-                        return
-            except (GeneratorExit, Exception) as langfuse_exc:
-                if isinstance(langfuse_exc, GeneratorExit):
-                    raise
-                # Only fallback if langfuse itself failed during setup before yielding
-                pass
+                    ))
+                obs = stack.enter_context(self._langfuse.start_as_current_observation(
+                    name=name,
+                    as_type=as_type,
+                    input=safe_input,
+                    metadata=meta,
+                ))
+            except Exception as exc:
+                # Setup failed before the caller's block ran: fall back to the local trace store.
+                logger.warning("Langfuse span '%s' could not be started; using local trace store: %s", name, exc)
+                stack.close()
+                stack = ExitStack()
+                obs = None
+
+        if obs is not None:
+            # Outside the try/except on purpose: errors from the caller's block must propagate
+            # (Langfuse records them on the span) instead of being swallowed as "setup failures".
+            with stack:
+                yield obs
+            return
 
         # Persistent local trace span fallback
         local_obs = _LocalTraceObservation(name, as_type, safe_input, meta, self._trace_dir)
@@ -329,10 +310,15 @@ class LangSmithTracer:
         prompt_tokens: int = 0,
         completion_tokens: int = 0,
         metadata: Optional[Dict[str, Any]] = None,
+        prompt: Optional[Any] = None,
     ) -> float:
-        """Records an LLM generation observation with token counts and calculates cost in USD."""
+        """Records an LLM generation observation with token counts and calculates cost in USD.
+
+        `prompt` is an optional Langfuse prompt client; passing it links the generation to the
+        prompt version so Langfuse can report latency / cost / scores per prompt version.
+        """
         cost_usd = calculate_cost_usd(model, prompt_tokens, completion_tokens)
-        meta = metadata or {}
+        meta = dict(metadata or {})
         if "user_id" in meta:
             meta["user_id"] = resolve_user_email(meta["user_id"])
         meta["cost_usd"] = cost_usd
@@ -356,34 +342,48 @@ class LangSmithTracer:
                     },
                     cost_details={
                         "total": cost_usd
-                    }
+                    },
+                    prompt=prompt,
                 )
                 if hasattr(obs, "end"):
                     obs.end()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Langfuse generation '%s' could not be recorded: %s", name, exc)
 
         return cost_usd
 
-    def score(self, name: str, value: float, comment: Optional[str] = None):
-        """Attach a score to the active trace in Langfuse."""
-        if self._langfuse:
-            try:
-                self._langfuse.score_current_trace(
+    def score(
+        self,
+        name: str,
+        value: float,
+        comment: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        data_type: str = "NUMERIC",
+    ):
+        """Attach a score to a trace (the given one, or the active trace) in Langfuse.
+
+        Scores use a deterministic id (trace + name) so retries update instead of duplicating.
+        """
+        if not self._langfuse:
+            return
+        try:
+            if trace_id:
+                self._langfuse.create_score(
                     name=name,
                     value=value,
+                    trace_id=trace_id,
+                    score_id=f"{trace_id}-{name}",
+                    data_type=data_type,
                     comment=comment,
                 )
-            except Exception:
-                pass
+            else:
+                self._langfuse.score_current_trace(name=name, value=value, comment=comment)
+        except Exception as exc:
+            logger.warning("Langfuse score '%s' could not be recorded: %s", name, exc)
 
     def flush(self):
-        """Flush all pending observations to Langfuse cloud immediately."""
-        if self._langfuse:
-            try:
-                self._langfuse.flush()
-            except Exception:
-                pass
+        """Flush pending observations (only needed at shutdown / in short-lived scripts)."""
+        langfuse_client.flush()
 
     def trace_agent_run(
         self,
@@ -399,7 +399,7 @@ class LangSmithTracer:
         token_usage: Dict[str, int],
         safety_score: float = 1.0,
         department: str = "Engineering",
-        model_name: str = "gemini-2.5-flash"
+        model_name: str = "gemini-3.8-flash"
     ):
         """Records a run trace with session, user, department cost analytics and alert tags."""
         resolved_email = resolve_user_email(user_id)
@@ -413,13 +413,7 @@ class LangSmithTracer:
         cost_usd = calculate_cost_usd(model_name, prompt_tokens, completion_tokens)
 
         # Build dynamic tag set for Langfuse Filtering, Sessions, Users, and Alerts
-        tags = [
-            "production",
-            f"dept:{department.lower()}",
-            f"role:{user_role.lower()}",
-            f"agent:{agent_name.lower()}",
-            f"user:{resolved_email.lower()}"
-        ]
+        tags = self._base_tags(department, user_role, resolved_email) + [f"agent:{agent_name.lower()}"]
 
         # Check and attach Alert Tags
         if guardrail_status == "INPUT_BLOCKED":
@@ -477,9 +471,6 @@ class LangSmithTracer:
             "safety_score": safety_score,
             "timestamp": time.time()
         }
-
-        # Flush to Langfuse
-        self.flush()
 
         return trace_payload
 
