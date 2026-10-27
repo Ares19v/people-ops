@@ -2,14 +2,14 @@
 
 # 🏢 PeopleOps — Enterprise HR Multi-Agent Platform
 
-[![CI Quality Gate](https://img.shields.io/badge/CI-Passing-22c55e.svg)](file:///C:/Users/Devansh%20Tyagi/Desktop/Intelera/people-ops/scripts/ci_quality_gate.py)
+[![CI Quality Gate](https://img.shields.io/badge/CI-Passing-22c55e.svg)](scripts/ci_quality_gate.py)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11.15-3b82f6.svg)](https://www.python.org/)
 [![Google ADK](https://img.shields.io/badge/Google%20ADK-2.13.0-4285F4.svg)](https://github.com/google/adk)
 [![DSPy](https://img.shields.io/badge/DSPy-3.4.1%20GEPA-8b5cf6.svg)](https://github.com/stanfordnlp/dspy)
 [![Langfuse](https://img.shields.io/badge/Langfuse-4.15-f59e0b.svg)](https://langfuse.com/)
 [![React 19](https://img.shields.io/badge/React-19.2-61DAFB.svg)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.162-009688.svg)](https://fastapi.tiangolo.com/)
-[![DPDP Act Shield](https://img.shields.io/badge/Security-DPDP%20PII%20Shield-10b981.svg)](file:///C:/Users/Devansh%20Tyagi/Desktop/Intelera/people-ops/backend/app/compliance)
+[![DPDP Act Shield](https://img.shields.io/badge/Security-DPDP%20PII%20Shield-10b981.svg)](backend/app/compliance)
 
 <p><strong>Autonomous Multi-Agent HR Orchestration Fleet with Dual-Leg Prompt Optimization & Enterprise Observability</strong></p>
 
@@ -21,6 +21,52 @@
 </p>
 
 </div>
+
+---
+
+## 📸 Visual Tour & Interface Showcase
+
+<p align="center">
+  <img src="assets/01_dashboard.png" alt="PeopleOps Command Center & Autonomous Agent Flow Circuit" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em><strong>Figure 1 — Command Center & Autonomous Agent Flow Circuit:</strong> Real-time intent routing diagram, statutory compliance indicators (EL, CL, SL), and executive People-Ops KPI telemetry.</em>
+</p>
+
+<p align="center">
+  <img src="assets/06_chat_drawer.png" alt="Conversational Multi-Agent AI Drawer with NeMo Guardrails" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em><strong>Figure 2 — Conversational AI Chat Drawer:</strong> Multi-turn natural language dialog powered by Google ADK specialists, protected by real-time NeMo Guardrails and DPDP Act PII redaction.</em>
+</p>
+
+<p align="center">
+  <img src="assets/02_leave_ledger.png" alt="Statutory Leave Ledger & Entitlement Engine" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em><strong>Figure 3 — Statutory Leave Ledger:</strong> Entitlement tracking, collision-free leave application validation, and real-time manager approval ledger.</em>
+</p>
+
+<p align="center">
+  <img src="assets/03_timesheets.png" alt="Timesheet Auditing & Overtime Compliance Portal" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em><strong>Figure 4 — Timesheet & Overtime Boundary Auditor:</strong> Daily project hour logging, weekly summaries, and automated 9h daily / 48h weekly Factories Act compliance enforcement.</em>
+</p>
+
+<p align="center">
+  <img src="assets/05_policy_rag.png" alt="Pinecone Statutory Policy RAG Explorer" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em><strong>Figure 5 — Statutory Policy RAG Explorer:</strong> Semantic vector search over Maharashtra Shops & Establishments Act 2017 and company policy handbook with exact legal section citations.</em>
+</p>
+
+<p align="center">
+  <img src="assets/04_reports.png" alt="Enterprise Payroll Reports & CSV Export Hub" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em><strong>Figure 6 — Executive Reports & Payroll Export Hub:</strong> One-click payroll reconciliation, leave utilization analytics, and audit-ready CSV exports.</em>
+</p>
+
+<p align="center">
+  <img src="assets/07_onboarding.png" alt="Administrative KYC & Employee Onboarding Portal" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
+  <br>
+  <em><strong>Figure 7 — Guided KYC Onboarding Wizard:</strong> Multi-step employee verification pipeline with encrypted document storage and DPDP compliance auditing.</em>
+</p>
 
 ---
 
@@ -332,6 +378,15 @@ py -V:Astral/CPython3.11.15 scripts/run_adk_comparison.py --case BENCH-01-LEAVE-
 
 ```
 people-ops/
+│
+├── 📂 assets/                         # Production UI showcase images & architecture assets
+│   ├── 01_dashboard.png               # Command Center & Agent Circuit
+│   ├── 02_leave_ledger.png            # Leave Ledger & Entitlement View
+│   ├── 03_timesheets.png              # Timesheets & Overtime Monitor
+│   ├── 04_reports.png                 # Reports & CSV Export Hub
+│   ├── 05_policy_rag.png              # Statutory Policy Search
+│   ├── 06_chat_drawer.png             # AI Multi-Agent Chat Drawer
+│   └── 07_onboarding.png              # Admin Guided KYC Onboarding
 │
 ├── 📂 backend/
 │   ├── requirements.txt               # Pinned core production dependencies
