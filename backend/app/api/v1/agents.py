@@ -589,6 +589,63 @@ async def run_prompt_model_grid(
     }
 
 
+class AdkComparePayload(BaseModel):
+    items: Optional[List[str]] = Field(None, description="Golden test ids (default: every case that is safe to run)")
+    model: Optional[str] = Field(None, description="e.g. openai/gpt-4o-mini (default: the backend's current model)")
+    judge: Optional[str] = Field(None, description="LLM judge for the Langfuse leg (default: gpt-4o-mini if an OpenAI key exists, else Groq; 'heuristic' forces keyword rules)")
+    limit: Optional[int] = Field(None, ge=1, le=25)
+
+
+async def _run_adk_comparison_tracked(payload: AdkComparePayload) -> Dict[str, Any]:
+    from app.evaluations import adk_comparison
+
+    adk_comparison.set_last_comparison({"status": "running", "started_at": time.time()})
+    try:
+        result = await adk_comparison.run_adk_langfuse_comparison(
+            payload.items, model=payload.model, judge=payload.judge, limit=payload.limit
+        )
+    except Exception as exc:
+        logger.exception("ADK vs Langfuse comparison failed")
+        result = {"status": "error", "error": str(exc)}
+    result["finished_at"] = time.time()
+    adk_comparison.set_last_comparison(result)
+    return result
+
+
+@router.post("/experiments/adk-compare")
+async def run_adk_vs_langfuse_comparison(
+    payload: AdkComparePayload,
+    background_tasks: BackgroundTasks,
+    wait: bool = Query(False, description="Block until the comparison finishes (minutes)"),
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+):
+    """Run the same golden cases through Google ADK's evaluators and the Langfuse pipeline, and compare.
+
+    Cases whose trajectories write data (apply leave, log hours, Zoho sync) are skipped unless the backend
+    runs on a throwaway SQLite database; use `python scripts/run_adk_comparison.py` for those.
+    """
+    from app.evaluations.golden_dataset_25 import GOLDEN_BENCHMARK_25
+
+    known = {tc.test_id for tc in GOLDEN_BENCHMARK_25}
+    unknown = [i for i in (payload.items or []) if i not in known]
+    if unknown:
+        raise HTTPException(status_code=422, detail={"message": "Unknown golden test ids", "unknown": unknown})
+    if wait:
+        return await _run_adk_comparison_tracked(payload)
+    background_tasks.add_task(_run_adk_comparison_tracked, payload)
+    return {"status": "ACCEPTED", "poll": "/api/v1/agents/experiments/adk-compare/latest"}
+
+
+@router.get("/experiments/adk-compare/latest")
+async def get_latest_adk_comparison(
+    current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
+):
+    """Status/result of the most recent ADK vs Langfuse comparison (in memory; lost on restart)."""
+    from app.evaluations import adk_comparison
+
+    return adk_comparison.last_comparison()
+
+
 @router.get("/experiments/grid/latest")
 async def get_latest_grid_run(
     current_user: User = Depends(require_role([UserRole.HR_MANAGER, UserRole.ADMIN])),
@@ -608,7 +665,8 @@ async def get_webhooks_and_ngrok_status(
     tunnel_target = None
 
     try:
-        async with httpx.AsyncClient(timeout=1.5) as client:
+        # trust_env=False: this is a loopback call and must never be routed through HTTP(S)_PROXY.
+        async with httpx.AsyncClient(timeout=1.5, trust_env=False) as client:
             resp = await client.get("http://127.0.0.1:4040/api/tunnels")
             if resp.status_code == 200:
                 tunnels = resp.json().get("tunnels", [])

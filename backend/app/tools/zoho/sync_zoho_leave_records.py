@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 async def sync_zoho_leave_records(user_id: str) -> Dict[str, Any]:
     """Fetch external synchronized leave records from Zoho People HRMS REST API v2.
 
+    Call this at most once per request; it returns every record for the employee.
+
     Args:
-        user_id: Unique UUID of the employee.
+        user_id: The employee ID code from the "ID: ..." part of the [Active Employee ...] header
+            (for example EMP-004). Never pass the employee's name, first name or any other text.
 
     Returns:
         Dict containing synchronized leave records.

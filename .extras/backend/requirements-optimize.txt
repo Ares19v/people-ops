@@ -1,0 +1,7 @@
+# Prompt optimisation with GEPA two ways: DSPy (mocked agent) and Google ADK (real agents).
+# dspy 3.4.1 requires gepa==0.1.4, the same GEPA that google-adk[eval] 2.13.0 uses, so both legs share one engine.
+# Installed into the same backend/.venv as everything else:
+#   uv pip install --python backend/.venv/Scripts/python.exe -r backend/requirements-dev.txt -r backend/requirements-optimize.txt
+-r requirements-eval.txt
+dspy==3.4.1
+json-repair>=0.54.2

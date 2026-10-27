@@ -8,6 +8,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .venv/
+.venv-adk/
 env/
 venv/
 *.db

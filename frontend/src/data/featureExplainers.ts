@@ -365,25 +365,25 @@ export const FEATURE_EXPLAINERS: Record<string, ExplainerFeature> = {
   // HR Policy RAG Portal
   policy_rag_search: {
     key: 'policy_rag_search',
-    title: 'Semantic Graph RAG Policy Search',
+    title: 'Semantic Policy Search',
     category: 'POLICY RAG PORTAL',
     overview: 'Natural language search bar allowing employees to ask complex questions about company policies and labor laws.',
-    howItWorks: 'Executes hybrid retrieval over PostgreSQL vector embeddings and knowledge graph nodes to locate relevant legal clauses.',
+    howItWorks: 'Runs semantic retrieval over a Pinecone vector index of statutory sections and company policies to locate relevant legal clauses.',
     demoTalkTrack: [
       'Type queries like "Can I carry forward 60 days of earned leave?" to show grounded, authoritative answers.'
     ],
-    statutoryOrTechCitation: 'Hybrid PostgreSQL Vector & Graph RAG'
+    statutoryOrTechCitation: 'Pinecone Vector Retrieval'
   },
   policy_graph_retrieval: {
     key: 'policy_graph_retrieval',
-    title: 'Knowledge Graph Legal Entity Linking',
+    title: 'Statutory-to-Policy Cross-Referencing',
     category: 'POLICY RAG PORTAL',
     overview: 'Connects statutory labor law sections (Section 13, 14, 18) with internal company handbooks and HR guidelines.',
-    howItWorks: 'Traverses knowledge graph relationships to verify that corporate rules do not contradict state statutes.',
+    howItWorks: 'Each indexed passage carries the related statutory and policy rules inline, so retrieval surfaces both sides when checking that corporate rules do not contradict state statutes.',
     demoTalkTrack: [
       'Explain that the AI checks whether company policy violates state minimums before formulating an answer.'
     ],
-    statutoryOrTechCitation: 'Knowledge Graph Entity Disambiguation'
+    statutoryOrTechCitation: 'Cross-Referenced Policy Passages'
   },
   policy_statutory_citations: {
     key: 'policy_statutory_citations',

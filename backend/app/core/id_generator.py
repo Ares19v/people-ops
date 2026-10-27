@@ -14,9 +14,12 @@ Generates clean, professional, readable sequential identifiers across all platfo
 - Projects: prj_banking_1, prj_ai_platform_2
 """
 
+import logging
 import re
 import threading
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
+
+logger = logging.getLogger(__name__)
 
 _counters: Dict[str, int] = {}
 _lock = threading.Lock()
@@ -38,10 +41,65 @@ def get_email_prefix(user_identifier: Optional[str]) -> str:
     return clean or "devansh.tyagi"
 
 
+# category -> (table, id prefix before the entity key, separator after the key)
+_SEQUENCE_TABLES: Dict[str, Tuple[str, str]] = {
+    "leave": ("leave_applications", "leave_"),
+    "timesheet": ("timesheet_entries", "ts_"),
+    "session": ("chat_sessions", "sess_"),
+    "summary": ("conversation_summaries", "sum_"),
+    "audit": ("security_trail", "aud_"),
+    "document": ("employee_documents", "doc_"),
+    "sync": ("zoho_sync_records", "sync_"),
+}
+_seeded: set = set()
+_sync_engine = None
+
+
+def _highest_existing_index(category: str, key: str) -> int:
+    """Highest sequence number already stored in the database for this bucket (0 if none / unknown)."""
+    spec = _SEQUENCE_TABLES.get(category)
+    if spec is None:
+        return 0
+    table, id_prefix = spec
+    if category == "document":
+        entity, _, doc_type = key.partition(":")
+        stem = f"{id_prefix}{entity}_{doc_type}_"
+    elif category == "sync":
+        stem = "sync_zoho_"
+    else:
+        stem = f"{id_prefix}{key}_"
+    try:
+        global _sync_engine
+        from sqlalchemy import create_engine, text
+        from app.core.config import settings
+
+        if _sync_engine is None:
+            _sync_engine = create_engine(settings.SYNC_DATABASE_URL)
+        with _sync_engine.connect() as connection:
+            # "_" is a LIKE wildcard, so this may over-match slightly; the regex below enforces the exact stem.
+            rows = connection.execute(text(f"SELECT id FROM {table} WHERE id LIKE :p"), {"p": stem + "%"}).fetchall()
+    except Exception as exc:  # no database / table not created yet: start from 1 as before
+        logger.debug("Could not seed %s sequence from the database: %s", category, exc)
+        return 0
+    pattern = re.compile(re.escape(stem) + r"(\d+)$")
+    indexes = [int(m.group(1)) for (row_id,) in rows if (m := pattern.match(str(row_id)))]
+    return max(indexes, default=0)
+
+
 def get_next_sequence(category: str, key: str = "global") -> int:
-    """Returns the next sequential integer (1-based) for a given category and entity key."""
+    """Returns the next sequential integer (1-based) for a given category and entity key.
+
+    The counters live in memory, so on the first use in a process each bucket is seeded from the highest
+    index already stored in the database. Without that, every restart began again at 1 and the first
+    new leave application / timesheet entry / session of an existing employee hit a duplicate primary key.
+    """
     bucket = f"{category}:{key}".lower()
     with _lock:
+        if bucket not in _seeded:
+            _seeded.add(bucket)
+            existing = _highest_existing_index(category, key.lower() if category != "document" else key.lower())
+            if existing > _counters.get(bucket, 0):
+                _counters[bucket] = existing
         current = _counters.get(bucket, 0) + 1
         _counters[bucket] = current
         return current

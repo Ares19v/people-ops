@@ -57,7 +57,7 @@ async def apply_leave(
             return {
                 "application_id": application.id,
                 "leave_type": application.leave_type.value,
-                "days": application.days,
+                "days": application.total_days,
                 "start_date": str(application.start_date),
                 "end_date": str(application.end_date),
                 "status": application.status.value,

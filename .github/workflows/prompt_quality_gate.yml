@@ -57,4 +57,4 @@ jobs:
           CI_MIN_SCORE_DELTA: '-0.05'
           CI_MIN_PASS_RATE: '80.0'
         run: |
-          python backend/scripts/ci_quality_gate.py
+          python scripts/ci_quality_gate.py

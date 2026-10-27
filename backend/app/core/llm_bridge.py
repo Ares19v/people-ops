@@ -206,6 +206,57 @@ def resolve_llm_provider() -> str:
     return _resolved_provider
 
 
+def export_provider_keys_to_env() -> None:
+    """Make the configured provider keys visible to LiteLLM / ADK through the environment.
+
+    Keys normally live only in .env (read into `settings`). ADK builds its own model objects from names
+    (for example an `openai/gpt-4o-mini` judge in an evaluation) and those read the process environment, so
+    without this they fail with "Missing credentials". Never overrides a variable that is already set.
+    """
+    for variable, key in (
+        ("GROQ_API_KEY", _get_groq_key()),
+        ("OPENAI_API_KEY", _get_openai_key()),
+        ("GOOGLE_API_KEY", _get_gemini_key()),
+    ):
+        if key:
+            os.environ.setdefault(variable, key)
+
+
+_groq_safe_class = None
+
+
+def _groq_safe_litellm(model: str, **kwargs: Any) -> Any:
+    """A LiteLlm that never sends reasoning back to Groq.
+
+    ADK 1.x+ replays the model's earlier "thinking" as a `reasoning_content` field on assistant messages.
+    Groq's API rejects that field ("property 'reasoning_content' is unsupported"), which broke every agent
+    turn that followed a tool call. Thought parts are dropped from the history before each request; the
+    final answers and tool calls are untouched.
+    """
+    global _groq_safe_class
+    from google.adk.models.lite_llm import LiteLlm
+
+    if _groq_safe_class is None:
+        class GroqSafeLiteLlm(LiteLlm):
+            async def generate_content_async(self, llm_request, stream: bool = False):
+                kept = []
+                for content in llm_request.contents or []:
+                    content.parts = [p for p in (content.parts or []) if not getattr(p, "thought", False)]
+                    if content.parts:
+                        kept.append(content)
+                llm_request.contents = kept
+                async for response in super().generate_content_async(llm_request, stream):
+                    yield response
+
+        _groq_safe_class = GroqSafeLiteLlm
+    return _groq_safe_class(model=model, **kwargs)
+
+
+def _retry_kwargs() -> dict:
+    """LiteLLM rate-limit retries for ADK agents (see Settings.LLM_NUM_RETRIES)."""
+    return {"num_retries": settings.LLM_NUM_RETRIES} if settings.LLM_NUM_RETRIES > 0 else {}
+
+
 def get_llm_model(model_override: Optional[str] = None) -> Any:
     """
     Return model representation for Google ADK Agents.
@@ -215,6 +266,8 @@ def get_llm_model(model_override: Optional[str] = None) -> Any:
     - "mock": Fallback string
     """
     provider = resolve_llm_provider()
+    if provider != "mock":
+        export_provider_keys_to_env()
 
     if provider == "groq":
         groq_key = _get_groq_key()
@@ -224,8 +277,7 @@ def get_llm_model(model_override: Optional[str] = None) -> Any:
         os.environ.setdefault("LITELLM_DROP_PARAMS", "True")
         target_model = model_override or get_active_groq_model()
         try:
-            from google.adk.models.lite_llm import LiteLlm
-            return LiteLlm(model=target_model)
+            return _groq_safe_litellm(target_model, **_retry_kwargs())
         except Exception as e:
             logger.warning("Could not initialize LiteLlm for Groq (%s), using model string", e)
             return target_model
@@ -238,7 +290,7 @@ def get_llm_model(model_override: Optional[str] = None) -> Any:
         os.environ.setdefault("LITELLM_DROP_PARAMS", "True")
         try:
             from google.adk.models.lite_llm import LiteLlm
-            return LiteLlm(model=settings.OPENAI_MODEL)
+            return LiteLlm(model=settings.OPENAI_MODEL, **_retry_kwargs())
         except Exception as e:
             logger.warning("Could not initialize LiteLlm (%s), using model string", e)
             return settings.OPENAI_MODEL

@@ -1,27 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { CitationItem, UserRole } from '../types';
-import { Search, Shield, BookOpen, Sparkles, ShieldCheck, Network, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Shield, BookOpen, Sparkles, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
 import { FeatureExplainerIcon } from '../components/FeatureExplainerIcon';
-import { LiveKnowledgeGraphViewer } from '../components/LiveKnowledgeGraphViewer';
 
 interface PolicySearchPortalProps {
   currentRole?: UserRole;
 }
 
-export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentRole }) => {
-  const isAdmin = currentRole === 'ADMIN';
-  const [activeTab, setActiveTab] = useState<'search' | 'graph'>('search');
+export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = () => {
   const [query, setQuery] = useState('sick leave medical certificate');
   const [results, setResults] = useState<any>(null);
   const [searching, setSearching] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isAdmin && activeTab === 'graph') {
-      setActiveTab('search');
-    }
-  }, [isAdmin, activeTab]);
 
   const sampleQueries = [
     'sick leave medical certificate',
@@ -52,16 +43,10 @@ export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentR
       setQueryCache((prev) => ({ ...prev, [q.toLowerCase()]: data }));
     } catch (err: any) {
       console.error('Policy search failed:', err);
-      setErrorMsg(err?.response?.data?.detail || err?.message || 'Failed to retrieve policy from Knowledge Graph.');
+      setErrorMsg(err?.response?.data?.detail || err?.message || 'Failed to retrieve policy.');
     } finally {
       setSearching(false);
     }
-  };
-
-  const handleQueryFromGraph = (nodeTitle: string) => {
-    setQuery(nodeTitle);
-    setActiveTab('search');
-    handleSearch(nodeTitle);
   };
 
   useEffect(() => {
@@ -70,62 +55,21 @@ export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentR
 
   return (
     <div className="space-y-6">
-      {/* Header and Shield Toggle Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            {isAdmin ? (
-              <button
-                type="button"
-                onClick={() => setActiveTab((prev) => (prev === 'search' ? 'graph' : 'search'))}
-                className="p-1 -ml-1 rounded-xl hover:bg-blue-50 active:scale-95 transition-all text-blue-600 focus:outline-none group flex items-center justify-center cursor-pointer"
-                title={activeTab === 'search' ? "Switch to Live Knowledge Graph (Neo4j)" : "Back to Policy Search & Citations"}
-              >
-                {activeTab === 'search' ? (
-                  <Shield className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
-                ) : (
-                  <Network className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
-                )}
-              </button>
-            ) : (
-              <Shield className="w-5 h-5 text-blue-600" />
-            )}
-            <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
-              {isAdmin && activeTab === 'graph'
-                ? 'Live Neo4j Aura Statutory Knowledge Graph'
-                : 'HR Policy & Maharashtra Labour Law Graph RAG'}
-            </h2>
-            <FeatureExplainerIcon featureKey="policy_rag_search" />
-          </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {isAdmin && activeTab === 'graph'
-              ? 'Interactive ontology graph topology, directional legal relationships, and property schemas.'
-              : 'Explore authoritative policies indexed against the Maharashtra Shops & Establishments Act, 2017 with Neo4j live graph traversal.'}
-          </p>
+      <div>
+        <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-blue-600" />
+          <h2 className="font-display text-xl font-bold text-slate-900 flex items-center gap-2">
+            HR Policy & Maharashtra Labour Law Search
+          </h2>
+          <FeatureExplainerIcon featureKey="policy_rag_search" />
         </div>
-
-        {/* Action Button if in Graph Mode */}
-        {isAdmin && activeTab === 'graph' && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab('search')}
-              className="btn-pill-outline text-xs"
-            >
-              <Search className="w-3.5 h-3.5 text-blue-600" />
-              <span>Back to Policy Search</span>
-            </button>
-          </div>
-        )}
+        <p className="text-xs text-slate-500 mt-0.5">
+          Explore authoritative policies indexed against the Maharashtra Shops & Establishments Act, 2017 with Pinecone semantic search.
+        </p>
       </div>
 
-      {/* Tab 1: Live Neo4j Graph Visualizer */}
-      {isAdmin && activeTab === 'graph' && (
-        <LiveKnowledgeGraphViewer onSelectQuery={handleQueryFromGraph} />
-      )}
-
-      {/* Tab 2: Policy Search & Citations */}
-      {(!isAdmin || activeTab === 'search') && (
-        <div className="space-y-6">
+      {/* Policy Search & Citations */}
+      <div className="space-y-6">
           {/* Search Input Bar */}
           <div className="card-olixer p-4 sm:p-5 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-slate-50/80 p-2 rounded-2xl border border-slate-200 focus-within:bg-white focus-within:border-blue-600 transition-all shadow-sm">
@@ -148,10 +92,10 @@ export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentR
                 {searching ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Searching Graph...</span>
+                    <span>Searching...</span>
                   </>
                 ) : (
-                  <span>Search Graph</span>
+                  <span>Search</span>
                 )}
               </button>
             </div>
@@ -179,7 +123,7 @@ export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentR
             <div className="card-olixer p-8 flex flex-col items-center justify-center text-center space-y-3">
               <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
               <div className="text-xs font-semibold text-slate-800">
-                Traversing Neo4j Knowledge Graph & Statutory Vector Index...
+                Searching the Pinecone policy index...
               </div>
               <div className="text-[11px] text-slate-400">
                 Querying Maharashtra Shops & Establishments Act 2017 & Company Handbooks
@@ -204,7 +148,7 @@ export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentR
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-blue-600" />
                     <span className="font-display font-bold text-xs uppercase tracking-wider text-slate-500">
-                      Synthesized Graph RAG Response
+                      Synthesized Policy Response
                     </span>
                   </div>
                   <div className="badge-statutory-green">
@@ -229,7 +173,7 @@ export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentR
               <div>
                 <h3 className="font-display font-bold text-sm text-slate-900 mb-3 flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-blue-600" />
-                  Retrieved Policy Nodes & Citations ({results.citations?.length || 0})
+                  Retrieved Policy Passages & Citations ({results.citations?.length || 0})
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -257,7 +201,6 @@ export const PolicySearchPortal: React.FC<PolicySearchPortalProps> = ({ currentR
             </div>
           )}
         </div>
-      )}
     </div>
   );
 };

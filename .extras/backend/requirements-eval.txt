@@ -1,0 +1,4 @@
+# Google ADK evaluation + the Eval tab in `adk web` (npm run adk:web, scripts/run_adk_*.py).
+# Heavier than the API itself (Vertex SDK, scikit-learn, pandas), so it is kept out of requirements.txt.
+-r requirements.txt
+google-adk[eval]==2.13.0

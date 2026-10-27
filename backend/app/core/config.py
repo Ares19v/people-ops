@@ -33,11 +33,13 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://hr_user:hr_password@localhost:5432/hr_db"
     SYNC_DATABASE_URL: str = "postgresql://hr_user:hr_password@localhost:5432/hr_db"
     
-    # Neo4j
-    NEO4J_URI: str = "bolt://localhost:7687"
-    NEO4J_USER: str = "neo4j"
-    NEO4J_PASSWORD: str = "hr_neo4j_password"
-    
+    # Pinecone (policy RAG, integrated inference). No key = local keyword fallback.
+    PINECONE_API_KEY: Optional[str] = None
+    PINECONE_INDEX: str = "people-ops-policies"
+    PINECONE_CLOUD: str = "aws"
+    PINECONE_REGION: str = "us-east-1"
+    PINECONE_EMBED_MODEL: str = "llama-text-embed-v2"
+
     # S3 / MinIO
     S3_ENDPOINT_URL: str = "http://localhost:9000"
     S3_ACCESS_KEY: str = "minio_admin"
@@ -61,6 +63,9 @@ class Settings(BaseSettings):
     GROQ_API_KEY: Optional[str] = None
     GROQ_MODEL: str = "groq/openai/gpt-oss-120b"
     MOCK_LLM_ENABLED: bool = True
+    # LiteLLM retries (honouring the provider's retry-after) for rate-limited calls. 0 = fail fast, as in the API;
+    # the ADK / evaluation tooling sets this so free-tier limits (e.g. Groq 8k tokens/min) slow a run instead of breaking it.
+    LLM_NUM_RETRIES: int = 0
     # Sync SQLAlchemy URL for ADK sessions (e.g. the SYNC_DATABASE_URL). Empty = in-memory sessions
     # (lost on restart, not shared between workers).
     ADK_SESSION_DB_URL: Optional[str] = None
@@ -118,7 +123,6 @@ class Settings(BaseSettings):
             if self.MOCK_SSO_ENABLED:
                 raise ValueError("CRITICAL SECURITY ERROR: MOCK_SSO_ENABLED must be false in production.")
             default_credentials = {
-                "NEO4J_PASSWORD": "hr_neo4j_password",
                 "S3_SECRET_KEY": "minio_secret_password",
             }
             for field, default in default_credentials.items():

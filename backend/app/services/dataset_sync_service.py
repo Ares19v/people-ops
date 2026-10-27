@@ -1072,12 +1072,21 @@ class LangfuseDatasetSyncService:
         return text or None
 
     def _publish_optimized_prompt(self, name: str, text: str, label: str, message: str) -> Optional[int]:
-        """Create a new prompt version carrying only the (non-live) output label."""
+        """Create a new prompt version carrying only the (non-live) output label, tagged "GEPA Optimized"."""
+        from app.evaluations.prompt_optimizer import GEPA_OPTIMIZED_TAG
+
         if not self._langfuse:
             return None
         try:
+            # Tags belong to the prompt name, so keep whatever tags it already has.
+            existing: List[str] = []
+            try:
+                existing = list(self._langfuse.get_prompt(name, label="latest", cache_ttl_seconds=0).tags or [])
+            except Exception:
+                pass  # a brand-new prompt name has no tags yet
+            tags = existing + [t for t in (GEPA_OPTIMIZED_TAG,) if t not in existing]
             created = self._langfuse.create_prompt(
-                name=name, prompt=text, labels=[label], type="text", commit_message=message
+                name=name, prompt=text, labels=[label], tags=tags, type="text", commit_message=message
             )
             self._langfuse.flush()
             return getattr(created, "version", None)

@@ -138,13 +138,9 @@ export const api = {
     window.URL.revokeObjectURL(url);
   },
 
-  // Policy Graph RAG
+  // Policy RAG
   searchPolicies: async (query: string) => {
     const res = await apiClient.get('/policy/search', { params: { q: query } });
-    return res.data;
-  },
-  getKnowledgeGraph: async () => {
-    const res = await apiClient.get('/policy/graph');
     return res.data;
   },
 

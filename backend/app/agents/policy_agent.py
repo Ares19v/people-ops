@@ -2,7 +2,7 @@ from typing import Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
-from app.services.graph_rag_service import graph_rag_service
+from app.services.policy_rag_service import policy_rag_service
 from app.agents.llm_provider import get_llm_provider
 from app.schemas.agent import StructuredAction
 from google.adk.agents import Agent
@@ -29,7 +29,7 @@ policy_adk_agent = Agent(
 
 
 class HRPolicyAgent:
-    """Graph RAG Agent responsible for policy, rule, and statutory labour law questions."""
+    """Policy RAG Agent responsible for policy, rule, and statutory labour law questions."""
 
     def __init__(self):
         self.llm = get_llm_provider()
@@ -43,8 +43,8 @@ class HRPolicyAgent:
         return self.system_prompt
 
     async def handle_request(self, db: AsyncSession, user: User, message: str) -> Dict[str, Any]:
-        # 1. Query Graph RAG service
-        retrieval_res = await graph_rag_service.search_policies(message)
+        # 1. Query policy RAG service
+        retrieval_res = await policy_rag_service.search_policies(message)
         context = retrieval_res["context"]
         citations = retrieval_res["citations"]
         requires_escalation = retrieval_res["requires_escalation"]

@@ -11,6 +11,7 @@ hr_root_orchestrator (Agent)
 """
 from __future__ import annotations
 
+import inspect
 import logging
 import time
 from typing import Optional
@@ -50,7 +51,7 @@ from app.agents.health_agent import health_adk_agent as health_agent
 from app.agents.policy_agent import policy_adk_agent as policy_agent
 from app.agents.zoho_agent import zoho_adk_agent as zoho_agent
 from app.agents.orchestrator import hr_root_orchestrator
-from app.core import directory
+from app.core.employee_context import build_employee_header
 
 # Patch Google ADK telemetry to prevent 'TypeError: Object of type bytes is not JSON serializable'
 try:
@@ -116,14 +117,33 @@ def sync_agent_instructions():
         hr_root_orchestrator.instruction = langfuse_prompt_service.get_prompt("peopleops-root-orchestrator", label="live")
 
 
+async def _maybe_await(value):
+    """ADK session methods are synchronous in 0.x and async from 1.x on; support both."""
+    return await value if inspect.isawaitable(value) else value
+
 # ── Runner Factory & Execution ────────────────────────────────────────────────
+
+_ASYNC_DRIVERS = (
+    ("postgresql://", "postgresql+asyncpg://"),
+    ("postgres://", "postgresql+asyncpg://"),
+    ("sqlite://", "sqlite+aiosqlite://"),
+)
+
+
+def _async_session_url(url: str) -> str:
+    """ADK 2.x needs an async SQLAlchemy driver; accept the plain URL form people usually have."""
+    for plain, asynchronous in _ASYNC_DRIVERS:
+        if url.startswith(plain):
+            return asynchronous + url[len(plain):]
+    return url
+
 
 def build_session_service():
     """Database-backed ADK sessions when ADK_SESSION_DB_URL is set, otherwise in-memory."""
     if settings.ADK_SESSION_DB_URL:
         try:
             from google.adk.sessions import DatabaseSessionService
-            return DatabaseSessionService(db_url=settings.ADK_SESSION_DB_URL)
+            return DatabaseSessionService(db_url=_async_session_url(settings.ADK_SESSION_DB_URL))
         except Exception as exc:
             logger.warning("ADK DatabaseSessionService unavailable (%s); falling back to in-memory sessions", exc)
     return InMemorySessionService()
@@ -180,11 +200,7 @@ async def run_hr_query(
     start = time.monotonic()
     alog.agent_start(session_id=session_id, user_id=user_id, message=message)
 
-    resolved_name = user_name
-    if not resolved_name and user_id:
-        resolved_name = directory.name_for(user_id)
-    first_name = resolved_name.split()[0] if resolved_name and " " in resolved_name else (resolved_name or "there")
-    user_header = f"[Active Employee: {resolved_name} (ID: {user_id}) - Address as {first_name}, NEVER call by ID code]" if resolved_name else f"[Active Employee ID: {user_id}]"
+    user_header = build_employee_header(user_id, user_name)
 
     full_message = f"{user_header}\n\n{message}"
     if context_injection:
@@ -201,13 +217,13 @@ async def run_hr_query(
     for attempt in range(max_attempts):
         # Use a clean per-attempt session id if retrying after a rate limit
         active_session_id = session_id if attempt == 0 else f"{session_id}_retry_{attempt}"
-        existing = runner.session_service.get_session(
+        existing = await _maybe_await(runner.session_service.get_session(
             app_name=runner.app_name,
             user_id=user_id,
             session_id=active_session_id,
-        )
+        ))
         if existing is None:
-            runner.session_service.create_session(
+            await _maybe_await(runner.session_service.create_session(
                 app_name=runner.app_name,
                 user_id=user_id,
                 session_id=active_session_id,
@@ -215,7 +231,7 @@ async def run_hr_query(
                     "organization_name": settings.ORGANIZATION_NAME,
                     "user_id": user_id,
                 }
-            )
+            ))
 
         prev_author = None
         delegation_path = ["hr_root_orchestrator"]

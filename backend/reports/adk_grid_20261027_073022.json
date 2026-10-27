@@ -1,0 +1,161 @@
+{
+  "status": "grid_complete",
+  "engine": "google-adk",
+  "evalset": "deterministic",
+  "metrics_preset": "fast",
+  "judge": "default",
+  "run_prefix": "adk-grid",
+  "items": [
+    "BENCH-01-LEAVE-BALANCES"
+  ],
+  "cells_total": 3,
+  "cells_succeeded": 3,
+  "matrix": {
+    "live": {
+      "groq/openai/gpt-oss-120b": 1.0
+    },
+    "v1": {
+      "groq/openai/gpt-oss-120b": 0.0
+    },
+    "v2": {
+      "groq/openai/gpt-oss-120b": 1.0
+    }
+  },
+  "best": {
+    "prompt": "live",
+    "model": "groq/openai/gpt-oss-120b",
+    "run_name": "adk-grid-gpt-oss-120b-live-1793066353",
+    "status": "ok",
+    "composite": 1.0,
+    "scored_cases": 1,
+    "errored_cases": 0,
+    "pass_rate_percent": 100.0,
+    "adk_strict_pass_rate_percent": 0.0,
+    "metrics": {
+      "tool_trajectory_avg_score": 1.0,
+      "response_match_score": 0.213
+    },
+    "average_latency_ms": 6203.0,
+    "prompt_chars": 1489,
+    "cases": [
+      {
+        "id": "BENCH-01-LEAVE-BALANCES",
+        "score": 1.0,
+        "status": "FAILED",
+        "tools": [
+          "transfer_to_agent",
+          "get_leave_balances"
+        ],
+        "expected_tools": [
+          "transfer_to_agent",
+          "get_leave_balances"
+        ],
+        "error": null
+      }
+    ]
+  },
+  "cells": [
+    {
+      "prompt": "live",
+      "model": "groq/openai/gpt-oss-120b",
+      "run_name": "adk-grid-gpt-oss-120b-live-1793066353",
+      "status": "ok",
+      "composite": 1.0,
+      "scored_cases": 1,
+      "errored_cases": 0,
+      "pass_rate_percent": 100.0,
+      "adk_strict_pass_rate_percent": 0.0,
+      "metrics": {
+        "tool_trajectory_avg_score": 1.0,
+        "response_match_score": 0.213
+      },
+      "average_latency_ms": 6203.0,
+      "prompt_chars": 1489,
+      "cases": [
+        {
+          "id": "BENCH-01-LEAVE-BALANCES",
+          "score": 1.0,
+          "status": "FAILED",
+          "tools": [
+            "transfer_to_agent",
+            "get_leave_balances"
+          ],
+          "expected_tools": [
+            "transfer_to_agent",
+            "get_leave_balances"
+          ],
+          "error": null
+        }
+      ]
+    },
+    {
+      "prompt": "v1",
+      "model": "groq/openai/gpt-oss-120b",
+      "run_name": "adk-grid-gpt-oss-120b-v1-1793066353",
+      "status": "ok",
+      "composite": 0.0,
+      "scored_cases": 1,
+      "errored_cases": 0,
+      "pass_rate_percent": 0.0,
+      "adk_strict_pass_rate_percent": 0.0,
+      "metrics": {
+        "tool_trajectory_avg_score": 0.0,
+        "response_match_score": 0.19
+      },
+      "average_latency_ms": 25907.0,
+      "prompt_chars": 46,
+      "cases": [
+        {
+          "id": "BENCH-01-LEAVE-BALANCES",
+          "score": 0.0,
+          "status": "FAILED",
+          "tools": [
+            "transfer_to_agent",
+            "transfer_to_agent",
+            "get_leave_balances"
+          ],
+          "expected_tools": [
+            "transfer_to_agent",
+            "get_leave_balances"
+          ],
+          "error": null
+        }
+      ]
+    },
+    {
+      "prompt": "v2",
+      "model": "groq/openai/gpt-oss-120b",
+      "run_name": "adk-grid-gpt-oss-120b-v2-1793066353",
+      "status": "ok",
+      "composite": 1.0,
+      "scored_cases": 1,
+      "errored_cases": 0,
+      "pass_rate_percent": 100.0,
+      "adk_strict_pass_rate_percent": 0.0,
+      "metrics": {
+        "tool_trajectory_avg_score": 1.0,
+        "response_match_score": 0.2
+      },
+      "average_latency_ms": 28391.0,
+      "prompt_chars": 76,
+      "cases": [
+        {
+          "id": "BENCH-01-LEAVE-BALANCES",
+          "score": 1.0,
+          "status": "FAILED",
+          "tools": [
+            "transfer_to_agent",
+            "get_leave_balances"
+          ],
+          "expected_tools": [
+            "transfer_to_agent",
+            "get_leave_balances"
+          ],
+          "error": null
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "duration_sec": 68.4
+}

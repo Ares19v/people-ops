@@ -327,4 +327,24 @@ class LLMJudgeService:
             logger.warning("Failed to record score to Langfuse: %s", e)
 
 
+HEURISTIC_JUDGE = "heuristic"
+
+
+def resolve_default_judge() -> Optional[str]:
+    """An LLM judge for comparisons, preferring one independent of the Groq model that usually runs the agents.
+
+    OpenAI gpt-4o-mini if an OpenAI key exists, otherwise a Groq model, otherwise None (keyword heuristics).
+    Always None in mock mode, where no live provider may be called.
+    """
+    from app.core import llm_bridge
+
+    if settings.MOCK_LLM_ENABLED:
+        return None
+    if llm_bridge._get_openai_key():
+        return "openai/gpt-4o-mini"
+    if llm_bridge._get_groq_key():
+        return "groq/openai/gpt-oss-120b"
+    return None
+
+
 llm_judge_service = LLMJudgeService()

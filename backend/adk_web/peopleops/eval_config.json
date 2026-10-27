@@ -1,0 +1,76 @@
+{
+  "criteria": {
+    "tool_trajectory_avg_score": {
+      "threshold": 1.0,
+      "match_type": "EXACT"
+    },
+    "response_match_score": 0.3,
+    "final_response_match_v2": {
+      "threshold": 0.5,
+      "judge_model_options": {
+        "judge_model": "openai/gpt-4o-mini",
+        "num_samples": 3
+      }
+    },
+    "rubric_based_final_response_quality_v1": {
+      "threshold": 0.7,
+      "judge_model_options": {
+        "judge_model": "openai/gpt-4o-mini",
+        "num_samples": 3
+      },
+      "rubrics": [
+        {
+          "rubric_id": "answers_the_question",
+          "rubric_content": {
+            "text_property": "The response directly answers what the employee asked."
+          },
+          "type": "FINAL_RESPONSE_QUALITY"
+        },
+        {
+          "rubric_id": "no_invented_facts",
+          "rubric_content": {
+            "text_property": "Numbers, dates and rules in the response come from tool results or cited policy, not from guesswork."
+          },
+          "type": "FINAL_RESPONSE_QUALITY"
+        },
+        {
+          "rubric_id": "addresses_by_first_name",
+          "rubric_content": {
+            "text_property": "If the response addresses the employee by name it uses the first name and never the employee ID code."
+          },
+          "type": "FINAL_RESPONSE_QUALITY"
+        }
+      ]
+    },
+    "rubric_based_tool_use_quality_v1": {
+      "threshold": 0.7,
+      "judge_model_options": {
+        "judge_model": "openai/gpt-4o-mini",
+        "num_samples": 3
+      },
+      "rubrics": [
+        {
+          "rubric_id": "no_duplicate_calls",
+          "rubric_content": {
+            "text_property": "The agent never calls the same tool twice with identical arguments."
+          },
+          "type": "TOOL_USE_QUALITY"
+        },
+        {
+          "rubric_id": "employee_id_not_name",
+          "rubric_content": {
+            "text_property": "Wherever a tool takes user_id, the agent passes the employee ID (for example EMP-004), never the employee's name."
+          },
+          "type": "TOOL_USE_QUALITY"
+        }
+      ]
+    },
+    "hallucinations_v1": {
+      "threshold": 0.8,
+      "judge_model_options": {
+        "judge_model": "openai/gpt-4o-mini"
+      },
+      "evaluate_intermediate_nl_responses": true
+    }
+  }
+}

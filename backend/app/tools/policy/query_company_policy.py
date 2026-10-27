@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 @log_tool_call
 async def query_company_policy(query_text: str, jurisdiction: str = "MAHARASHTRA") -> Dict[str, Any]:
-    """Query the enterprise HR policies and statutory knowledge graph.
+    """Query the enterprise HR policies and Maharashtra statutory labour law knowledge base.
 
     Args:
         query_text: Natural language policy question.
@@ -20,15 +20,17 @@ async def query_company_policy(query_text: str, jurisdiction: str = "MAHARASHTRA
         Dict with answer, relevant policy sections, and confidence score.
     """
     try:
-        from app.rag.agentic_rag import agentic_policy_rag
-        res = await agentic_policy_rag.retrieve_and_synthesize(query_text, user_role="EMPLOYEE")
+        from app.services.policy_rag_service import policy_rag_service
+        res = await policy_rag_service.search_policies(query_text)
+        citations = [c.model_dump() for c in res["citations"]]
         return {
             "query": query_text,
-            "response": res.get("response", ""),
-            "citations": res.get("citations", []),
-            "confidence": 0.95,
+            "response": res["context"],
+            "citations": citations,
+            "confidence": max((c["confidence_score"] for c in citations), default=0.0),
         }
     except Exception as exc:
+        logger.warning("query_company_policy failed: %s", exc)
         return {
             "query": query_text,
             "response": f"Policy knowledge query for '{query_text}' under {jurisdiction} guidelines.",

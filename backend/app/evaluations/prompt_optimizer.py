@@ -20,6 +20,10 @@ logger = logging.getLogger(__name__)
 
 BUDGET_ROUNDS: Dict[str, int] = {"light": 2, "medium": 4, "heavy": 8}
 PROTECTED_LABELS = {"live", "production", "latest"}
+# Every prompt version an optimiser publishes carries this label (per version) and tag (Langfuse tags belong to the
+# prompt name, so all versions of that prompt show the tag). Neither ever promotes a prompt to live.
+GEPA_OPTIMIZED_TAG = "GEPA Optimized"
+GEPA_DEFAULT_LABEL = "gepa-optimized"
 _PLACEHOLDER = re.compile(r"\{\{\s*[\w.]+\s*\}\}")
 
 

@@ -9,24 +9,18 @@ jobs:
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: backend/requirements-dev.txt
-      - run: pip install -r requirements-dev.txt
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r backend/requirements.txt
       - name: Run offline test suite
         env:
-          PYTHONPATH: .
-        run: >-
-          pytest -q
-          --ignore=tests/test_live_system_comprehensive.py
-          --ignore=tests/run_10_scenario_benchmark.py
+          PYTHONPATH: backend
+        run: pytest -q --ignore=tests/test_live_system_comprehensive.py
 
   frontend:
     name: Frontend lint & build

@@ -1,0 +1,13 @@
+{
+  "name": "people-ops",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:all": "node scripts/banner.js && npm --prefix frontend run dev:all:fleet",
+    "dev:backend": "npm --prefix frontend run dev:backend",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "adk:web": "npm --prefix frontend run adk:web",
+    "dev:ngrok": "npm --prefix frontend run dev:ngrok"
+  }
+}

@@ -463,7 +463,7 @@ const getStepsForQuery = (query: string): string[] => {
   if (q.includes('policy') || q.includes('rule') || q.includes('act') || q.includes('law') || q.includes('maharashtra') || q.includes('karnataka') || q.includes('delhi')) {
     return [
       'Evaluating query intent & checking NeMo Guardrails...',
-      'Querying NetworkX Policy Graph & ChromaDB Hybrid RAG...',
+      'Querying Pinecone policy index...',
       'Evaluating state statutory mandates (Maharashtra/Karnataka/Delhi)...',
       'Verifying legal invariants with Adversarial Statutory Critic...',
       'Extracting authoritative citations & synthesizing response...',

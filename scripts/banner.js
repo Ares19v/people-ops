@@ -16,7 +16,7 @@ ${WHITE}                                                     HRMS FLEET v2.0
 ${BOLD_WHITE}  ====================================================================
    * ENTERPRISE MULTI-AGENT FLEET & ADK OBSERVABILITY PLATFORM *
   ====================================================================${WHITE}
-   [•] API Backend     : ${BOLD_WHITE}http://127.0.0.1:8000${WHITE} (FastAPI / LangGraph)
+   [•] API Backend     : ${BOLD_WHITE}http://127.0.0.1:38290${WHITE} (FastAPI / LangGraph)
    [•] Web Portal      : ${BOLD_WHITE}http://localhost:5173${WHITE} (Vite SPA Dashboard)
    [•] ngrok Tunnel    : ${BOLD_WHITE}https://upcountry-scarcity-hatchery.ngrok-free.dev${WHITE}
    [•] LLM Judges      : ${BOLD_WHITE}Langfuse Benchmark (25 Prompts / 6 Evaluators)${WHITE}

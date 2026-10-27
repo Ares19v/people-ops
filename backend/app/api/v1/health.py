@@ -11,6 +11,6 @@ async def health_check():
         "environment": settings.ENVIRONMENT,
         "multi_agent_framework": "Google ADK (Agent Development Kit)",
         "guardrails_engine": "NVIDIA NeMo Guardrails",
-        "graph_rag_engine": "Neo4j / Hybrid PostgreSQL RAG",
+        "graph_rag_engine": "Pinecone (integrated inference) Policy RAG",
         "observability": "LangSmith (DPDP Scrubbed)"
     }

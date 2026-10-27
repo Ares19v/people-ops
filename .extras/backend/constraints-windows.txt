@@ -1,0 +1,12 @@
+# Optional. Some Windows machines run an Application Control policy that blocks the compiled files of very
+# recently released packages ("DLL load failed ... An Application Control policy has blocked this file").
+# These are the newest releases that loaded on the machine this project was developed on:
+#   pip install -r requirements-eval.txt -c constraints-windows.txt
+grpcio==1.84.0
+grpcio-status==1.84.0
+xxhash==4.0.1
+jiter==0.17.0
+numpy<2.4
+pandas<2.4
+uuid-utils<0.14
+sqlalchemy<2.1

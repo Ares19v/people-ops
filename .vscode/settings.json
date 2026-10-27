@@ -3,5 +3,33 @@
     "*.db": "qwtel.sqlite-viewer",
     "*.sqlite": "qwtel.sqlite-viewer",
     "*.sqlite3": "qwtel.sqlite-viewer"
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/node_modules": true,
+    "**/.venv": true,
+    "**/dist": true,
+    ".extras": true,
+    "pytest.ini": true,
+    ".github": true,
+    ".git": true,
+    ".gitattributes": true,
+    "backend/uploads": true,
+    "backend/reports": true,
+    "backend/*.db": true,
+    "backend/.dockerignore": true,
+    "backend/.python-version": true,
+    "frontend/.dockerignore": true,
+    "frontend/.gitignore": true,
+    "frontend/.oxlintrc.json": true,
+    "frontend/tsconfig*.json": true,
+    "frontend/postcss.config.js": true,
+    "frontend/tailwind.config.js": true,
+    "backend/data/chroma_db": true,
+    "backend/data/token_vault": true,
+    "backend/data/traces": true,
+    "backend/data/*.db": true,
+    "backend/data/conversation_sessions.json": true
   }
 }

@@ -1,0 +1,174 @@
+{
+  "source": "Statutory & policy knowledge base (flattened from the former ontology graph)",
+  "document_type": "KNOWLEDGE_BASE",
+  "entries": [
+    {
+      "id": "kb_act_maha_2017",
+      "title": "Maharashtra Shops and Establishments Act 2017",
+      "category": "StatutoryAct",
+      "domain": "Time & Attendance",
+      "citation": "Maharashtra Act LXI of 2017",
+      "content": "Maharashtra Shops and Establishments Act 2017 (StatutoryAct)\nCitation: Maharashtra Act LXI of 2017\nKey facts: jurisdiction: Maharashtra, India; year: 2017; mandatory: True\nRelated rule (CONTAINS_SECTION -> Section 13: Opening, Closing Hours & Daily Limits): Maharashtra Act 2017 establishes standard 9h/day and 48h/week working limits. Basis: Maharashtra Act LXI of 2017\nRelated rule (CONTAINS_SECTION -> Section 14: Overtime Working & Double Wages): Maharashtra Act 2017 mandates 2x overtime rate and 11h daily spread limit. Basis: Maharashtra Act LXI of 2017\nRelated rule (CONTAINS_SECTION -> Section 15: Mandatory Interval for Rest): Maharashtra Act 2017 mandates 30-minute rest interval after 5h continuous work. Basis: Maharashtra Act LXI of 2017\nRelated rule (CONTAINS_SECTION -> Section 18: Statutory Leave with Wages & Casual Leaves): Maharashtra Act 2017 guarantees Earned Leave (1 per 20 days) and 8 days Casual Leave. Basis: Maharashtra Act LXI of 2017"
+    },
+    {
+      "id": "kb_act_maternity_1961",
+      "title": "Maternity Benefit Act 1961",
+      "category": "StatutoryAct",
+      "domain": "Leave Management",
+      "citation": "Act No. 53 of 1961",
+      "content": "Maternity Benefit Act 1961 (StatutoryAct)\nCitation: Act No. 53 of 1961\nKey facts: jurisdiction: Federal India; year: 1961; mandatory: True\nRelated rule (CONTAINS_SECTION -> Section 5: Right to Payment of Maternity Benefit): Maternity Benefit Act mandates 26 weeks paid leave for eligible female employees. Basis: Maternity Benefit Act 1961"
+    },
+    {
+      "id": "kb_act_dpdp_2023",
+      "title": "Digital Personal Data Protection Act 2023",
+      "category": "StatutoryAct",
+      "domain": "Data Privacy & Compliance",
+      "citation": "DPDP Act 2023, No. 22 of 2023",
+      "content": "Digital Personal Data Protection Act 2023 (StatutoryAct)\nCitation: DPDP Act 2023, No. 22 of 2023\nKey facts: jurisdiction: Federal India; year: 2023; mandatory: True\nRelated rule (CONTAINS_SECTION -> Section 4: Grounds for Processing Personal Data & Tokenization): DPDP Act 2023 establishes purpose limitation, consent, and personal data masking. Basis: DPDP Act 2023"
+    },
+    {
+      "id": "kb_sec_13_working_hours",
+      "title": "Section 13: Opening, Closing Hours & Daily Limits",
+      "category": "StatutorySection",
+      "domain": "Time & Attendance",
+      "citation": "Section 13, Maharashtra Act 2017",
+      "content": "Section 13: Opening, Closing Hours & Daily Limits (StatutorySection)\nCitation: Section 13, Maharashtra Act 2017\nKey facts: max daily hours: 9; max weekly hours: 48\nRelated rule (from Maharashtra Shops and Establishments Act 2017, CONTAINS_SECTION): Maharashtra Act 2017 establishes standard 9h/day and 48h/week working limits. Basis: Maharashtra Act LXI of 2017"
+    },
+    {
+      "id": "kb_sec_14_overtime_wages",
+      "title": "Section 14: Overtime Working & Double Wages",
+      "category": "StatutorySection",
+      "domain": "Compensation & Overtime",
+      "citation": "Section 14, Maharashtra Act 2017",
+      "content": "Section 14: Overtime Working & Double Wages (StatutorySection)\nCitation: Section 14, Maharashtra Act 2017\nKey facts: overtime multiplier: 2.0; max daily spread hours: 11; quarterly cap hours: 125\nRelated rule (from Maharashtra Shops and Establishments Act 2017, CONTAINS_SECTION): Maharashtra Act 2017 mandates 2x overtime rate and 11h daily spread limit. Basis: Maharashtra Act LXI of 2017\nRelated rule (MANDATES_INVARIANT -> Mandatory Daily 11-Hour Hard Ceiling): Under Section 14(2), no employee is permitted to work beyond 11 hours in any single day. Basis: Section 14(2), Maharashtra Act 2017\nRelated rule (MANDATES_INVARIANT -> Statutory 2.0x Double Wage Rate for Overtime): Under Section 14(1), any work exceeding 9 hours/day or 48 hours/week is remunerated at 2.0x normal wage rate. Basis: Section 14(1), Maharashtra Act 2017\nRelated rule (GOVERNS_POLICY -> Enterprise Work Hours & Overtime Policy): Enterprise overtime compensation strictly enforces 2.0x pay and 11-hour daily cap. Basis: Section 14, Maharashtra Act 2017"
+    },
+    {
+      "id": "kb_sec_15_rest_interval",
+      "title": "Section 15: Mandatory Interval for Rest",
+      "category": "StatutorySection",
+      "domain": "Time & Attendance",
+      "citation": "Section 15, Maharashtra Act 2017",
+      "content": "Section 15: Mandatory Interval for Rest (StatutorySection)\nCitation: Section 15, Maharashtra Act 2017\nKey facts: min rest minutes: 30; continuous work limit hours: 5\nRelated rule (from Maharashtra Shops and Establishments Act 2017, CONTAINS_SECTION): Maharashtra Act 2017 mandates 30-minute rest interval after 5h continuous work. Basis: Maharashtra Act LXI of 2017"
+    },
+    {
+      "id": "kb_sec_18_leave_entitlements",
+      "title": "Section 18: Statutory Leave with Wages & Casual Leaves",
+      "category": "StatutorySection",
+      "domain": "Leave Management",
+      "citation": "Section 18, Maharashtra Act 2017",
+      "content": "Section 18: Statutory Leave with Wages & Casual Leaves (StatutorySection)\nCitation: Section 18, Maharashtra Act 2017\nKey facts: statutory el accrual rate: 1 day per 20 days worked; statutory cl quota: 8; max el carryover: 45\nRelated rule (from Maharashtra Shops and Establishments Act 2017, CONTAINS_SECTION): Maharashtra Act 2017 guarantees Earned Leave (1 per 20 days) and 8 days Casual Leave. Basis: Maharashtra Act LXI of 2017\nRelated rule (MANDATES_INVARIANT -> Earned Leave 45-Day Maximum Accumulation Cap): Under Section 18(1)(a), unavailed Earned Leave accumulation cannot exceed 45 days. Basis: Section 18(1)(a), Maharashtra Act 2017\nRelated rule (MANDATES_INVARIANT -> Mandatory MBBS/MD Medical Certificate for >2 Consecutive Sick Days): Statutory framework supports mandatory medical documentation for illness absences exceeding 2 consecutive days. Basis: Section 18, Maharashtra Act 2017\nRelated rule (GOVERNS_POLICY -> Enterprise Earned Leave (EL) Policy 2026): Section 18 sets minimum 12 days EL; Enterprise policy provides higher benefit of 18 days per year. Basis: Section 18, Maharashtra Act 2017\nRelated rule (from Enterprise Earned Leave (EL) Policy 2026, OVERRIDES_WITH_HIGHER_BENEFIT): Company grants 18 days Earned Leave annually (1.5 days/month), exceeding the statutory minimum of 12 days. Basis: Company Leave Policy § 4.1\nRelated rule (GOVERNS_POLICY -> Enterprise Casual Leave (CL) Policy 2026): Company Casual Leave aligns exactly with statutory 8 days quota and non-carryover rules. Basis: Section 18(1)(b), Maharashtra Act 2017"
+    },
+    {
+      "id": "kb_sec_5_maternity_benefit",
+      "title": "Section 5: Right to Payment of Maternity Benefit",
+      "category": "StatutorySection",
+      "domain": "Leave Management",
+      "citation": "Section 5, Maternity Benefit Act 1961",
+      "content": "Section 5: Right to Payment of Maternity Benefit (StatutorySection)\nCitation: Section 5, Maternity Benefit Act 1961\nKey facts: paid maternity weeks: 26; medical bonus inr: 3500\nRelated rule (from Maternity Benefit Act 1961, CONTAINS_SECTION): Maternity Benefit Act mandates 26 weeks paid leave for eligible female employees. Basis: Maternity Benefit Act 1961\nRelated rule (GOVERNS_POLICY -> Enterprise Maternity & Parental Policy): Company provides 26 weeks paid maternity leave plus INR 50,000 pre-natal medical reimbursement. Basis: Section 5, Maternity Benefit Act 1961"
+    },
+    {
+      "id": "kb_sec_4_dpdp_personal_data",
+      "title": "Section 4: Grounds for Processing Personal Data & Tokenization",
+      "category": "StatutorySection",
+      "domain": "Data Privacy & Compliance",
+      "citation": "Section 4, DPDP Act 2023",
+      "content": "Section 4: Grounds for Processing Personal Data & Tokenization (StatutorySection)\nCitation: Section 4, DPDP Act 2023\nKey facts: requires consent: True; requires tokenization: True\nRelated rule (from Digital Personal Data Protection Act 2023, CONTAINS_SECTION): DPDP Act 2023 establishes purpose limitation, consent, and personal data masking. Basis: DPDP Act 2023"
+    },
+    {
+      "id": "kb_pol_earned_leave",
+      "title": "Enterprise Earned Leave (EL) Policy 2026",
+      "category": "EnterprisePolicy",
+      "domain": "Leave Management",
+      "citation": "Company HR Handbook § 4.1",
+      "content": "Enterprise Earned Leave (EL) Policy 2026 (EnterprisePolicy)\nCitation: Company HR Handbook § 4.1\nKey facts: annual quota: 18.0; accrual: 1.5 days/month; carryover cap: 45.0; encashable: True\nRelated rule (from Section 18: Statutory Leave with Wages & Casual Leaves, GOVERNS_POLICY): Section 18 sets minimum 12 days EL; Enterprise policy provides higher benefit of 18 days per year. Basis: Section 18, Maharashtra Act 2017\nRelated rule (OVERRIDES_WITH_HIGHER_BENEFIT -> Section 18: Statutory Leave with Wages & Casual Leaves): Company grants 18 days Earned Leave annually (1.5 days/month), exceeding the statutory minimum of 12 days. Basis: Company Leave Policy § 4.1"
+    },
+    {
+      "id": "kb_pol_casual_leave",
+      "title": "Enterprise Casual Leave (CL) Policy 2026",
+      "category": "EnterprisePolicy",
+      "domain": "Leave Management",
+      "citation": "Company HR Handbook § 4.2",
+      "content": "Enterprise Casual Leave (CL) Policy 2026 (EnterprisePolicy)\nCitation: Company HR Handbook § 4.2\nKey facts: annual quota: 8.0; max consecutive days: 3; encashable: False; lapses dec 31: True\nRelated rule (from Section 18: Statutory Leave with Wages & Casual Leaves, GOVERNS_POLICY): Company Casual Leave aligns exactly with statutory 8 days quota and non-carryover rules. Basis: Section 18(1)(b), Maharashtra Act 2017"
+    },
+    {
+      "id": "kb_pol_sick_leave",
+      "title": "Enterprise Sick Leave (SL) & Medical Protocol",
+      "category": "EnterprisePolicy",
+      "domain": "Occupational Health & Wellness",
+      "citation": "Company HR Handbook § 4.3",
+      "content": "Enterprise Sick Leave (SL) & Medical Protocol (EnterprisePolicy)\nCitation: Company HR Handbook § 4.3\nKey facts: annual quota: 10.0; med cert threshold days: 2; encashable: False\nRelated rule (ENFORCES_RULE -> Mandatory MBBS/MD Medical Certificate for >2 Consecutive Sick Days): Sick leave exceeding 2 consecutive days triggers mandatory medical certificate validation. Basis: Company Health Policy § 4.3"
+    },
+    {
+      "id": "kb_pol_overtime_rules",
+      "title": "Enterprise Work Hours & Overtime Policy",
+      "category": "EnterprisePolicy",
+      "domain": "Compensation & Overtime",
+      "citation": "Company HR Handbook § 5.1",
+      "content": "Enterprise Work Hours & Overtime Policy (EnterprisePolicy)\nCitation: Company HR Handbook § 5.1\nKey facts: daily standard hours: 9; daily hard cap hours: 11; overtime rate: 2.0x base hourly rate\nRelated rule (from Section 14: Overtime Working & Double Wages, GOVERNS_POLICY): Enterprise overtime compensation strictly enforces 2.0x pay and 11-hour daily cap. Basis: Section 14, Maharashtra Act 2017"
+    },
+    {
+      "id": "kb_pol_maternity_leave",
+      "title": "Enterprise Maternity & Parental Policy",
+      "category": "EnterprisePolicy",
+      "domain": "Leave Management",
+      "citation": "Company HR Handbook § 4.4",
+      "content": "Enterprise Maternity & Parental Policy (EnterprisePolicy)\nCitation: Company HR Handbook § 4.4\nKey facts: paid weeks: 26; pre natal reimbursement inr: 50000\nRelated rule (from Section 5: Right to Payment of Maternity Benefit, GOVERNS_POLICY): Company provides 26 weeks paid maternity leave plus INR 50,000 pre-natal medical reimbursement. Basis: Section 5, Maternity Benefit Act 1961\nRelated rule (REQUIRES_DOCUMENT -> Form B Maternity Medical Notice & Fitness Declaration): Form B maternity notice must be submitted at least 7 weeks prior to expected date of confinement. Basis: Maternity Benefit Rules Form B"
+    },
+    {
+      "id": "kb_pol_group_medical_health",
+      "title": "Enterprise Group Medical & Ergonomics Plan",
+      "category": "EnterprisePolicy",
+      "domain": "Occupational Health & Wellness",
+      "citation": "Company HR Handbook § 6.2",
+      "content": "Enterprise Group Medical & Ergonomics Plan (EnterprisePolicy)\nCitation: Company HR Handbook § 6.2\nKey facts: sum insured inr: 500000; covers dependents: True; standing desk reimbursement: True"
+    },
+    {
+      "id": "kb_inv_daily_11h_hard_cap",
+      "title": "Mandatory Daily 11-Hour Hard Ceiling",
+      "category": "LegalInvariant",
+      "domain": "Time & Attendance",
+      "citation": "Section 14(2), Maharashtra Act 2017",
+      "content": "Mandatory Daily 11-Hour Hard Ceiling (LegalInvariant)\nCitation: Section 14(2), Maharashtra Act 2017\nKey facts: max hours: 11.0; is hard block: True; overtime allowed: True\nRelated rule (from Section 14: Overtime Working & Double Wages, MANDATES_INVARIANT): Under Section 14(2), no employee is permitted to work beyond 11 hours in any single day. Basis: Section 14(2), Maharashtra Act 2017"
+    },
+    {
+      "id": "kb_inv_overtime_2x_multiplier",
+      "title": "Statutory 2.0x Double Wage Rate for Overtime",
+      "category": "LegalInvariant",
+      "domain": "Compensation & Overtime",
+      "citation": "Section 14(1), Maharashtra Act 2017",
+      "content": "Statutory 2.0x Double Wage Rate for Overtime (LegalInvariant)\nCitation: Section 14(1), Maharashtra Act 2017\nKey facts: multiplier: 2.0\nRelated rule (from Section 14: Overtime Working & Double Wages, MANDATES_INVARIANT): Under Section 14(1), any work exceeding 9 hours/day or 48 hours/week is remunerated at 2.0x normal wage rate. Basis: Section 14(1), Maharashtra Act 2017"
+    },
+    {
+      "id": "kb_inv_el_accumulation_45d_cap",
+      "title": "Earned Leave 45-Day Maximum Accumulation Cap",
+      "category": "LegalInvariant",
+      "domain": "Leave Management",
+      "citation": "Section 18(1)(a), Maharashtra Act 2017",
+      "content": "Earned Leave 45-Day Maximum Accumulation Cap (LegalInvariant)\nCitation: Section 18(1)(a), Maharashtra Act 2017\nKey facts: max accumulated days: 45\nRelated rule (from Section 18: Statutory Leave with Wages & Casual Leaves, MANDATES_INVARIANT): Under Section 18(1)(a), unavailed Earned Leave accumulation cannot exceed 45 days. Basis: Section 18(1)(a), Maharashtra Act 2017"
+    },
+    {
+      "id": "kb_inv_sick_cert_over_2_days",
+      "title": "Mandatory MBBS/MD Medical Certificate for >2 Consecutive Sick Days",
+      "category": "LegalInvariant",
+      "domain": "Occupational Health & Wellness",
+      "citation": "Section 18(1)(b) & Company Health Policy § 4.3",
+      "content": "Mandatory MBBS/MD Medical Certificate for >2 Consecutive Sick Days (LegalInvariant)\nCitation: Section 18(1)(b) & Company Health Policy § 4.3\nKey facts: threshold consecutive days: 2; mandatory doc: Medical Certificate\nRelated rule (from Section 18: Statutory Leave with Wages & Casual Leaves, MANDATES_INVARIANT): Statutory framework supports mandatory medical documentation for illness absences exceeding 2 consecutive days. Basis: Section 18, Maharashtra Act 2017\nRelated rule (from Enterprise Sick Leave (SL) & Medical Protocol, ENFORCES_RULE): Sick leave exceeding 2 consecutive days triggers mandatory medical certificate validation. Basis: Company Health Policy § 4.3\nRelated rule (REQUIRES_DOCUMENT -> Certified Medical Practitioner Certificate (MBBS/MD)): A verified medical fitness certificate issued by a registered medical practitioner (MBBS/MD) is required. Basis: Medical Council of India / HR Policy § 4.3"
+    },
+    {
+      "id": "kb_doc_mbbs_medical_cert",
+      "title": "Certified Medical Practitioner Certificate (MBBS/MD)",
+      "category": "DocumentRequirement",
+      "domain": "Occupational Health & Wellness",
+      "citation": "Maharashtra Labour Rules & Form F",
+      "content": "Certified Medical Practitioner Certificate (MBBS/MD) (DocumentRequirement)\nCitation: Maharashtra Labour Rules & Form F\nKey facts: practitioner types: ['MBBS', 'MD']; validity days: 15\nRelated rule (from Mandatory MBBS/MD Medical Certificate for >2 Consecutive Sick Days, REQUIRES_DOCUMENT): A verified medical fitness certificate issued by a registered medical practitioner (MBBS/MD) is required. Basis: Medical Council of India / HR Policy § 4.3"
+    },
+    {
+      "id": "kb_doc_maternity_declaration",
+      "title": "Form B Maternity Medical Notice & Fitness Declaration",
+      "category": "DocumentRequirement",
+      "domain": "Leave Management",
+      "citation": "Maternity Benefit Rules Form B",
+      "content": "Form B Maternity Medical Notice & Fitness Declaration (DocumentRequirement)\nCitation: Maternity Benefit Rules Form B\nKey facts: mandatory prior notice weeks: 7\nRelated rule (from Enterprise Maternity & Parental Policy, REQUIRES_DOCUMENT): Form B maternity notice must be submitted at least 7 weeks prior to expected date of confinement. Basis: Maternity Benefit Rules Form B"
+    }
+  ]
+}
