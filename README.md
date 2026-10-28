@@ -50,22 +50,17 @@
   <em><strong>Figure 4 — Timesheet & Overtime Boundary Auditor:</strong> Daily project hour logging, weekly summaries, and automated 9h daily / 48h weekly Factories Act compliance enforcement.</em>
 </p>
 
-<p align="center">
-  <img src="assets/05_policy_rag.png" alt="Pinecone Statutory Policy RAG Explorer" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
-  <br>
-  <em><strong>Figure 5 — Statutory Policy RAG Explorer:</strong> Semantic vector search over Maharashtra Shops & Establishments Act 2017 and company policy handbook with exact legal section citations.</em>
-</p>
 
 <p align="center">
   <img src="assets/04_reports.png" alt="Enterprise Payroll Reports & CSV Export Hub" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
   <br>
-  <em><strong>Figure 6 — Executive Reports & Payroll Export Hub:</strong> One-click payroll reconciliation, leave utilization analytics, and audit-ready CSV exports.</em>
+  <em><strong>Figure 5 — Executive Reports & Payroll Export Hub:</strong> One-click payroll reconciliation, leave utilization analytics, and audit-ready CSV exports.</em>
 </p>
 
 <p align="center">
   <img src="assets/07_onboarding.png" alt="Administrative KYC & Employee Onboarding Portal" width="100%" style="border-radius: 8px; border: 1px solid #30363d;" />
   <br>
-  <em><strong>Figure 7 — Guided KYC Onboarding Wizard:</strong> Multi-step employee verification pipeline with encrypted document storage and DPDP compliance auditing.</em>
+  <em><strong>Figure 6 — Guided KYC Onboarding Wizard:</strong> Multi-step employee verification pipeline with encrypted document storage and DPDP compliance auditing.</em>
 </p>
 
 ---
